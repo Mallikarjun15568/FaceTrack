@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="flex-1 p-6">
+
+    <h1 class="text-2xl font-bold mb-4">Enroll Face</h1>
+
+    <div class="bg-white p-4 rounded-xl shadow">
+        <table class="w-full border-collapse">
+            <thead class="bg-gray-100 text-gray-600">
+                <tr>
+                    <th class="p-3 text-left">ID</th>
+                    <th class="p-3 text-left">Photo</th>
+                    <th class="p-3 text-left">Name</th>
+                    <th class="p-3 text-left">Department</th>
+                    <th class="p-3 text-left">Enrollment</th>
+                    <th class="p-3 text-left">Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for emp in employees %}
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="p-3">{{ emp.id }}</td>
+
+                    <td class="p-3">
+                        <img src="{{ url_for('static', filename='default_user.png') }}"
+                             class="w-10 h-10 rounded-full border">
+                    </td>
+
+                    <td class="p-3 font-medium">{{ emp.full_name }}</td>
+                    <td class="p-3">{{ emp.department }}</td>
+
+                    <td class="p-3">
+                        {% if emp.enroll_status == "Enrolled" %}
+                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
+                            Enrolled
+                        </span>
+                        {% else %}
+                        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm">
+                            Not Enrolled
+                        </span>
+                        {% endif %}
+                    </td>
+
+                    <td class="p-3">
+                        {% if emp.enroll_status == "Enrolled" %}
+                            <a href="/enroll/update/{{ emp.id }}"
+                               class="px-3 py-1 bg-yellow-500 text-white rounded-lg">
+                                Update Face
+                            </a>
+                        {% else %}
+                            <a href="/enroll/{{ emp.id }}"
+                               class="px-4 py-1 bg-blue-600 text-white rounded-lg">
+                                Enroll Face
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

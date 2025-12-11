@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Logs{% endblock %}
+
+{% block content %}
+
+<main class="main-content attendance-page">
+
+    <h2 class="text-2xl font-semibold mb-4">Attendance Records</h2>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar flex flex-wrap items-center gap-4 mb-6">
+
+        <div>
+            <label for="userFilter" class="font-medium">User:</label>
+            <select id="userFilter" class="border px-3 py-2 rounded-md">
+                <option value="">All</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="dateFilter" class="font-medium">Date:</label>
+            <input type="date" id="dateFilter" class="border px-3 py-2 rounded-md">
+        </div>
+
+        <button id="applyFilters" class="btn bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+            Apply
+        </button>
+
+        <button id="exportCSV" class="btn bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+            Export CSV
+        </button>
+
+    </div>
+
+    <!-- ATTENDANCE TABLE -->
+    <div class="overflow-x-auto bg-white rounded-xl shadow-sm border">
+
+        <table class="attendance-table w-full text-sm" id="attendanceTable">
+
+            <thead class="bg-gray-100 border-b">
+                <tr>
+                    <th class="p-3 text-left">Photo</th>
+                    <th class="p-3 text-left">Username</th>
+                    <th class="p-3 text-left">Snapshot</th>
+                    <th class="p-3 text-left">Check-In</th>
+                    <th class="p-3 text-left">Check-Out</th>
+                    <th class="p-3 text-left">Working Hours</th>
+                    <th class="p-3 text-left">Status</th>
+                </tr>
+            </thead>
+
+            <tbody id="attendanceTableBody">
+                <!-- Rows inserted via attendance.js -->
+            </tbody>
+
+        </table>
+
+    </div>
+     <div id="attendance-popup"
+     class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2
+            w-[90%] max-w-md rounded-xl shadow-xl p-4 text-white
+            text-sm font-medium z-50 animate-slideUp">
+    </div>
+
+</main>
+
+<script src="{{ url_for('static', filename='js/attendance.js') }}"></script>
+{% endblock %}

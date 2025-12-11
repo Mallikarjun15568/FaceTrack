@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block page_title %}Admin Dashboard{% endblock %}
+{% block content %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- Left column: summary + quick actions -->
+  <div class="space-y-6 lg:col-span-2">
+
+    <!-- Top summary cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="p-5 rounded-2xl bg-white shadow flex flex-col">
+        <div class="flex items-center justify-between">
+          <div class="text-sm text-gray-500">Total Employees</div>
+          <div class="text-xs text-gray-400">All time</div>
+        </div>
+        <div class="mt-4 text-3xl font-bold text-blue-600">{{ total_employees }}</div>
+      </div>
+
+      <div class="p-5 rounded-2xl bg-white shadow flex flex-col">
+        <div class="flex items-center justify-between">
+          <div class="text-sm text-gray-500">Departments</div>
+        </div>
+        <div class="mt-4 text-3xl font-bold text-blue-600">{{ total_departments }}</div>
+      </div>
+
+      <div class="p-5 rounded-2xl bg-white shadow flex flex-col">
+        <div class="flex items-center justify-between">
+          <div class="text-sm text-gray-500">Present Today</div>
+          <div class="text-xs text-gray-400">Today</div>
+        </div>
+        <div class="mt-4 text-3xl font-bold text-blue-600">{{ today_present }}</div>
+      </div>
+
+      <div class="p-5 rounded-2xl bg-white shadow flex flex-col">
+        <div class="flex items-center justify-between">
+          <div class="text-sm text-gray-500">Recognition Events</div>
+          <div class="text-xs text-gray-400">Today</div>
+        </div>
+        <div class="mt-4 text-3xl font-bold text-blue-600">{{ recognition_today }}</div>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-white p-5 rounded-2xl shadow">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold">Weekly Attendance</h3>
+          <div class="text-xs text-gray-400">Last 7 days</div>
+        </div>
+        <canvas id="weeklyAttendanceChart" height="140"></canvas>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold">Department Breakdown</h3>
+          <div class="text-xs text-gray-400">Employees per dept</div>
+        </div>
+        <canvas id="departmentChart" height="140"></canvas>
+      </div>
+    </div>
+
+    <!-- Recent attendance table -->
+    <div class="bg-white p-5 rounded-2xl shadow mt-4">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold">Recent Attendance</h3>
+        <a href="/attendance" class="text-sm text-blue-600 hover:underline">See all</a>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="text-left text-gray-500 border-b">
+            <tr>
+              <th class="py-2">Employee</th>
+              <th class="py-2">Date</th>
+              <th class="py-2">Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in recent_attendance %}
+            <tr class="border-b hover:bg-gray-50">
+              <td class="py-3">{{ r.full_name }}</td>
+              <td class="py-3">{{ r.date }}</td>
+              <td class="py-3">{{ r.time }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right column -->
+  <aside class="space-y-6">
+
+    <div class="bg-white p-5 rounded-2xl shadow">
+      <h3 class="font-semibold">Quick Actions</h3>
+      <div class="mt-4 grid grid-cols-1 gap-3">
+        <a href="/employees" class="block text-center py-2 rounded-lg bg-blue-600 text-white">Manage Employees</a>
+        <a href="/enroll" class="block text-center py-2 rounded-lg bg-green-600 text-white">Enroll Face</a>
+        <a href="/reports" class="block text-center py-2 rounded-lg bg-orange-500 text-white">Reports</a>
+      </div>
+    </div>
+
+    <div class="bg-white p-5 rounded-2xl shadow">
+      <h3 class="font-semibold">Recent Recognitions</h3>
+      <ul class="mt-3 space-y-2 text-sm text-gray-700">
+        {% for r in recent_recognitions %}
+          <li class="flex items-center justify-between">
+            <span>{{ r.full_name }}</span>
+            <span class="text-xs text-gray-400">{{ r.timestamp }}</span>
+
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="bg-white p-5 rounded-2xl shadow text-sm text-gray-500">
+      <div>System</div>
+      <div class="mt-3"><strong>DB:</strong> OK</div>
+      <div><strong>Uptime:</strong> --</div>
+    </div>
+
+  </aside>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.WEEKLY_DATA = {{ weekly_data | tojson | safe }};
+    window.DEPARTMENT_DATA = {{ department_data | tojson | safe }};
+</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
+

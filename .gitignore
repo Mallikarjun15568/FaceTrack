@@ -1,0 +1,77 @@
+# -------------------------------
+# Python
+# -------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# -------------------------------
+# Virtual Environment (CRITICAL)
+# -------------------------------
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# -------------------------------
+# Database Files
+# -------------------------------
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# -------------------------------
+# Environment / Secrets
+# -------------------------------
+.env
+.env.local
+.env.production
+.env.development
+
+# -------------------------------
+# Face Data (PRIVACY CRITICAL)
+# -------------------------------
+static/faces/
+static/attendance_photos/
+static/snapshots/
+static/face_login_temp/
+
+# -------------------------------
+# InsightFace Models (VERY LARGE)
+# -------------------------------
+models/*.onnx
+models/*.bin
+models/*.pth
+models/*.caffemodel
+models/__pycache__/
+
+# -------------------------------
+# Logs
+# -------------------------------
+*.log
+
+# -------------------------------
+# IDE / System
+# -------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# -------------------------------
+# Node (if any tools used)
+# -------------------------------
+node_modules/
+
+# -------------------------------
+# Compiled files
+# -------------------------------
+*.pyo
+*.pyd
+*.dll
+*.exe

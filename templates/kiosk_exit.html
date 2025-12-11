@@ -1,0 +1,206 @@
+{% extends "base_kiosk.html" %}
+{% block title %}Exit Kiosk Mode{% endblock %}
+
+{% block content %}
+
+<div class="min-h-screen w-full flex items-center justify-center bg-gray-50 px-4">
+
+    <div class="w-full max-w-md">
+
+        <!-- Clean Card -->
+        <div class="bg-white rounded-3xl shadow-xl border border-gray-200 p-10">
+
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-semibold text-gray-900">Exit Kiosk</h2>
+                <p class="text-sm text-gray-500 mt-1">Secure Exit — Admin PIN Required</p>
+            </div>
+
+            <!-- Form -->
+            <form id="exitForm" class="space-y-6">
+
+                <!-- PIN Input -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Admin PIN
+                    </label>
+
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="pin" 
+                            class="w-full px-5 py-3 rounded-xl border border-gray-300 
+                                   bg-white shadow-inner text-gray-900 text-lg
+                                   focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Enter PIN"
+                            autocomplete="off"
+                            required
+                        >
+                        <!-- Eye icon -->
+                        <svg id="togglePin" 
+                             class="w-5 h-5 text-gray-500 absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 
+                                   9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Message -->
+                <div id="message" class="hidden text-sm rounded-xl py-3 px-4 text-center"></div>
+
+                <!-- Buttons -->
+                <div class="flex gap-4">
+
+                    <!-- Back -->
+                    <a href="{{ url_for('kiosk.kiosk_page') }}"
+                       class="flex-1 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 
+                              text-gray-700 font-medium shadow-sm transition
+                              flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        Back
+                    </a>
+
+                    <!-- Exit -->
+                    <button type="submit" id="submitBtn"
+                        class="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 
+                               text-white font-semibold shadow-md transition
+                               flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 
+                                   01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 
+                                   3 0 013 3v1"/>
+                        </svg>
+                        Exit Kiosk
+                    </button>
+
+                </div>
+
+            </form>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Eye toggle
+    const toggle = document.getElementById("togglePin");
+    const pin = document.getElementById("pin");
+
+    toggle.addEventListener("click", () => {
+        pin.type = pin.type === "password" ? "text" : "password";
+    });
+
+    const form = document.getElementById('exitForm');
+    const messageDiv = document.getElementById('message');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const pinVal = pin.value.trim();
+        if (!pinVal) {
+            showMsg("Please enter your PIN", false);
+            return;
+        }
+
+        lockBtn(true);
+
+        try {
+            const res = await fetch('/kiosk/exit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin: pinVal })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                showMsg("✔ Verified, redirecting...", true);
+                setTimeout(() => window.location.href = data.redirect, 700);
+            } else {
+                // Check if message contains lockout time
+                const lockoutMatch = data.message.match(/(\d+)s/);
+                if (lockoutMatch) {
+                    const seconds = parseInt(lockoutMatch[1]);
+                    startCountdown(seconds);
+                } else {
+                    showMsg(data.message, false);
+                    pin.value = "";
+                    pin.focus();
+                    lockBtn(false);
+                }
+            }
+
+        } catch (err) {
+            showMsg("⚠ Network error. Try again.", false);
+            lockBtn(false);
+        }
+    });
+
+    function showMsg(text, ok) {
+        messageDiv.textContent = text;
+        messageDiv.className = ok
+            ? "py-3 px-4 rounded-xl bg-green-100 text-green-700 shadow text-center"
+            : "py-3 px-4 rounded-xl bg-red-100 text-red-700 shadow text-center";
+        messageDiv.classList.remove("hidden");
+    }
+
+    function lockBtn(state) {
+        submitBtn.disabled = state;
+        submitBtn.innerHTML = state
+            ? `<svg class='animate-spin w-5 h-5 mr-2 inline' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                   <circle class='opacity-25' cx='12' cy='12' r='10' stroke-width='4'></circle>
+                   <path class='opacity-75' fill='currentColor'
+                         d='M4 12a8 8 0 018-8V0A12 12 0 000 12h4z'></path>
+               </svg> Verifying...`
+            : `Exit Kiosk`;
+    }
+
+    let countdownInterval = null;
+
+    function startCountdown(seconds) {
+        pin.disabled = true;
+        submitBtn.disabled = true;
+        
+        // Clear any existing countdown
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+        }
+
+        const updateCountdown = () => {
+            if (seconds <= 0) {
+                clearInterval(countdownInterval);
+                showMsg("You can try again now", true);
+                pin.disabled = false;
+                pin.value = "";
+                pin.focus();
+                lockBtn(false);
+                return;
+            }
+
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            const timeStr = mins > 0 
+                ? `${mins}m ${secs}s` 
+                : `${secs}s`;
+            
+            showMsg(`🔒 Too many attempts. Locked for ${timeStr}`, false);
+            seconds--;
+        };
+
+        updateCountdown(); // Show immediately
+        countdownInterval = setInterval(updateCountdown, 1000);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-4xl mx-auto p-6">
+
+    <h1 class="text-3xl font-bold mb-2">System Settings</h1>
+    <p class="text-gray-600 text-sm mb-6">
+        Configure AI recognition, attendance rules, system behavior, and company details.
+    </p>
+
+    <!-- SECTION 1: RECOGNITION SETTINGS -->
+    <div class="bg-white p-5 rounded-xl shadow mb-6">
+        <h2 class="text-xl font-semibold mb-4">Recognition Settings</h2>
+
+        <div class="space-y-4">
+
+            <!-- Threshold -->
+            <div>
+                <label class="block font-medium mb-1">
+                    Recognition Threshold:
+                    <span id="th-val">{{ settings.recognition_threshold }}</span>
+                </label>
+                <input id="recognition_threshold"
+                       type="range" min="0.30" max="0.60" step="0.01"
+                       value="{{ settings.recognition_threshold }}"
+                       class="w-full" />
+            </div>
+
+            <!-- Duplicate Interval -->
+            <div>
+                <label class="block font-medium mb-1">Duplicate Attendance Interval (minutes)</label>
+                <input id="duplicate_interval" type="number"
+                       value="{{ settings.duplicate_interval }}"
+                       class="w-full p-2 border rounded" />
+            </div>
+
+            <!-- Snapshot Mode -->
+            <div class="flex items-center gap-2">
+                <label class="font-medium">Snapshot Mode</label>
+                <input id="snapshot_mode" type="checkbox"
+                       {% if settings.snapshot_mode == 'on' %}checked{% endif %}
+                       class="h-5 w-5">
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- SECTION 2: ATTENDANCE RULES -->
+    <div class="bg-white p-5 rounded-xl shadow mb-6">
+        <h2 class="text-xl font-semibold mb-4">Attendance Rules</h2>
+
+        <div class="space-y-4">
+
+            <div>
+                <label class="block font-medium mb-1">Late Time (HH:MM)</label>
+                <input id="late_time" type="time"
+                       value="{{ settings.late_time }}"
+                       class="w-full p-2 border rounded" />
+            </div>
+
+            <div>
+                <label class="block font-medium mb-1">Minimum Confidence (%)</label>
+                <input id="min_confidence" type="number"
+                       value="{{ settings.min_confidence }}"
+                       class="w-full p-2 border rounded" />
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- SECTION 3: SYSTEM PREFERENCES -->
+    <div class="bg-white p-5 rounded-xl shadow mb-6">
+        <h2 class="text-xl font-semibold mb-4">System Preferences</h2>
+
+        <div class="space-y-6">
+
+            <div>
+                <label class="block font-medium mb-1">Company Name</label>
+                <input id="company_name" type="text"
+                       value="{{ settings.company_name }}"
+                       class="w-full p-2 border rounded" />
+            </div>
+
+            <div>
+                <label class="block font-medium mb-2">Company Logo</label>
+
+                <div class="flex items-center gap-4">
+                    <img id="logo_preview"
+                         src="{{ settings.company_logo }}"
+                         class="h-14 w-auto object-contain border rounded bg-white p-1">
+
+                    <form id="logoForm" enctype="multipart/form-data">
+                        <input id="company_logo" name="company_logo" type="file" accept="image/*" />
+                        <button type="button" id="uploadLogoBtn"
+                                class="bg-gray-800 text-white px-4 py-1 rounded ml-2">
+                            Upload
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-medium mb-1">Camera Device Index</label>
+                <input id="camera_index"
+                       type="number"
+                       value="{{ settings.camera_index }}"
+                       class="w-full p-2 border rounded" />
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- SECTION 4: SECURITY SETTINGS -->
+    <div class="bg-white p-5 rounded-xl shadow mb-6">
+        <h2 class="text-xl font-semibold mb-4">Security Settings</h2>
+
+        <div class="space-y-4">
+
+            <div>
+                <label class="block font-medium mb-1">Session Timeout (minutes)</label>
+                <select id="session_timeout"
+                        class="w-full p-2 border rounded">
+                    <option value="15" {% if settings.session_timeout == '15' %}selected{% endif %}>15</option>
+                    <option value="30" {% if settings.session_timeout == '30' %}selected{% endif %}>30</option>
+                    <option value="60" {% if settings.session_timeout == '60' %}selected{% endif %}>60</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-medium mb-1">Login Alert</label>
+                <input id="login_alert"
+                       value="{{ settings.login_alert }}"
+                       class="w-full p-2 border rounded"
+                       placeholder="off or email" />
+            </div>
+
+            <!-- Kiosk PIN -->
+            <div>
+                <label class="block font-medium mb-1">Kiosk Exit PIN</label>
+                <form id="kioskPinForm" class="flex gap-2">
+                    <input 
+                        id="kiosk_pin" 
+                        type="password" 
+                        placeholder="Enter 4+ digit PIN"
+                        class="flex-1 p-2 border rounded"
+                        autocomplete="new-password"
+                    />
+                    <button 
+                        type="button"
+                        id="setPinBtn"
+                        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    >
+                        Set PIN
+                    </button>
+                </form>
+                <p class="text-xs text-gray-500 mt-1">Used to exit kiosk mode. Must be numeric, 4+ digits.</p>
+                <div id="pinStatus" class="text-sm mt-1 hidden"></div>
+            </div>
+
+            <!-- Remote Unlock -->
+            <div>
+                <label class="block font-medium mb-1">Remote Kiosk Control</label>
+                <button 
+                    id="remoteUnlockBtn"
+                    class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 flex items-center gap-2"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
+                    </svg>
+                    Force Unlock Kiosk
+                </button>
+                <p class="text-xs text-gray-500 mt-1">Remotely unlock kiosk without PIN. Use only in emergencies.</p>
+                <div id="unlockStatus" class="text-sm mt-1 hidden"></div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- SECTION 5: DATA & BACKUP -->
+    <div class="bg-white p-5 rounded-xl shadow mb-6">
+        <h2 class="text-xl font-semibold mb-4">Data & Backup</h2>
+
+        <div class="flex gap-3">
+            <button id="exportAttendance" class="bg-green-600 text-white px-4 py-2 rounded">
+                Export Attendance (CSV)
+            </button>
+
+            <button id="exportEmployees" class="bg-green-600 text-white px-4 py-2 rounded">
+                Export Employees (CSV)
+            </button>
+        </div>
+    </div>
+
+
+    <div class="flex items-center gap-4">
+        <button id="saveBtn"
+                class="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700">
+            Save Changes
+        </button>
+        <span id="status" class="text-gray-600 text-sm"></span>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}

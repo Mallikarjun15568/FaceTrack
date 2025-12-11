@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="p-6 space-y-6">
+
+    <!-- Back Button -->
+    <a href="/employees" class="text-blue-600 hover:underline">&larr; Back to Employees</a>
+
+    <!-- Page Header -->
+    <h1 class="text-2xl font-bold">Edit Employee</h1>
+
+    <!-- Edit Form -->
+    <div class="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow max-w-xl">
+
+        <form action="/employees/edit/{{ emp.id }}" 
+              method="POST" 
+              enctype="multipart/form-data"
+              class="space-y-4">
+
+            <!-- Full Name -->
+            <div>
+                <label class="block mb-1">Full Name</label>
+                <input type="text" 
+                       name="full_name" 
+                       value="{{ emp.full_name }}" 
+                       required
+                       class="w-full p-3 rounded-xl border dark:bg-gray-800 dark:text-white">
+            </div>
+
+            <!-- Email -->
+            <div>
+                <label class="block mb-1">Email</label>
+                <input type="email" 
+                       name="email" 
+                       value="{{ emp.email }}" 
+                       required
+                       class="w-full p-3 rounded-xl border dark:bg-gray-800 dark:text-white">
+            </div>
+
+            <!-- Phone -->
+            <div>
+                <label class="block mb-1">Phone</label>
+                <input type="text" 
+                       name="phone" 
+                       value="{{ emp.phone }}" 
+                       class="w-full p-3 rounded-xl border dark:bg-gray-800 dark:text-white">
+            </div>
+
+            <!-- Department -->
+            <div>
+                <label class="block mb-1">Department</label>
+                <select name="department_id"
+                        class="w-full p-3 rounded-xl border dark:bg-gray-800 dark:text-white">
+                    {% for d in departments %}
+                    <option value="{{ d.id }}" 
+                        {% if d.id == emp.department_id %}selected{% endif %}>
+                        {{ d.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Join Date -->
+            <div>
+                <label class="block mb-1">Join Date</label>
+                <input type="date" 
+                       name="join_date" 
+                       value="{{ emp.join_date }}" 
+                       required
+                       class="w-full p-3 rounded-xl border dark:bg-gray-800 dark:text-white">
+            </div>
+
+            <!-- Status -->
+            <div>
+                <label class="block mb-1">Status</label>
+                <select name="status"
+                        class="w-full p-3 rounded-xl border dark:bg-gray-800 dark:text-white">
+                    <option value="Active"   {% if emp.status == "Active" %}selected{% endif %}>Active</option>
+                    <option value="Inactive" {% if emp.status == "Inactive" %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+
+            <!-- Update Photo -->
+            <div>
+                <label class="block mb-1">Update Photo (optional)</label>
+                <input type="file" 
+                       name="photo" 
+                       accept="image/*"
+                       class="w-full p-3 rounded-xl border dark:bg-gray-800 dark:text-white">
+            </div>
+
+            <!-- Submit -->
+            <button type="submit"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl">
+                Save Changes
+            </button>
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,26 @@
+{% if not enrolled %}
+<div class="empty-state">
+  <span class="empty-icon">👥</span>
+  <p>No employees enrolled yet</p>
+</div>
+{% else %}
+<div class="enrolled-grid">
+  {% for emp in enrolled %}
+  <div class="enrolled-card">
+    <div class="card-header">
+      <span class="emp-id">#{{ emp.emp_id }}</span>
+      <span class="emp-role {{ emp.role }}">{{ emp.role }}</span>
+    </div>
+    <div class="card-body">
+      <h4>{{ emp.full_name }}</h4>
+      <p>{{ emp.department }} • {{ emp.designation }}</p>
+    </div>
+    <div class="card-footer">
+      <span class="enrolled-date">
+        Enrolled: {{ emp.created_at.strftime('%d %b %Y') }}
+      </span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

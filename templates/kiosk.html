@@ -1,0 +1,97 @@
+{% extends "base_kiosk.html" %}
+{% block title %}FaceTrack | Kiosk{% endblock %}
+
+{% block content %}
+
+<div class="min-h-screen w-full flex items-center justify-center bg-gray-100 p-6">
+
+    <div class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- LEFT: CAMERA CARD -->
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-5">
+
+            <div class="mb-4">
+                <h2 class="text-xl font-bold text-gray-900">FaceTrack — Kiosk</h2>
+                <p class="text-sm text-gray-500">Please align your face inside the scan area</p>
+            </div>
+
+            <div class="w-full rounded-xl bg-gray-50 border border-gray-200 p-3">
+                <div class="relative w-full h-[400px] rounded-xl overflow-hidden bg-black">
+
+                    <!-- LIVE CAMERA -->
+                    <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
+
+                    <!-- SCAN BOX -->
+                    <div id="scan-box"
+                        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                               w-80 h-56 border-2 border-sky-400 rounded-xl
+                               flex flex-col items-center justify-center bg-white/0 backdrop-blur-0
+                               text-center shadow-none">
+
+                        <h3 class="text-lg font-semibold text-gray-100 drop-shadow">SCAN FACE AREA</h3>
+                        <p class="text-sm text-gray-200">Look straight into the camera</p>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT: ATTENDANCE PANEL -->
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 flex flex-col">
+
+            <!-- HEADER -->
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">Attendance Panel</h3>
+                    <p class="text-sm text-gray-500">Your attendance will be marked automatically</p>
+                </div>
+                <a href="{{ url_for('kiosk.kiosk_exit') }}" 
+                   class="px-3 py-1.5 bg-red-600 text-white text-sm font-semibold rounded hover:bg-red-700 transition">
+                    Exit
+                </a>
+            </div>
+
+            <!-- WAITING BLOCK -->
+            <div id="waiting-block" class="mt-4">
+                <p class="font-semibold text-gray-900">Waiting for face...</p>
+                <p class="text-xs text-gray-500">Stay in frame for accurate recognition</p>
+            </div>
+
+            <!-- EMPLOYEE CARD -->
+            <div id="employee-card" class="hidden mt-5 flex gap-4 items-center">
+
+                 <img id="emp-photo"
+                     src="{{ url_for('static', filename='default_user.png') }}"
+                     class="w-16 h-16 rounded-full border border-gray-300 object-cover shadow-sm">
+
+                <div>
+                    <div id="emp-name" class="text-lg font-bold text-gray-900">Employee Name</div>
+                    <div id="emp-dept" class="text-sm text-gray-500">Department</div>
+
+                    <!-- STATUS BADGE -->
+                    <div id="status-area" class="mt-2"></div>
+                </div>
+
+            </div>
+
+            <!-- LAST LOGS -->
+            <div class="mt-6">
+                <h4 class="text-lg font-semibold mb-3">Recent Logs</h4>
+
+                <div id="logs-list" class="space-y-2">
+                    <!-- Logs inserted by JS -->
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/kiosk.js') }}"></script>
+{% endblock %}

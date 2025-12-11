@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-4xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-4">Face Enrollment</h1>
+    <p class="text-gray-600 mb-4">Employee: <b>{{ employee.name }}</b> (ID: {{ employee.id }})</p>
+
+    <!-- Camera Preview -->
+    <div class="flex justify-center">
+        <video id="camera" autoplay playsinline class="rounded-lg shadow-lg w-96 h-72 bg-black"></video>
+    </div>
+
+    <!-- Capture Button -->
+    <div class="flex justify-center mt-5">
+        <button id="captureBtn" 
+                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-lg font-semibold">
+            Capture Face
+        </button>
+    </div>
+
+    <!-- Preview -->
+    <div class="flex justify-center mt-6 hidden" id="previewBox">
+        <img id="capturedImg" class="w-72 rounded-lg shadow-lg"/>
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingBox" class="hidden text-center mt-4 text-lg text-blue-600 font-semibold">
+        Processing... Please wait.
+    </div>
+
+</div>
+
+
+<!-- JS SECTION -->
+<script>
+let video = document.getElementById("camera");
+let captureBtn = document.getElementById("captureBtn");
+let previewBox = document.getElementById("previewBox");
+let capturedImg = document.getElementById("capturedImg");
+let loadingBox = document.getElementById("loadingBox");
+
+// Start Webcam
+navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => {
+        video.srcObject = stream;
+    })
+    .catch(err => {
+        alert("Camera not accessible!");
+        console.error(err);
+    });
+
+// Capture Function
+captureBtn.onclick = async function () {
+    loadingBox.classList.remove("hidden");
+
+    // Create Canvas
+    let canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    let context = canvas.getContext("2d");
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    let imageBase64 = canvas.toDataURL("image/jpeg");
+
+    // Show Preview
+    previewBox.classList.remove("hidden");
+    capturedImg.src = imageBase64;
+
+    // Send to backend
+    let response = await fetch("/enroll/capture", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            employee_id: "{{ employee.id }}",
+            image: imageBase64
+        })
+    });
+
+    let result = await response.json();
+    loadingBox.classList.add("hidden");
+
+    if (result.status === "success") {
+        alert("Face enrolled successfully!");
+        window.location.href = "/enroll";  // redirect to list
+    }
+    else if (result.status === "no_face") {
+        alert("No face detected! Try again.");
+    }
+    else {
+        alert("Error: " + result.message);
+    }
+};
+</script>
+
+{% endblock %}

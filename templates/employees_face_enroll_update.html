@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Update Face - {{ employee.full_name }}</title>
+    <link rel="stylesheet" href="/static/css/output.css">
+</head>
+
+<body class="bg-gray-100 min-h-screen p-6">
+
+<div class="max-w-4xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
+
+    <h2 class="text-2xl font-bold mb-6 text-blue-600">
+        Update Face – {{ employee.full_name }}
+    </h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+        <!-- CURRENT SAVED FACE -->
+        <div class="bg-gray-50 p-4 rounded-xl border shadow">
+            <h3 class="text-lg font-semibold mb-3">Current Registered Face</h3>
+
+            {% if employee.photo_path %}
+                <img src="{{ employee.photo_path }}"
+                     class="w-56 h-56 rounded-xl object-cover border shadow">
+            {% else %}
+                <p class="text-gray-500">No photo available</p>
+            {% endif %}
+        </div>
+
+        <!-- LIVE CAMERA -->
+        <div class="bg-gray-50 p-4 rounded-xl border shadow">
+            <h3 class="text-lg font-semibold mb-3">Live Camera Preview</h3>
+
+            <video id="camera" autoplay playsinline
+                   class="w-full h-56 bg-black rounded-xl shadow"></video>
+
+            <button id="captureBtn"
+                    class="mt-4 w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700">
+                Capture New Face
+            </button>
+
+            <img id="previewImg"
+                 class="hidden mt-4 w-56 h-56 rounded-xl border shadow object-cover mx-auto" />
+
+            <button id="saveBtn"
+                    class="hidden mt-4 w-full bg-green-600 text-white py-2 rounded-xl hover:bg-green-700">
+                Save Updated Face
+            </button>
+        </div>
+
+    </div>
+
+</div>
+
+<script src="/static/js/employees_face_enroll_update.js"></script>
+
+</body>
+</html>

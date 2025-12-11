@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}FaceTrack {% endblock %}</title>
+
+  <link rel="icon" type="image/png" href="{{ url_for('favicon') }}">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <link rel="stylesheet" href="/static/css/output.css">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://unpkg.com/feather-icons"></script>
+
+  <!-- Alerts -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  {% block head %}{% endblock %}
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+
+<div id="app" class="flex h-screen overflow-hidden">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="w-72 bg-white border-r hidden lg:block">
+    <div class="p-6 border-b">
+      <a href="/" class="flex items-center gap-3">
+        <img src="{{ url_for('static', filename='images/facetrack_pro.png') }}" class="h-10 rounded">
+        <div>
+          <div class="font-bold text-lg">FaceTrack</div>
+          <div class="text-xs text-gray-500">Attendance & Recognition</div>
+        </div>
+      </a>
+    </div>
+
+    <nav class="px-4 pb-6 pt-4">
+      <ul class="space-y-1">
+
+        <li>
+          <a href="/dashboard" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50">
+            <i data-feather="grid"></i>
+            <span class="text-sm">Dashboard</span>
+          </a>
+        </li>
+
+        <!-- Admin & HR only -->
+        {% if session.role in ['admin', 'hr'] %}
+        <li>
+          <a href="/employees" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50">
+            <i data-feather="users"></i>
+            <span class="text-sm">Employees</span>
+          </a>
+        </li>
+
+        <li>
+          <a href="/enroll" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50">
+            <i data-feather="camera"></i>
+            <span class="text-sm">Enroll Face</span>
+          </a>
+        </li>
+        {% endif %}
+
+        <li>
+          <a href="/kiosk" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50">
+          <i data-feather="monitor"></i>
+          <span class="text-sm">Kiosk Mode</span>
+         </a>
+        </li>
+
+        <li>
+          <a href="/attendance" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50">
+            <i data-feather="check-circle"></i>
+            <span class="text-sm">Attendance</span>
+          </a>
+        </li>
+
+        <!-- Admin & HR only -->
+        {% if session.role in ['admin', 'hr'] %}
+        <li>
+          <a href="/reports" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50">
+            <i data-feather="bar-chart-2"></i>
+            <span class="text-sm">Reports</span>
+          </a>
+        </li>
+        {% endif %}
+
+        <li>
+          <a href="/auth/logout" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-red-50">
+            <i data-feather="log-out"></i>
+            <span class="text-sm">Logout</span>
+          </a>
+        </li>
+
+        <!-- Admin only -->
+        {% if session.role == 'admin' %}
+        <li>
+          <a href="/settings" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50">
+          <i data-feather="settings"></i>
+          <span class="text-sm">Settings</span>
+          </a>
+        </li>
+        {% endif %}
+
+      </ul>
+    </nav>
+  </aside>
+
+  <div class="flex-1 flex flex-col overflow-auto">
+
+    <header class="hidden lg:flex items-center justify-between bg-white border-b p-4">
+      <h1 class="text-xl font-semibold">{% block page_title %}Dashboard{% endblock %}</h1>
+    </header>  <!-- ✅ FIX: ADDED THIS CLOSING TAG -->
+
+    <main class="p-6">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="space-y-2 mb-4">
+        {% for category, msg in messages %}
+        <div class="p-3 rounded-lg 
+          {% if category=='error' %}bg-red-50 text-red-700
+          {% else %}bg-green-50 text-green-700{% endif %}">
+          {{ msg }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+
+  </div>
+</div>
+
+<script>feather.replace();</script>
+<script src="/static/js/modal.js"></script>
+
+{% block scripts %}{% endblock %}
+
+</body>
+</html>
