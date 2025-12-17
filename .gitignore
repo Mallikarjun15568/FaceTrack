@@ -75,3 +75,11 @@ node_modules/
 *.pyd
 *.dll
 *.exe
+
+# -------------------------------
+# Project Docs / Design (DO NOT UPLOAD)
+# -------------------------------
+ERD_Documentation.md
+ERD_FaceTrack.svg
+wireframes_index.md
+demo_data.sql

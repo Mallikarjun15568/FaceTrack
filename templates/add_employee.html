@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="p-6">
+
+<div class="max-w-3xl mx-auto space-y-8">
 
     <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center justify-between mb-6 scroll-reveal">
         <h2 class="text-2xl font-bold flex items-center gap-2">
             <i class="fa-solid fa-user-plus text-blue-600"></i>
             Add New Employee
@@ -17,39 +18,50 @@
     </div>
 
     <!-- Add Employee Card -->
-    <div class="bg-white dark:bg-gray-900 shadow-lg rounded-2xl p-6">
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 scroll-reveal" style="transition-delay:0.1s">
 
-        <form action="{{ url_for('employees.add_employee') }}"
+          <form action="{{ url_for('employees.add_employee') }}"
               method="POST"
               enctype="multipart/form-data"
               class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             <!-- Full Name -->
-            <div>
-                <label class="block font-medium mb-1">Full Name</label>
-                <input name="full_name" required type="text"
-                       class="w-full px-4 py-2 rounded-xl border dark:border-gray-700 dark:bg-gray-800 dark:text-white" />
+            <div class="scroll-reveal" style="transition-delay:0.15s">
+                <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-user text-blue-600 text-sm"></i>
+                    Full Name
+                </label>
+                <input name="full_name" required type="text" placeholder="Enter full name"
+                       class="input-modern" />
             </div>
 
             <!-- Email -->
-            <div>
-                <label class="block font-medium mb-1">Email</label>
-                <input name="email" required type="email"
-                       class="w-full px-4 py-2 rounded-xl border dark:border-gray-700 dark:bg-gray-800 dark:text-white" />
+            <div class="scroll-reveal" style="transition-delay:0.18s">
+                <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-envelope text-blue-600 text-sm"></i>
+                    Email
+                </label>
+                <input name="email" required type="email" placeholder="employee@company.com"
+                       class="input-modern" />
             </div>
 
             <!-- Phone -->
-            <div>
-                <label class="block font-medium mb-1">Phone</label>
-                <input name="phone" type="text"
-                       class="w-full px-4 py-2 rounded-xl border dark:border-gray-700 dark:bg-gray-800 dark:text-white" />
+            <div class="scroll-reveal" style="transition-delay:0.21s">
+                <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-phone text-blue-600 text-sm"></i>
+                    Phone
+                </label>
+                <input name="phone" type="text" placeholder="+91 XXXXX XXXXX"
+                       class="input-modern" />
             </div>
 
             <!-- Gender -->
-            <div>
-                <label class="block font-medium mb-1">Gender</label>
-                <select name="gender"
-                        class="w-full px-4 py-2 rounded-xl border dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+            <div class="scroll-reveal" style="transition-delay:0.24s">
+                <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-venus-mars text-blue-600 text-sm"></i>
+                    Gender
+                </label>
+                <select name="gender" class="input-modern">
                     <option>Male</option>
                     <option>Female</option>
                     <option>Other</option>
@@ -57,10 +69,12 @@
             </div>
 
             <!-- Department -->
-            <div>
-                <label class="block font-medium mb-1">Department</label>
-                <select name="department_id"
-                        class="w-full px-4 py-2 rounded-xl border dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+            <div class="scroll-reveal" style="transition-delay:0.27s">
+                <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-building text-blue-600 text-sm"></i>
+                    Department
+                </label>
+                <select name="department_id" class="input-modern">
                     {% for dept in departments %}
                     <option value="{{ dept.id }}">{{ dept.name }}</option>
                     {% endfor %}
@@ -68,41 +82,54 @@
             </div>
 
             <!-- Job Title -->
-            <div>
-                <label class="block font-medium mb-1">Job Title</label>
-                <input name="job_title" type="text"
-                       class="w-full px-4 py-2 rounded-xl border dark:border-gray-700 dark:bg-gray-800 dark:text-white" />
+            <div class="scroll-reveal" style="transition-delay:0.30s">
+                <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-briefcase text-blue-600 text-sm"></i>
+                    Job Title
+                </label>
+                <input name="job_title" type="text" placeholder="e.g., Software Engineer"
+                       class="input-modern" />
             </div>
 
             <!-- Joining Date -->
-            <div>
-                <label class="block font-medium mb-1">Joining Date</label>
+            <div class="scroll-reveal" style="transition-delay:0.33s">
+                <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-calendar text-blue-600 text-sm"></i>
+                    Joining Date
+                </label>
                 <input name="join_date" type="date"
-                       class="w-full px-4 py-2 rounded-xl border dark:border-gray-700 dark:bg-gray-800 dark:text-white" />
+                       class="input-modern" />
             </div>
 
             <!-- Status -->
-            <div>
-                <label class="block font-medium mb-1">Status</label>
-                <select name="status"
-                        class="w-full px-4 py-2 rounded-xl border dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+            <div class="scroll-reveal" style="transition-delay:0.36s">
+                <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-toggle-on text-blue-600 text-sm"></i>
+                    Status
+                </label>
+                <select name="status" class="input-modern">
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                 </select>
             </div>
 
             <!-- Photo Upload -->
-            <div class="col-span-1 md:col-span-2">
-                <label class="block font-medium mb-2">Upload Employee Photo</label>
+            <div class="col-span-1 md:col-span-2 scroll-reveal" style="transition-delay:0.39s">
+                <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-camera text-blue-600 text-sm"></i>
+                    Upload Employee Photo
+                </label>
                 <input name="photo" type="file" accept="image/*"
-                       class="w-full px-4 py-3 rounded-xl border dark:border-gray-700 dark:bg-gray-800 dark:text-white" />
+                       class="input-modern file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-600 file:font-semibold hover:file:bg-blue-100 cursor-pointer" />
             </div>
 
             <!-- Submit Button -->
-            <div class="col-span-1 md:col-span-2 flex justify-end">
-                <button type="submit"
-                        class="px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition shadow-lg">
-                    <i class="fa-solid fa-save mr-2"></i>
+            <div class="col-span-1 md:col-span-2 flex justify-end gap-3 scroll-reveal" style="transition-delay:0.42s">
+                <a href="{{ url_for('employees.list_employees') }}" class="btn-secondary">
+                    Cancel
+                </a>
+                <button type="submit" class="btn-primary flex items-center gap-2">
+                    <i class="fa-solid fa-save"></i>
                     Save Employee
                 </button>
             </div>

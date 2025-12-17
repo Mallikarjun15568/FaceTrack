@@ -1,174 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FaceTrack | Login</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FaceTrack Pro | Login</title>
 
-  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}" />
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
 </head>
 
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+<body class="bg-gray-50 min-h-screen flex items-center justify-center px-4">
 
-  <div class="w-full max-w-6xl bg-white rounded-3xl shadow-2xl overflow-hidden flex">
+  <!-- ================= LOGIN CARD ================= -->
+  <div class="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-xl p-8">
 
-    <!-- LEFT PANEL -->
-    <aside class="hidden md:flex md:w-[40%] flex-col justify-between p-10 
-                  bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-800">
+    <!-- LOGO -->
+    <div class="text-center mb-6">
+      <h1 class="text-3xl font-extrabold text-blue-600">
+        FaceTrack <span class="text-gray-900">Pro</span>
+      </h1>
+      <p class="text-sm text-gray-500 mt-1">
+        Sign in to continue
+      </p>
+    </div>
+
+    <!-- NORMAL LOGIN FORM (optional / can keep empty if backend needs) -->
+    <form method="POST" class="space-y-5">
 
       <div>
-        <h1 class="text-3xl font-extrabold text-white tracking-tight">FACETRACK PRO</h1>
-        <p class="mt-2 text-sm text-white/80">AI-powered facial attendance for modern workplaces</p>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+        <input type="text" name="username"
+               class="w-full px-4 py-3 rounded-xl border border-gray-300
+                      focus:outline-none focus:ring-2 focus:ring-blue-500">
       </div>
 
-      <div class="mt-8">
-        <img src="/static/images/hero_illustration.png"
-             class="w-full rounded-2xl shadow-xl" />
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <input type="password" name="password"
+               class="w-full px-4 py-3 rounded-xl border border-gray-300
+                      focus:outline-none focus:ring-2 focus:ring-blue-500">
       </div>
+         <a href="#"
+          onclick="alert('Please contact system administrator to reset password.')"
+          class="text-sm text-blue-600 hover:underline">
+          Forgot password?
+         </a>
+      
+      <button type="submit"
+              class="w-full py-3 rounded-xl bg-blue-600 text-white font-semibold
+                     hover:bg-blue-700 transition shadow-md active:scale-95">
+        Login
+      </button>
 
-      <div class="mt-10 text-white/80">
-        <h3 class="font-semibold text-white">Secure • Fast • Private</h3>
-        <p class="text-sm mt-1">Offline embeddings • Low-latency recognition</p>
-      </div>
-    </aside>
-
-    <!-- RIGHT PANEL -->
-    <main class="w-full md:w-[60%] p-10 bg-white">
-      <div class="max-w-md mx-auto">
-
-        <h2 class="text-3xl font-bold text-gray-800 mb-1">Login</h2>
-        <p class="text-sm text-gray-500 mb-6">Sign in to your FaceTrack Pro account</p>
-
-        <!-- FLASH MESSAGES -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="p-3 mb-3 rounded-lg text-sm
-                          {% if category=='success' %} bg-green-100 text-green-700
-                          {% elif category=='error' %} bg-red-100 text-red-700
-                          {% else %} bg-blue-100 text-blue-700 {% endif %}">
-                {{ message }}
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-
-        <!-- FORM -->
-        <form action="" method="POST" class="space-y-5">
-
-             <div>
-               <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-               <input name="username" type="text" autocomplete="username" required
-                 class="w-full px-4 py-3 rounded-lg bg-gray-100 text-gray-800 border border-transparent 
-                   focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
-             </div>
-
-             <div>
-               <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-               <input name="password" type="password" autocomplete="current-password" required
-                 class="w-full px-4 py-3 rounded-lg bg-gray-100 text-gray-800 border border-transparent 
-                   focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
-             </div>
-
-          <!-- FACE ID CAMERA (HIDDEN UNTIL CLICKED) -->
-          <div id="cameraPreview" class="hidden mt-4 mb-4">
-            <video id="faceCam" autoplay playsinline class="w-full rounded-xl shadow-md"></video>
-          </div>
-
-          <!-- FACE LOGIN STATUS -->
-          <div id="faceStatus" 
-               class="hidden text-sm text-center py-2 mt-2 rounded-lg bg-blue-50 text-blue-700 font-medium"></div>
-
-          <!-- FACE ID LOGIN BUTTON -->
-          <button type="button" id="loginFaceID"
-                  class="w-full py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 
-                         text-white font-semibold shadow-md hover:opacity-90 transition flex items-center justify-center gap-2">
-            <span>🔍</span> Login with Face ID
-          </button>
-
-          <!-- NORMAL LOGIN -->
-          <button type="submit"
-                  class="w-full py-3 rounded-lg bg-gray-900 text-white font-semibold 
-                         hover:bg-black transition">
-            Login
-          </button>
-
-        </form>
-
+    </form>
         <p class="mt-6 text-center text-sm text-gray-600">
           New user?
-          <a href="/auth/signup" class="font-semibold text-blue-600 hover:underline">Create account</a>
+           <a href="/auth/signup"
+            class="font-semibold text-blue-600 hover:underline">
+          Create account
+           </a>
         </p>
 
-      </div>
-    </main>
+    <!-- FACE ID BUTTON -->
+    <button id="loginFaceID"
+            type="button"
+            class="mt-4 w-full py-3 rounded-xl border border-blue-600
+                   text-blue-600 font-semibold hover:bg-blue-50 transition">
+      Login with Face ID
+    </button>
+
   </div>
 
-  <!-- ================= PREMIUM FACE ID MODAL (V3 — Final Polished) ================= -->
+  <!-- ================= FACE ID MODAL ================= -->
   <div id="faceModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+
+    <!-- BACKDROP -->
     <div id="faceBackdrop" class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
 
-    <div class="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl p-7 mx-4 animate-fadeIn">
-        <div class="text-center mb-4">
-          <h3 class="text-2xl font-semibold text-gray-800">Face ID Login</h3>
-          <p class="text-sm text-gray-500 mt-1">
-            Align your face inside the circle to start scanning.
-          </p>
-        </div>
+    <!-- MODAL BOX -->
+    <div class="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl p-7 mx-4">
 
-        <div class="flex flex-col items-center gap-3">
-          <div class="relative w-56 h-56">
-            <div class="w-full h-full rounded-full overflow-hidden bg-gray-200 shadow-inner">
-              <video id="modalFaceCam" autoplay playsinline muted class="w-full h-full object-cover"></video>
-            </div>
-            <svg class="absolute inset-0 w-56 h-56 pointer-events-none" viewBox="0 0 200 200">
-              <defs>
-                <linearGradient id="scanGrad3" x1="0" x2="1">
-                  <stop offset="0%" stop-color="#3b82f6" stop-opacity="0"/>
-                  <stop offset="50%" stop-color="#3b82f6" stop-opacity="0.7"/>
-                  <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <circle cx="100" cy="100" r="90" fill="none" stroke="url(#scanGrad3)"
-                      stroke-width="5" stroke-linecap="round">
-                <animateTransform attributeName="transform" type="rotate"
-                                  from="0 100 100" to="360 100 100"
-                                  dur="2.2s" repeatCount="indefinite"/>
-              </circle>
-            </svg>
-            <div id="faceSuccess" class="absolute inset-0 hidden items-center justify-center">
-              <div class="w-full h-full rounded-full bg-white/70 flex items-center justify-center">
-                <svg class="w-20 h-20 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M5 13l4 4L19 7"/>
-                </svg>
-              </div>
-            </div>
+      <div class="text-center mb-4">
+        <h3 class="text-2xl font-semibold text-gray-800">Face ID Login</h3>
+        <p class="text-sm text-gray-500 mt-1">
+          Align your face inside the circle
+        </p>
+      </div>
+
+      <!-- CAMERA + SCAN -->
+      <div class="flex flex-col items-center gap-3">
+
+        <div class="relative w-56 h-56">
+          <div class="w-full h-full rounded-full overflow-hidden bg-gray-200">
+            <video id="modalFaceCam"
+                   autoplay playsinline muted
+                   class="w-full h-full object-cover"></video>
           </div>
 
-          <div id="modalStatus"
-               class="text-center text-sm text-gray-600 min-h-[22px]">
-            Initializing camera…
+          <!-- SUCCESS OVERLAY -->
+          <div id="faceSuccess"
+               class="absolute inset-0 hidden items-center justify-center">
+            <div class="w-full h-full rounded-full bg-white/70 flex items-center justify-center">
+              <svg class="w-20 h-20 text-green-600"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
           </div>
         </div>
 
-        <div class="flex gap-3 mt-5 justify-between">
-          <button id="modalCancel"
-            class="flex-1 py-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
-            Cancel
-          </button>
-          <button id="modalForceCapture"
-            class="px-6 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
-            Capture
-          </button>
+        <div id="modalStatus"
+             class="text-sm text-gray-600 min-h-[22px] text-center">
+          Initializing camera…
         </div>
+
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="flex gap-3 mt-5 justify-between">
+        <button id="modalCancel"
+                class="flex-1 py-2 rounded-xl bg-gray-100 text-gray-700
+                       hover:bg-gray-200 transition">
+          Cancel
+        </button>
+        <button id="modalForceCapture"
+                class="px-6 py-2 rounded-xl bg-blue-600 text-white font-semibold
+                       hover:bg-blue-700 transition">
+          Capture
+        </button>
+      </div>
+
     </div>
   </div>
-  <!-- ================= END PREMIUM FACE ID MODAL ================= -->
 
   <!-- FACE LOGIN JS -->
   <script src="{{ url_for('static', filename='js/face_login.js') }}"></script>
 
-  </body>
+</body>
 </html>

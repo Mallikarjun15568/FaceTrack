@@ -22,86 +22,93 @@
   {% block head %}{% endblock %}
 </head>
 
-<body class="bg-gray-50 text-gray-800">
+<body class="bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 text-gray-800">
+
+<!-- Mobile Menu Toggle -->
+<button id="mobileMenuBtn" class="lg:hidden fixed top-4 left-4 z-50 w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl shadow-xl flex items-center justify-center text-white">
+  <i class="fas fa-bars text-xl"></i>
+</button>
 
 <div id="app" class="flex h-screen overflow-hidden">
 
   <!-- SIDEBAR -->
-  <aside id="sidebar" class="w-72 bg-white border-r hidden lg:block">
-    <div class="p-6 border-b">
+  <aside id="sidebar" class="w-72 bg-white/80 backdrop-blur-xl border-r border-gray-200 shadow-xl fixed lg:static inset-y-0 left-0 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+    <div class="p-6 border-b border-gray-200">
       <a href="/" class="flex items-center gap-3">
-        <img src="{{ url_for('static', filename='images/facetrack_pro.png') }}" class="h-10 rounded">
+        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+          <i class="fas fa-fingerprint text-white text-2xl"></i>
+        </div>
         <div>
-          <div class="font-bold text-lg">FaceTrack</div>
-          <div class="text-xs text-gray-500">Attendance & Recognition</div>
+          <div class="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">FaceTrack</div>
+          <div class="text-xs text-gray-500 font-medium">AI Attendance System</div>
         </div>
       </a>
     </div>
 
     <nav class="px-4 pb-6 pt-4">
-      <ul class="space-y-1">
+      <ul class="space-y-2">
 
         <li>
-          <a href="/dashboard" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50">
+          <a href="/dashboard" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
             <i data-feather="grid"></i>
-            <span class="text-sm">Dashboard</span>
+            <span class="text-sm font-medium">Dashboard</span>
           </a>
         </li>
 
         <!-- Admin & HR only -->
         {% if session.role in ['admin', 'hr'] %}
         <li>
-          <a href="/employees" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50">
+          <a href="/employees" class="nav-link {% if 'employees' in request.endpoint %}active{% endif %}">
             <i data-feather="users"></i>
-            <span class="text-sm">Employees</span>
+            <span class="text-sm font-medium">Employees</span>
           </a>
         </li>
 
         <li>
-          <a href="/enroll" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50">
+          <a href="/enroll" class="nav-link {% if 'enroll' in request.endpoint %}active{% endif %}">
             <i data-feather="camera"></i>
-            <span class="text-sm">Enroll Face</span>
+            <span class="text-sm font-medium">Enroll Face</span>
           </a>
         </li>
         {% endif %}
 
         <li>
-          <a href="/kiosk" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50">
+          <a href="/kiosk" class="nav-link {% if 'kiosk' in request.endpoint or 'recognition' in request.endpoint %}active{% endif %}">
           <i data-feather="monitor"></i>
-          <span class="text-sm">Kiosk Mode</span>
+          <span class="text-sm font-medium">Kiosk Mode</span>
          </a>
         </li>
 
         <li>
-          <a href="/attendance" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50">
+          <a href="/attendance" class="nav-link {% if 'attendance' in request.endpoint %}active{% endif %}">
             <i data-feather="check-circle"></i>
-            <span class="text-sm">Attendance</span>
+            <span class="text-sm font-medium">Attendance</span>
           </a>
         </li>
 
         <!-- Admin & HR only -->
         {% if session.role in ['admin', 'hr'] %}
         <li>
-          <a href="/reports" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50">
+          <a href="/reports" class="nav-link {% if 'reports' in request.endpoint %}active{% endif %}">
             <i data-feather="bar-chart-2"></i>
-            <span class="text-sm">Reports</span>
+            <span class="text-sm font-medium">Reports</span>
           </a>
         </li>
         {% endif %}
 
         <li>
-          <a href="/auth/logout" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-red-50">
+          <a href="/auth/logout" class="nav-link hover:bg-red-50 hover:text-red-600">
             <i data-feather="log-out"></i>
-            <span class="text-sm">Logout</span>
+            <span class="text-sm font-medium">Logout</span>
           </a>
         </li>
 
         <!-- Admin only -->
         {% if session.role == 'admin' %}
         <li>
-          <a href="/settings" class="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50">
+          <a href="/settings" class="nav-link {% if 'settings' in request.endpoint %}active{% endif %}">
           <i data-feather="settings"></i>
-          <span class="text-sm">Settings</span>
+          <span class="text-sm font-medium">Settings</span>
           </a>
         </li>
         {% endif %}
@@ -112,14 +119,33 @@
 
   <div class="flex-1 flex flex-col overflow-auto">
 
-    <header class="hidden lg:flex items-center justify-between bg-white border-b p-4">
-      <h1 class="text-xl font-semibold">{% block page_title %}Dashboard{% endblock %}</h1>
-    </header>  <!-- ✅ FIX: ADDED THIS CLOSING TAG -->
+    <header class="hidden lg:flex items-center justify-between bg-white/70 backdrop-blur-xl border-b border-gray-200 p-5 shadow-sm">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-800">{% block page_title %}Dashboard{% endblock %}</h1>
+        <!-- Breadcrumbs -->
+        <nav class="flex items-center gap-2 text-sm text-gray-600 mt-1">
+          <a href="/dashboard" class="hover:text-blue-600 transition-colors">Home</a>
+          <span class="text-gray-400">/</span>
+          <span class="text-gray-800 font-medium">{% block breadcrumb %}Dashboard{% endblock %}</span>
+        </nav>
+      </div>
+      
+      <!-- User info -->
+      <div class="flex items-center gap-4">
+        <div class="text-right">
+          <div class="text-sm font-semibold text-gray-800">{{ session.get('full_name', 'User') }}</div>
+          <div class="text-xs text-gray-500">{{ session.get('role', 'employee').title() }}</div>
+        </div>
+        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+          {{ session.get('full_name', 'U')[0] }}
+        </div>
+      </div>
+    </header>
 
-    <main class="p-6">
+    <main class="p-8">
       {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-      <div class="space-y-2 mb-4">
+      <div class="space-y-2 mb-6">
         {% for category, msg in messages %}
         <div class="p-3 rounded-lg 
           {% if category=='error' %}bg-red-50 text-red-700
@@ -139,6 +165,77 @@
 
 <script>feather.replace();</script>
 <script src="/static/js/modal.js"></script>
+
+<!-- Mobile Menu Script -->
+<script>
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const sidebar = document.getElementById('sidebar');
+  
+  if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('-translate-x-full');
+      
+      // Toggle icon
+      const icon = mobileMenuBtn.querySelector('i');
+      icon.classList.toggle('fa-bars');
+      icon.classList.toggle('fa-times');
+    });
+    
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      if (!sidebar.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+        sidebar.classList.add('-translate-x-full');
+        mobileMenuBtn.querySelector('i').classList.remove('fa-times');
+        mobileMenuBtn.querySelector('i').classList.add('fa-bars');
+      }
+    });
+  }
+</script>
+
+<!-- Scroll Reveal Animation -->
+<script>
+  // Intersection Observer for scroll animations
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  // Observe all scroll-reveal elements
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.scroll-reveal').forEach(el => {
+      observer.observe(el);
+    });
+  });
+
+  // Toast notification system
+  window.showToast = function(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type} flex items-center gap-3`;
+    
+    const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+    toast.innerHTML = `
+      <span class="text-2xl">${icon}</span>
+      <span class="font-medium">${message}</span>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(400px)';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  };
+</script>
 
 {% block scripts %}{% endblock %}
 

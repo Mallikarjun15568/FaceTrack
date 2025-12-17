@@ -1,52 +1,74 @@
 {% extends "base.html" %}
 
 {% block title %}Attendance Logs{% endblock %}
+{% block page_title %}Attendance{% endblock %}
+{% block breadcrumb %}Attendance{% endblock %}
 
 {% block content %}
 
-<main class="main-content attendance-page">
+<div class="space-y-8">
 
-    <h2 class="text-2xl font-semibold mb-4">Attendance Records</h2>
+    <!-- HEADER -->
+    <div class="scroll-reveal flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+        <div>
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Attendance Records</h1>
+            <p class="text-sm text-gray-600 mt-2 font-medium">View and manage employee check-in/check-out logs</p>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button id="exportCSV" class="btn-success px-6 py-3 shadow-md hover:shadow-lg rounded-xl">
+                <i class="fa-solid fa-file-csv mr-2"></i>Export CSV
+            </button>
+        </div>
+    </div>
 
     <!-- FILTER BAR -->
-    <div class="filter-bar flex flex-wrap items-center gap-4 mb-6">
+    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow" style="transition-delay: 0.2s">
+        <h3 class="font-bold text-xl text-gray-800 mb-6">Filter Attendance</h3>
+        
+        <div class="flex flex-wrap items-end gap-6">
 
-        <div>
-            <label for="userFilter" class="font-medium">User:</label>
-            <select id="userFilter" class="border px-3 py-2 rounded-md">
-                <option value="">All</option>
-            </select>
+            <div class="flex-1 min-w-[200px]">
+                <label for="userFilter" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fa-solid fa-user text-blue-500 mr-2"></i>Employee
+                </label>
+                <select id="userFilter" class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm">
+                    <option value="">All Employees</option>
+                </select>
+            </div>
+
+            <div class="flex-1 min-w-[200px]">
+                <label for="dateFilter" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fa-solid fa-calendar text-green-500 mr-2"></i>Date
+                </label>
+                <input type="date" id="dateFilter" class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm">
+            </div>
+
+            <button id="applyFilters" class="btn-primary px-6 py-3 shadow-md hover:shadow-lg rounded-xl">
+                <i class="fa-solid fa-filter mr-2"></i>Apply
+            </button>
+
+            <button id="resetFilters" class="px-6 py-3 rounded-xl border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold transition-all shadow-sm hover:shadow-md">
+                <i class="fa-solid fa-redo mr-2"></i>Reset
+            </button>
+
         </div>
-
-        <div>
-            <label for="dateFilter" class="font-medium">Date:</label>
-            <input type="date" id="dateFilter" class="border px-3 py-2 rounded-md">
-        </div>
-
-        <button id="applyFilters" class="btn bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-            Apply
-        </button>
-
-        <button id="exportCSV" class="btn bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
-            Export CSV
-        </button>
-
     </div>
 
     <!-- ATTENDANCE TABLE -->
-    <div class="overflow-x-auto bg-white rounded-xl shadow-sm border">
+    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 overflow-x-auto hover:shadow-xl transition-shadow" style="transition-delay: 0.3s">
 
-        <table class="attendance-table w-full text-sm" id="attendanceTable">
+        <table class="table-modern" id="attendanceTable">
 
-            <thead class="bg-gray-100 border-b">
-                <tr>
-                    <th class="p-3 text-left">Photo</th>
-                    <th class="p-3 text-left">Username</th>
-                    <th class="p-3 text-left">Snapshot</th>
-                    <th class="p-3 text-left">Check-In</th>
-                    <th class="p-3 text-left">Check-Out</th>
-                    <th class="p-3 text-left">Working Hours</th>
-                    <th class="p-3 text-left">Status</th>
+            <thead>
+                <tr class="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                    <th class="rounded-tl-xl">Photo</th>
+                    <th>Username</th>
+                    <th>Snapshot</th>
+                    <th>Check-In</th>
+                    <th>Check-Out</th>
+                    <th>Working Hours</th>
+                    <th class="rounded-tr-xl">Status</th>
                 </tr>
             </thead>
 
@@ -57,13 +79,14 @@
         </table>
 
     </div>
+     
      <div id="attendance-popup"
-     class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2
-            w-[90%] max-w-md rounded-xl shadow-xl p-4 text-white
-            text-sm font-medium z-50 animate-slideUp">
+         class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2
+                w-[90%] max-w-md rounded-xl shadow-2xl p-4 text-white
+                text-sm font-medium z-50 animate-slideUp backdrop-blur-xl">
     </div>
 
-</main>
+</div>
 
 <script src="{{ url_for('static', filename='js/attendance.js') }}"></script>
 {% endblock %}

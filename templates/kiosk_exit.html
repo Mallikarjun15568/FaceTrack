@@ -1,89 +1,147 @@
 {% extends "base_kiosk.html" %}
 {% block title %}Exit Kiosk Mode{% endblock %}
 
+{% block head %}
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<div class="min-h-screen w-full flex items-center justify-center bg-gray-50 px-4">
+<!-- Full Screen Kiosk Exit -->
+<div class="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 px-4 relative">
 
-    <div class="w-full max-w-md">
+    <!-- Animated Background Elements with Pulse -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-20 left-20 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-20 right-20 w-[500px] h-[500px] bg-pink-500/20 rounded-full blur-3xl animate-pulse" style="animation-delay: 0.5s;"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+    </div>
 
-        <!-- Clean Card -->
-        <div class="bg-white rounded-3xl shadow-xl border border-gray-200 p-10">
+    <div class="w-full max-w-lg relative z-10 animate-fadeIn">
 
-            <!-- Header -->
+        <!-- Clean Card with Glassmorphism -->
+        <div class="glass-dark rounded-3xl shadow-2xl border border-white/20 p-10 backdrop-blur-xl">
+
+            <!-- Header with Icon -->
             <div class="text-center mb-8">
-                <h2 class="text-3xl font-semibold text-gray-900">Exit Kiosk</h2>
-                <p class="text-sm text-gray-500 mt-1">Secure Exit — Admin PIN Required</p>
+                <div class="flex justify-center mb-4">
+                    <div class="w-20 h-20 bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-xl rotate-3 hover:rotate-0 transition-transform duration-300">
+                        <i class="fas fa-sign-out-alt text-white text-3xl"></i>
+                    </div>
+                </div>
+                <h2 class="text-4xl font-bold text-white mb-2">Exit Kiosk Mode</h2>
+                <p class="text-blue-200">Secure Exit — Admin PIN Required</p>
             </div>
 
             <!-- Form -->
-            <form id="exitForm" class="space-y-6">
+            <form id="exitForm" class="space-y-8">
 
                 <!-- PIN Input -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Admin PIN
+                    <label class="block text-center text-sm font-semibold text--200 mb-6 uppercase tracking-wider">
+                        <i class="fas fa-lock mr-2 text-blue-400"></i>Enter Admin PIN
                     </label>
 
-                    <div class="relative">
-                        <input 
-                            type="password" 
-                            id="pin" 
-                            class="w-full px-5 py-3 rounded-xl border border-gray-300 
-                                   bg-white shadow-inner text-gray-900 text-lg
-                                   focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Enter PIN"
-                            autocomplete="off"
-                            required
-                        >
-                        <!-- Eye icon -->
-                        <svg id="togglePin" 
-                             class="w-5 h-5 text-gray-500 absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer"
-                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 
-                                   9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                        </svg>
+                    <!-- OTP Style PIN Boxes -->
+                    <div class="flex justify-center gap-3 mb-4" id="pin-boxes">
+                        <input type="password" maxlength="1"
+                            class="w-16 h-20 text-center text-5xl font-bold rounded-2xl
+                                   bg-gradient-to-br from-blue-500/20 to-cyan-500/20
+                                   border-3 border-blue-400/40 text-white
+                                   focus:border-blue-400 focus:ring-4 focus:ring-blue-500/50 focus:scale-110
+                                   transition-all duration-200 outline-none backdrop-blur-xl shadow-2xl
+                                   hover:border-blue-300/60"
+                            data-index="0" autocomplete="off">
+
+                        <input type="password" maxlength="1"
+                            class="w-16 h-20 text-center text-5xl font-bold rounded-2xl
+                                   bg-gradient-to-br from-blue-500/20 to-cyan-500/20
+                                   border-3 border-blue-400/40 text-white
+                                   focus:border-blue-400 focus:ring-4 focus:ring-blue-500/50 focus:scale-110
+                                   transition-all duration-200 outline-none backdrop-blur-xl shadow-2xl
+                                   hover:border-blue-300/60"
+                            data-index="1" autocomplete="off">
+
+                        <input type="password" maxlength="1"
+                            class="w-16 h-20 text-center text-5xl font-bold rounded-2xl
+                                   bg-gradient-to-br from-blue-500/20 to-cyan-500/20
+                                   border-3 border-blue-400/40 text-white
+                                   focus:border-blue-400 focus:ring-4 focus:ring-blue-500/50 focus:scale-110
+                                   transition-all duration-200 outline-none backdrop-blur-xl shadow-2xl
+                                   hover:border-blue-300/60"
+                            data-index="2" autocomplete="off">
+
+                        <input type="password" maxlength="1"
+                            class="w-16 h-20 text-center text-5xl font-bold rounded-2xl
+                                   bg-gradient-to-br from-blue-500/20 to-cyan-500/20
+                                   border-3 border-blue-400/40 text-white
+                                   focus:border-blue-400 focus:ring-4 focus:ring-blue-500/50 focus:scale-110
+                                   transition-all duration-200 outline-none backdrop-blur-xl shadow-2xl
+                                   hover:border-blue-300/60"
+                            data-index="3" autocomplete="off">
                     </div>
+
+                    <!-- Hidden actual PIN field -->
+                    <input type="hidden" id="pin" name="pin">
                 </div>
 
                 <!-- Message -->
-                <div id="message" class="hidden text-sm rounded-xl py-3 px-4 text-center"></div>
+                <div id="message" class="hidden text-sm rounded-2xl py-4 px-5 text-center font-medium backdrop-blur-sm"></div>
 
                 <!-- Buttons -->
                 <div class="flex gap-4">
 
                     <!-- Back -->
                     <a href="{{ url_for('kiosk.kiosk_page') }}"
-                       class="flex-1 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 
-                              text-gray-700 font-medium shadow-sm transition
-                              flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                        </svg>
+                       class="flex-1 py-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20
+                              text-white font-semibold shadow-lg transition-all hover:scale-105 active:scale-95
+                              flex items-center justify-center backdrop-blur-sm">
+                        <i class="fas fa-arrow-left mr-2"></i>
                         Back
                     </a>
 
                     <!-- Exit -->
                     <button type="submit" id="submitBtn"
-                        class="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 
-                               text-white font-semibold shadow-md transition
+                        class="flex-1 py-4 rounded-2xl bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700
+                               text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95
                                flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 
-                                   01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 
-                                   3 0 013 3v1"/>
-                        </svg>
+                        <i class="fas fa-sign-out-alt mr-2"></i>
                         Exit Kiosk
                     </button>
 
                 </div>
 
             </form>
+
+            <!-- Security Notice -->
+            <div class="mt-8 text-center">
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full backdrop-blur-sm">
+                    <i class="fas fa-shield-alt text-yellow-300"></i>
+                    <span class="text-xs text-yellow-200 font-medium">Secure Admin Area</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Additional Info Card -->
+        <div class="mt-6 glass-dark rounded-2xl border border-white/20 p-6 backdrop-blur-xl">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-info-circle text-blue-300 text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-1">About Exit PIN</h4>
+                    <p class="text-sm text-blue-200">Only authorized administrators can exit kiosk mode. Contact your system administrator if you forgot the PIN.</p>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -93,24 +151,136 @@
 
 {% block scripts %}
 <script>
-    // Eye toggle
-    const toggle = document.getElementById("togglePin");
-    const pin = document.getElementById("pin");
-
-    toggle.addEventListener("click", () => {
-        pin.type = pin.type === "password" ? "text" : "password";
-    });
-
     const form = document.getElementById('exitForm');
     const messageDiv = document.getElementById('message');
     const submitBtn = document.getElementById('submitBtn');
+    const pinBoxes = document.querySelectorAll('#pin-boxes input');
+    const hiddenPin = document.getElementById('pin');
+
+    // OTP Box Navigation
+    pinBoxes.forEach((box, index) => {
+        box.addEventListener('input', (e) => {
+            const value = e.target.value;
+            
+            // Only allow numbers
+            if (!/^\d*$/.test(value)) {
+                e.target.value = '';
+                return;
+            }
+            
+            // Move to next box
+            if (value && index < pinBoxes.length - 1) {
+                pinBoxes[index + 1].focus();
+            }
+            
+            // Update hidden field
+            updateHiddenPin();
+        });
+
+        box.addEventListener('keydown', (e) => {
+            // Backspace - move to previous box
+            if (e.key === 'Backspace' && !box.value && index > 0) {
+                pinBoxes[index - 1].focus();
+            }
+            
+            // Left arrow
+            if (e.key === 'ArrowLeft' && index > 0) {
+                pinBoxes[index - 1].focus();
+            }
+            
+            // Right arrow
+            if (e.key === 'ArrowRight' && index < pinBoxes.length - 1) {
+                pinBoxes[index + 1].focus();
+            }
+        });
+
+        // Paste handler
+        box.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
+            pastedData.split('').forEach((char, i) => {
+                if (pinBoxes[i]) {
+                    pinBoxes[i].value = char;
+                }
+            });
+            if (pastedData.length > 0) {
+                pinBoxes[Math.min(pastedData.length, 3)].focus();
+            }
+            updateHiddenPin();
+        });
+    });
+
+    function updateHiddenPin() {
+        hiddenPin.value = Array.from(pinBoxes).map(box => box.value).join('');
+    }
+
+    // Focus first box on load
+    pinBoxes[0].focus();
+
+    function showMsg(text, ok) {
+        messageDiv.textContent = text;
+        messageDiv.className = ok
+            ? "py-4 px-5 rounded-2xl bg-green-500/20 border border-green-500/30 text-green-100 backdrop-blur-sm shadow-lg text-center font-medium animate-fadeIn"
+            : "py-4 px-5 rounded-2xl bg-red-500/20 border border-red-500/30 text-red-100 backdrop-blur-sm shadow-lg text-center font-medium animate-fadeIn";
+        messageDiv.classList.remove("hidden");
+    }
+
+    function lockBtn(state) {
+        submitBtn.disabled = state;
+        submitBtn.innerHTML = state
+            ? `<svg class='animate-spin w-5 h-5 mr-2 inline' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                   <circle class='opacity-25' cx='12' cy='12' r='10' stroke-width='4'></circle>
+                   <path class='opacity-75' fill='currentColor'
+                         d='M4 12a8 8 0 018-8V0A12 12 0 000 12h4z'></path>
+               </svg> Verifying...`
+            : `<i class="fas fa-sign-out-alt mr-2"></i>Exit Kiosk`;
+    }
+
+    let countdownInterval = null;
+
+    function startCountdown(seconds) {
+        pinBoxes.forEach(box => box.disabled = true);
+        submitBtn.disabled = true;
+        
+        // Clear any existing countdown
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+        }
+
+        const updateCountdown = () => {
+            if (seconds <= 0) {
+                clearInterval(countdownInterval);
+                showMsg("You can try again now", true);
+                pinBoxes.forEach(box => {
+                    box.disabled = false;
+                    box.value = '';
+                });
+                pinBoxes[0].focus();
+                updateHiddenPin();
+                lockBtn(false);
+                return;
+            }
+
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            const timeStr = mins > 0 
+                ? `${mins}m ${secs}s` 
+                : `${secs}s`;
+            
+            showMsg(`🔒 Too many attempts. Locked for ${timeStr}`, false);
+            seconds--;
+        };
+
+        updateCountdown(); // Show immediately
+        countdownInterval = setInterval(updateCountdown, 1000);
+    }
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const pinVal = pin.value.trim();
-        if (!pinVal) {
-            showMsg("Please enter your PIN", false);
+        const pinVal = hiddenPin.value.trim();
+        if (!pinVal || pinVal.length !== 4) {
+            showMsg("Please enter 4-digit PIN", false);
             return;
         }
 
@@ -136,8 +306,9 @@
                     startCountdown(seconds);
                 } else {
                     showMsg(data.message, false);
-                    pin.value = "";
-                    pin.focus();
+                    pinBoxes.forEach(box => box.value = '');
+                    pinBoxes[0].focus();
+                    updateHiddenPin();
                     lockBtn(false);
                 }
             }
@@ -147,60 +318,5 @@
             lockBtn(false);
         }
     });
-
-    function showMsg(text, ok) {
-        messageDiv.textContent = text;
-        messageDiv.className = ok
-            ? "py-3 px-4 rounded-xl bg-green-100 text-green-700 shadow text-center"
-            : "py-3 px-4 rounded-xl bg-red-100 text-red-700 shadow text-center";
-        messageDiv.classList.remove("hidden");
-    }
-
-    function lockBtn(state) {
-        submitBtn.disabled = state;
-        submitBtn.innerHTML = state
-            ? `<svg class='animate-spin w-5 h-5 mr-2 inline' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                   <circle class='opacity-25' cx='12' cy='12' r='10' stroke-width='4'></circle>
-                   <path class='opacity-75' fill='currentColor'
-                         d='M4 12a8 8 0 018-8V0A12 12 0 000 12h4z'></path>
-               </svg> Verifying...`
-            : `Exit Kiosk`;
-    }
-
-    let countdownInterval = null;
-
-    function startCountdown(seconds) {
-        pin.disabled = true;
-        submitBtn.disabled = true;
-        
-        // Clear any existing countdown
-        if (countdownInterval) {
-            clearInterval(countdownInterval);
-        }
-
-        const updateCountdown = () => {
-            if (seconds <= 0) {
-                clearInterval(countdownInterval);
-                showMsg("You can try again now", true);
-                pin.disabled = false;
-                pin.value = "";
-                pin.focus();
-                lockBtn(false);
-                return;
-            }
-
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            const timeStr = mins > 0 
-                ? `${mins}m ${secs}s` 
-                : `${secs}s`;
-            
-            showMsg(`🔒 Too many attempts. Locked for ${timeStr}`, false);
-            seconds--;
-        };
-
-        updateCountdown(); // Show immediately
-        countdownInterval = setInterval(updateCountdown, 1000);
-    }
 </script>
 {% endblock %}

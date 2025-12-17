@@ -1,102 +1,190 @@
 {% extends "base.html" %}
+{% block page_title %}Reports{% endblock %}
+{% block breadcrumb %}Reports{% endblock %}
 {% block content %}
 
-<h1 class="text-2xl font-semibold">Attendance Reports</h1>
+<div class="scroll-reveal flex items-center justify-between mb-8">
+  <div>
+    <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Attendance Reports</h1>
+    <p class="text-sm text-gray-600 mt-2 font-medium">Comprehensive attendance analytics & insights</p>
+  </div>
 
-<!-- Export Buttons -->
-<div class="flex items-center gap-3 mb-6">
+  <!-- Export Buttons -->
+  <div class="flex items-center gap-4">
 
     <!-- CSV Export -->
     <button
         id="exportCsv"
-        class="px-4 py-2 rounded-xl bg-white dark:bg-gray-800 border 
-                 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200
-                 hover:bg-gray-100 dark:hover:bg-gray-700 transition shadow-sm flex items-center gap-2"
+        class="btn-success flex items-center gap-2 px-6 py-3 shadow-md hover:shadow-lg rounded-xl"
     >
-        <i class="fa-solid fa-file-csv text-emerald-600 dark:text-emerald-300"></i>
+        <i class="fa-solid fa-file-csv"></i>
         Export CSV
     </button>
 
     <!-- PDF Export -->
     <button
         id="exportPdf"
-        class="px-4 py-2 rounded-xl bg-white dark:bg-gray-800 border 
-                 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200
-                 hover:bg-gray-100 dark:hover:bg-gray-700 transition shadow-sm flex items-center gap-2"
+        class="btn-danger flex items-center gap-2 px-6 py-3 shadow-md hover:shadow-lg rounded-xl"
     >
-        <i class="fa-solid fa-file-pdf text-red-600 dark:text-red-400"></i>
+        <i class="fa-solid fa-file-pdf"></i>
         Export PDF
     </button>
 
+  </div>
 </div>
 
 <!-- Summary Cards -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 
     <!-- Present -->
-    <div class="p-5 bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-500">Total Present</p>
-                <h2 id="presentCount" class="text-3xl font-bold mt-1">-</h2>
+    <div class="scroll-reveal bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6 border border-green-100 group relative overflow-hidden shine-effect" style="transition-delay: 0.1s">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2 text-sm font-semibold text-gray-600">
+                Total Present
+                <span class="relative group">
+                  <i class="fa-solid fa-circle-info text-green-400 cursor-pointer"></i>
+                  <span class="absolute left-6 top-1 z-10 w-40 p-2 rounded bg-white text-xs text-gray-700 shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">Number of employees present today</span>
+                </span>
             </div>
-            <div class="p-3 bg-emerald-100 dark:bg-emerald-900 rounded-xl">
-                <i class="fa-solid fa-user-check text-emerald-600 dark:text-emerald-300 text-xl"></i>
+            <div class="bg-gradient-to-br from-green-500 to-emerald-600 p-3 rounded-xl shadow-md animate-gradient-spin">
+                <i class="fa-solid fa-user-check text-white text-xl"></i>
             </div>
         </div>
+        <h2 id="presentCount" class="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent countup" data-target="-">-</h2>
+        <div class="mt-2 text-xs text-gray-500 font-medium flex items-center gap-2">
+            Checked in
+            <span class="text-green-500 font-bold flex items-center gap-1"><i class="fa-solid fa-arrow-up"></i>+2%</span>
+        </div>
+        <div class="absolute right-2 bottom-2 opacity-10 text-7xl pointer-events-none select-none"><i class="fa-solid fa-user-check"></i></div>
     </div>
 
     <!-- Absent -->
-    <div class="p-5 bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-500">Total Absent</p>
-                <h2 id="absentCount" class="text-3xl font-bold mt-1">-</h2>
+    <div class="scroll-reveal bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6 border border-orange-100 group relative overflow-hidden shine-effect" style="transition-delay: 0.2s">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2 text-sm font-semibold text-gray-600">
+                Total Absent
+                <span class="relative group">
+                  <i class="fa-solid fa-circle-info text-orange-400 cursor-pointer"></i>
+                  <span class="absolute left-6 top-1 z-10 w-40 p-2 rounded bg-white text-xs text-gray-700 shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">Number of employees absent today</span>
+                </span>
             </div>
-            <div class="p-3 bg-red-100 dark:bg-red-900 rounded-xl">
-                <i class="fa-solid fa-user-xmark text-red-600 dark:text-red-300 text-xl"></i>
+            <div class="bg-gradient-to-br from-orange-500 to-amber-600 p-3 rounded-xl shadow-md animate-gradient-spin">
+                <i class="fa-solid fa-user-xmark text-white text-xl"></i>
             </div>
         </div>
+        <h2 id="absentCount" class="text-4xl font-bold bg-gradient-to-r from-orange-600 to-amber-500 bg-clip-text text-transparent countup" data-target="-">-</h2>
+        <div class="mt-2 text-xs text-gray-500 font-medium flex items-center gap-2">
+            Not present
+            <span class="text-orange-500 font-bold flex items-center gap-1"><i class="fa-solid fa-arrow-down"></i>-1%</span>
+        </div>
+        <div class="absolute right-2 bottom-2 opacity-10 text-7xl pointer-events-none select-none"><i class="fa-solid fa-user-xmark"></i></div>
     </div>
 
     <!-- Late -->
-    <div class="p-5 bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-500">Late Entries</p>
-                <h2 id="lateCount" class="text-3xl font-bold mt-1">-</h2>
+    <div class="scroll-reveal bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6 border border-purple-100 group relative overflow-hidden shine-effect" style="transition-delay: 0.3s">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2 text-sm font-semibold text-gray-600">
+                Late Entries
+                <span class="relative group">
+                  <i class="fa-solid fa-circle-info text-purple-400 cursor-pointer"></i>
+                  <span class="absolute left-6 top-1 z-10 w-40 p-2 rounded bg-white text-xs text-gray-700 shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">Employees who checked in late</span>
+                </span>
             </div>
-            <div class="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-xl">
-                <i class="fa-solid fa-clock text-yellow-600 dark:text-yellow-300 text-xl"></i>
+            <div class="bg-gradient-to-br from-purple-500 to-violet-600 p-3 rounded-xl shadow-md animate-gradient-spin">
+                <i class="fa-solid fa-clock text-white text-xl"></i>
             </div>
         </div>
+        <h2 id="lateCount" class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-violet-500 bg-clip-text text-transparent countup" data-target="-">-</h2>
+        <div class="mt-2 text-xs text-gray-500 font-medium flex items-center gap-2">
+            After schedule
+            <span class="text-purple-500 font-bold flex items-center gap-1"><i class="fa-solid fa-arrow-up"></i>+0.5%</span>
+        </div>
+        <div class="absolute right-2 bottom-2 opacity-10 text-7xl pointer-events-none select-none"><i class="fa-solid fa-clock"></i></div>
     </div>
 
     <!-- Attendance % -->
-    <div class="p-5 bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-500">Attendance %</p>
-                <h2 id="attendancePercent" class="text-3xl font-bold mt-1">-</h2>
+    <div class="scroll-reveal bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6 border border-blue-100 group relative overflow-hidden shine-effect" style="transition-delay: 0.4s">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2 text-sm font-semibold text-gray-600">
+                Attendance %
+                <span class="relative group">
+                  <i class="fa-solid fa-circle-info text-blue-400 cursor-pointer"></i>
+                  <span class="absolute left-6 top-1 z-10 w-40 p-2 rounded bg-white text-xs text-gray-700 shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">Overall attendance rate</span>
+                </span>
             </div>
-            <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-xl">
-                <i class="fa-solid fa-chart-simple text-blue-600 dark:text-blue-300 text-xl"></i>
+            <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl shadow-md animate-gradient-spin">
+                <i class="fa-solid fa-chart-simple text-white text-xl"></i>
             </div>
         </div>
+        <h2 id="attendancePercentage" class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent countup" data-target="-">-</h2>
+        <div class="mt-2 text-xs text-gray-500 font-medium flex items-center gap-2">
+            Overall rate
+            <span class="text-blue-500 font-bold flex items-center gap-1"><i class="fa-solid fa-arrow-up"></i>+1.2%</span>
+        </div>
+        <div class="absolute right-2 bottom-2 opacity-10 text-7xl pointer-events-none select-none"><i class="fa-solid fa-chart-simple"></i></div>
     </div>
+<style>
+.shine-effect::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(120deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 60%, transparent 100%);
+    transform: rotate(25deg);
+    pointer-events: none;
+    transition: opacity 0.3s;
+    opacity: 0;
+}
+.shine-effect:hover::before {
+    opacity: 1;
+}
+.animate-gradient-spin {
+    animation: gradientSpin 2s linear infinite;
+}
+@keyframes gradientSpin {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+</style>
+<script>
+// Count-up animation for stat cards
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.countup').forEach(function(el) {
+        const target = parseFloat(el.getAttribute('data-target'));
+        if (!isNaN(target) && target !== '-') {
+            let start = 0;
+            const duration = 1200;
+            const step = Math.ceil(duration / 60);
+            let current = start;
+            function update() {
+                current += (target - start) / 60;
+                if ((target > start && current >= target) || (target < start && current <= target)) {
+                    el.textContent = target;
+                } else {
+                    el.textContent = Math.round(current);
+                    requestAnimationFrame(update);
+                }
+            }
+            update();
+        }
+    });
+});
+</script>
 
 </div>
 
 
 
 <!-- Charts Row -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
 
     <!-- Daily Attendance Chart -->
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="font-semibold text-gray-700 dark:text-gray-200">Daily Attendance</h3>
-            <span class="text-sm text-gray-500 dark:text-gray-400">Range view</span>
+    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 hover:shadow-xl transition-shadow" style="transition-delay: 0.5s">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="font-bold text-xl text-gray-800">Daily Attendance</h3>
+            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">Range view</span>
         </div>
 
         <div class="h-64 md:h-80">
@@ -105,9 +193,10 @@
     </div>
 
     <!-- Department-wise Chart -->
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="font-semibold text-gray-700 dark:text-gray-200">Department-wise</h3>
+    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 hover:shadow-xl transition-shadow" style="transition-delay: 0.6s">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="font-bold text-xl text-gray-800">Department-wise</h3>
+            <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">By department</span>
         </div>
 
         <div class="h-64 md:h-80">
@@ -119,64 +208,57 @@
 
 
 <!-- Filters -->
-<div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow border border-gray-200 dark:border-gray-700 mb-6">
+<div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 hover:shadow-xl transition-shadow mb-8" style="transition-delay: 0.7s">
 
-    <h3 class="font-semibold mb-4 text-gray-700 dark:text-gray-200">Filters</h3>
+    <h3 class="font-bold text-xl text-gray-800 mb-6">Filter Reports</h3>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
 
         <!-- From Date -->
         <div>
-            <label class="block text-sm text-gray-500 mb-1">From Date</label>
-            <div class="flex items-center border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 px-3">
-                <i class="fa-solid fa-calendar-days text-gray-500 dark:text-gray-300 mr-2"></i>
-                <input id="fromDate" type="date"
-                       class="w-full py-2 bg-transparent text-gray-900 dark:text-white focus:outline-none">
-            </div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fa-solid fa-calendar-days text-blue-500 mr-2"></i>From Date
+            </label>
+            <input id="fromDate" type="date" class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm">
         </div>
 
         <!-- To Date -->
         <div>
-            <label class="block text-sm text-gray-500 mb-1">To Date</label>
-            <div class="flex items-center border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 px-3">
-                <i class="fa-solid fa-calendar-check text-gray-500 dark:text-gray-300 mr-2"></i>
-                <input id="toDate" type="date"
-                       class="w-full py-2 bg-transparent text-gray-900 dark:text-white focus:outline-none">
-            </div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fa-solid fa-calendar-check text-green-500 mr-2"></i>To Date
+            </label>
+            <input id="toDate" type="date" class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm">
         </div>
 
         <!-- Department -->
         <div>
-            <label class="block text-sm text-gray-500 mb-1">Department</label>
-            <select id="departmentFilter"
-                    class="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 
-                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fa-solid fa-building text-purple-500 mr-2"></i>Department
+            </label>
+            <select id="departmentFilter" class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm">
             </select>
         </div>
 
         <!-- Employee -->
         <div>
-            <label class="block text-sm text-gray-500 mb-1">Employee</label>
-            <select id="employeeFilter"
-                    class="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 
-                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fa-solid fa-user text-orange-500 mr-2"></i>Employee
+            </label>
+            <select id="employeeFilter" class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm">
             </select>
         </div>
 
     </div>
 
     <!-- Buttons -->
-    <div class="flex items-center gap-4 mt-6">
+    <div class="flex items-center gap-4 mt-8">
 
-        <button id="applyFilters"
-                class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow">
-            Apply Filters
+        <button id="applyFilters" class="btn-primary px-6 py-3 shadow-md hover:shadow-lg rounded-xl">
+            <i class="fa-solid fa-filter mr-2"></i>Apply Filters
         </button>
 
-        <button id="resetFilters"
-                class="px-5 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 
-                       dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200">
-            Reset
+        <button id="resetFilters" class="px-6 py-3 rounded-xl border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold transition-all shadow-sm hover:shadow-md">
+            <i class="fa-solid fa-redo mr-2"></i>Reset
         </button>
 
     </div>
@@ -184,36 +266,37 @@
 </div>
 
 
-
+<!-- Table -->
+<div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 hover:shadow-xl transition-shadow" style="transition-delay: 0.8s">
 <!-- Detailed Table -->
-<div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-200 dark:border-gray-700 mt-6">
+<div class="card-modern p-6 mt-6 animate-fadeIn">
 
     <div class="flex items-center justify-between mb-4">
-        <h3 class="font-semibold text-gray-700 dark:text-gray-200">Detailed Attendance</h3>
-        <span class="text-sm text-gray-500 dark:text-gray-400">Records</span>
+        <h3 class="font-bold text-lg text-gray-800">Detailed Attendance</h3>
+        <span class="badge badge-info">Records</span>
     </div>
 
-    <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
-        <table id="reportsTable" class="min-w-full text-sm">
-            <thead class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+    <div class="overflow-x-auto">
+        <table id="reportsTable" class="table-modern">
+            <thead>
                 <tr>
-                    <th class="py-3 px-4 text-left font-medium">Date</th>
-                    <th class="py-3 px-4 text-left font-medium">Employee</th>
-                    <th class="py-3 px-4 text-left font-medium">Department</th>
-                    <th class="py-3 px-4 text-left font-medium">Status</th>
-                    <th class="py-3 px-4 text-left font-medium">In Time</th>
-                    <th class="py-3 px-4 text-left font-medium">Snapshot</th>
+                    <th>Date</th>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Status</th>
+                    <th>In Time</th>
+                    <th>Snapshot</th>
                 </tr>
             </thead>
 
-            <tbody id="tableBody" class="divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+            <tbody id="tableBody"></tbody>
         </table>
     </div>
 
 </div>
 
 
-<div class="mt-6 text-center text-sm text-gray-500">Reports module — Phase 7</div>
+<div class="mt-6 text-center text-sm text-gray-400">• FaceTrack Pro Reporting System •</div>
 
 <script type="module" src="{{ url_for('static', filename='js/reports.js') }}"></script>
 

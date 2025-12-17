@@ -1,45 +1,69 @@
 {% extends "base.html" %}
+{% block page_title %}Settings{% endblock %}
+{% block breadcrumb %}Settings{% endblock %}
 {% block content %}
 
-<div class="max-w-4xl mx-auto p-6">
+<div class="max-w-5xl mx-auto space-y-8">
 
-    <h1 class="text-3xl font-bold mb-2">System Settings</h1>
-    <p class="text-gray-600 text-sm mb-6">
-        Configure AI recognition, attendance rules, system behavior, and company details.
-    </p>
+    <!-- HEADER -->
+    <div class="scroll-reveal">
+        <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">System Settings</h1>
+        <p class="text-gray-600 text-sm mt-2 font-medium">
+            Configure AI recognition, attendance rules, system behavior, and company details.
+        </p>
+    </div>
 
     <!-- SECTION 1: RECOGNITION SETTINGS -->
-    <div class="bg-white p-5 rounded-xl shadow mb-6">
-        <h2 class="text-xl font-semibold mb-4">Recognition Settings</h2>
+    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 hover:shadow-xl transition-shadow" style="transition-delay: 0.1s">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
+                <i class="fas fa-brain text-white text-xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">Recognition Settings</h2>
+        </div>
 
-        <div class="space-y-4">
+        <div class="space-y-6">
 
             <!-- Threshold -->
-            <div>
-                <label class="block font-medium mb-1">
-                    Recognition Threshold:
-                    <span id="th-val">{{ settings.recognition_threshold }}</span>
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                <label class="block font-semibold text-gray-700 mb-3">
+                    <i class="fas fa-sliders-h text-blue-500 mr-2"></i>
+                    Recognition Threshold: 
+                    <span id="th-val" class="text-blue-600 font-bold text-lg">{{ settings.recognition_threshold }}</span>
                 </label>
                 <input id="recognition_threshold"
                        type="range" min="0.30" max="0.60" step="0.01"
                        value="{{ settings.recognition_threshold }}"
-                       class="w-full" />
+                       class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+                <div class="flex justify-between text-xs text-gray-600 mt-2">
+                    <span>Lower (0.30)</span>
+                    <span>Higher (0.60)</span>
+                </div>
             </div>
 
             <!-- Duplicate Interval -->
             <div>
-                <label class="block font-medium mb-1">Duplicate Attendance Interval (minutes)</label>
+                <label class="block font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-clock text-purple-500 mr-2"></i>
+                    Duplicate Attendance Interval (minutes)
+                </label>
                 <input id="duplicate_interval" type="number"
                        value="{{ settings.duplicate_interval }}"
-                       class="w-full p-2 border rounded" />
+                       class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm" />
             </div>
 
             <!-- Snapshot Mode -->
-            <div class="flex items-center gap-2">
-                <label class="font-medium">Snapshot Mode</label>
+            <div class="flex items-center justify-between bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div>
+                    <label class="font-semibold text-gray-700 flex items-center gap-2">
+                        <i class="fas fa-camera text-green-500"></i>
+                        Snapshot Mode
+                    </label>
+                    <p class="text-xs text-gray-500 mt-1">Save snapshots of recognized faces</p>
+                </div>
                 <input id="snapshot_mode" type="checkbox"
                        {% if settings.snapshot_mode == 'on' %}checked{% endif %}
-                       class="h-5 w-5">
+                       class="h-6 w-6 rounded accent-blue-600">
             </div>
 
         </div>
@@ -47,23 +71,34 @@
 
 
     <!-- SECTION 2: ATTENDANCE RULES -->
-    <div class="bg-white p-5 rounded-xl shadow mb-6">
-        <h2 class="text-xl font-semibold mb-4">Attendance Rules</h2>
+    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 hover:shadow-xl transition-shadow" style="transition-delay: 0.2s">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md">
+                <i class="fas fa-check-circle text-white text-xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">Attendance Rules</h2>
+        </div>
 
-        <div class="space-y-4">
+        <div class="space-y-6">
 
             <div>
-                <label class="block font-medium mb-1">Late Time (HH:MM)</label>
+                <label class="block font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-clock text-orange-500 mr-2"></i>
+                    Late Time (HH:MM)
+                </label>
                 <input id="late_time" type="time"
                        value="{{ settings.late_time }}"
-                       class="w-full p-2 border rounded" />
+                       class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm" />
             </div>
 
             <div>
-                <label class="block font-medium mb-1">Minimum Confidence (%)</label>
+                <label class="block font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-percentage text-blue-500 mr-2"></i>
+                    Minimum Confidence (%)
+                </label>
                 <input id="min_confidence" type="number"
                        value="{{ settings.min_confidence }}"
-                       class="w-full p-2 border rounded" />
+                       class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm" />
             </div>
 
         </div>
@@ -71,31 +106,42 @@
 
 
     <!-- SECTION 3: SYSTEM PREFERENCES -->
-    <div class="bg-white p-5 rounded-xl shadow mb-6">
-        <h2 class="text-xl font-semibold mb-4">System Preferences</h2>
+    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 hover:shadow-xl transition-shadow" style="transition-delay: 0.3s">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center shadow-md">
+                <i class="fas fa-cog text-white text-xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">System Preferences</h2>
+        </div>
 
         <div class="space-y-6">
 
             <div>
-                <label class="block font-medium mb-1">Company Name</label>
+                <label class="block font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-building text-blue-500 mr-2"></i>
+                    Company Name
+                </label>
                 <input id="company_name" type="text"
                        value="{{ settings.company_name }}"
-                       class="w-full p-2 border rounded" />
+                       class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm" />
             </div>
 
             <div>
-                <label class="block font-medium mb-2">Company Logo</label>
+                <label class="block font-semibold text-gray-700 mb-3">
+                    <i class="fas fa-image text-purple-500 mr-2"></i>
+                    Company Logo
+                </label>
 
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-6 bg-gray-50 rounded-xl p-6 border border-gray-200">
                     <img id="logo_preview"
                          src="{{ settings.company_logo }}"
-                         class="h-14 w-auto object-contain border rounded bg-white p-1">
+                         class="h-20 w-auto object-contain border-2 border-gray-300 rounded-xl bg-white p-2 shadow-md">
 
-                    <form id="logoForm" enctype="multipart/form-data">
-                        <input id="company_logo" name="company_logo" type="file" accept="image/*" />
+                    <form id="logoForm" enctype="multipart/form-data" class="flex-1">
+                        <input id="company_logo" name="company_logo" type="file" accept="image/*" class="mb-3" />
                         <button type="button" id="uploadLogoBtn"
-                                class="bg-gray-800 text-white px-4 py-1 rounded ml-2">
-                            Upload
+                                class="btn-primary px-5 py-2.5 rounded-xl shadow-md">
+                            <i class="fas fa-upload mr-2"></i>Upload Logo
                         </button>
                     </form>
                 </div>
@@ -133,47 +179,62 @@
                 <label class="block font-medium mb-1">Login Alert</label>
                 <input id="login_alert"
                        value="{{ settings.login_alert }}"
-                       class="w-full p-2 border rounded"
+                       class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm"
                        placeholder="off or email" />
             </div>
 
             <!-- Kiosk PIN -->
-            <div>
-                <label class="block font-medium mb-1">Kiosk Exit PIN</label>
-                <form id="kioskPinForm" class="flex gap-2">
+            <div class="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-6 border border-orange-200">
+                <label class="block font-semibold text-gray-700 mb-3">
+                    <i class="fas fa-lock text-red-500 mr-2"></i>
+                    Kiosk Exit PIN
+                </label>
+                <form id="kioskPinForm" class="flex gap-3">
                     <input 
                         id="kiosk_pin" 
                         type="password" 
                         placeholder="Enter 4+ digit PIN"
-                        class="flex-1 p-2 border rounded"
+                        class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-orange-500/50 focus:border-orange-400 outline-none transition-all shadow-sm"
                         autocomplete="new-password"
                     />
                     <button 
                         type="button"
                         id="setPinBtn"
-                        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                        class="btn-warning px-6 py-3 rounded-xl shadow-md hover:shadow-lg"
                     >
-                        Set PIN
+                        <i class="fas fa-key mr-2"></i>Set PIN
                     </button>
                 </form>
-                <p class="text-xs text-gray-500 mt-1">Used to exit kiosk mode. Must be numeric, 4+ digits.</p>
-                <div id="pinStatus" class="text-sm mt-1 hidden"></div>
+                <p class="text-xs text-gray-600 mt-2 flex items-center gap-2">
+                    <i class="fas fa-info-circle text-orange-500"></i>
+                    Used to exit kiosk mode. Must be numeric, 4+ digits.
+                </p>
+                <div id="pinStatus" class="text-sm mt-2 hidden"></div>
             </div>
 
+
             <!-- Remote Unlock -->
-            <div>
-                <label class="block font-medium mb-1">Remote Kiosk Control</label>
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-200 scroll-reveal" style="transition-delay: 0.3s;">
+                <label class="block font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 text-white shadow-lg mr-2">
+                        <i class="fas fa-wifi"></i>
+                    </span>
+                    Remote Kiosk Control
+                </label>
                 <button 
                     id="remoteUnlockBtn"
-                    class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 flex items-center gap-2"
+                    class="btn-warning px-6 py-3 rounded-xl shadow-md hover:shadow-lg flex items-center gap-2"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
                     </svg>
                     Force Unlock Kiosk
                 </button>
-                <p class="text-xs text-gray-500 mt-1">Remotely unlock kiosk without PIN. Use only in emergencies.</p>
-                <div id="unlockStatus" class="text-sm mt-1 hidden"></div>
+                <p class="text-xs text-gray-600 mt-2 flex items-center gap-2">
+                    <i class="fas fa-info-circle text-purple-500"></i>
+                    Remotely unlock kiosk without PIN. Use only in emergencies.
+                </p>
+                <div id="unlockStatus" class="text-sm mt-2 hidden"></div>
             </div>
 
         </div>
@@ -181,24 +242,39 @@
 
 
     <!-- SECTION 5: DATA & BACKUP -->
-    <div class="bg-white p-5 rounded-xl shadow mb-6">
-        <h2 class="text-xl font-semibold mb-4">Data & Backup</h2>
+    <div class="bg-gradient-to-r from-green-50 to-blue-50 p-8 rounded-2xl shadow-lg border border-green-200 mb-6 scroll-reveal" style="transition-delay: 0.4s;">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+            <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-400 text-white shadow-lg">
+                <i class="fas fa-database"></i>
+            </span>
+            Data & Backup
+        </h2>
 
-        <div class="flex gap-3">
-            <button id="exportAttendance" class="bg-green-600 text-white px-4 py-2 rounded">
+        <div class="flex gap-4">
+            <button id="exportAttendance" class="btn-success px-6 py-3 rounded-xl shadow-md hover:shadow-lg flex items-center gap-2">
+                <i class="fas fa-file-csv"></i>
                 Export Attendance (CSV)
             </button>
 
-            <button id="exportEmployees" class="bg-green-600 text-white px-4 py-2 rounded">
+            <button id="exportEmployees" class="btn-success px-6 py-3 rounded-xl shadow-md hover:shadow-lg flex items-center gap-2">
+                <i class="fas fa-users"></i>
                 Export Employees (CSV)
             </button>
         </div>
     </div>
 
 
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-4 scroll-reveal" style="transition-delay: 0.5s;">
         <button id="saveBtn"
-                class="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700">
+                class="btn-primary px-8 py-3 rounded-xl shadow-md hover:shadow-lg text-lg font-semibold flex items-center gap-2">
+            <i class="fas fa-save"></i>
+            Save Changes
+        </button>
+        <button id="resetBtn"
+                class="btn-warning px-8 py-3 rounded-xl shadow-md hover:shadow-lg text-lg font-semibold flex items-center gap-2">
+            <i class="fas fa-undo"></i>
+            Reset
+        </button>
             Save Changes
         </button>
         <span id="status" class="text-gray-600 text-sm"></span>
