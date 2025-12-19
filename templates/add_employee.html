@@ -45,14 +45,24 @@
                        class="input-modern" />
             </div>
 
-            <!-- Phone -->
+            <!-- Phone with Country Code -->
             <div class="scroll-reveal" style="transition-delay:0.21s">
                 <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
                     <i class="fas fa-phone text-blue-600 text-sm"></i>
                     Phone
                 </label>
-                <input name="phone" type="text" placeholder="+91 XXXXX XXXXX"
-                       class="input-modern" />
+                <div class="flex gap-3">
+                    <select name="country_code" id="country_code" class="input-modern w-24 shrink-0" aria-label="Country code">
+                        <option value="+91" title="India">+91 India</option>
+                        <option value="+1" title="United States">+1 United States</option>
+                        <option value="+44" title="United Kingdom">+44 United Kingdom</option>
+                        <option value="+61" title="Australia">+61 Australia</option>
+                        <option value="+966" title="Saudi Arabia">+966 Saudi Arabia</option>
+                    </select>
+                          <input name="phone" id="phoneInput" type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
+                              placeholder="Enter 10 digit number" title="Enter 10 digit phone number" class="input-modern flex-1" />
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Enter phone digits only (no spaces or symbols).</p>
             </div>
 
             <!-- Gender -->
@@ -140,4 +150,33 @@
 
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const phoneInput = document.getElementById('phoneInput');
+    if (!phoneInput) return;
+
+    // allow only digits while typing
+    phoneInput.addEventListener('input', function(e) {
+        const max = this.maxLength || 10;
+        let cleaned = this.value.replace(/\D+/g, '');
+        if (cleaned.length > max) cleaned = cleaned.slice(0, max);
+        if (this.value !== cleaned) this.value = cleaned;
+    });
+
+    // sanitize pasted content
+    phoneInput.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text') || '';
+        const max = this.maxLength || 10;
+        const cleaned = text.replace(/\D+/g, '').slice(0, max);
+        const start = this.selectionStart || 0;
+        const end = this.selectionEnd || 0;
+        const newVal = this.value.slice(0, start) + cleaned + this.value.slice(end);
+        this.value = newVal.replace(/\D+/g, '').slice(0, max);
+    });
+});
+</script>
 {% endblock %}

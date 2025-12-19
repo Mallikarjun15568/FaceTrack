@@ -9,6 +9,7 @@ from utils.helpers import generate_unique_filename, ensure_folder
 from blueprints.auth.utils import login_required
 
 from blueprints.kiosk import utils as kiosk_utils
+from utils.face_encoder import invalidate_embeddings_cache, face_encoder
 from insightface.app import FaceAnalysis
 import numpy as np
 import cv2
@@ -97,6 +98,12 @@ def capture_face():
         embedding = face.normed_embedding.astype("float32")
         emb_bytes = embedding.astype(np.float32).tobytes()
 
+        # Log embedding byte length for diagnostics
+        try:
+            print(f"[+] Embedding bytes length: {len(emb_bytes)} for emp {employee_id}")
+        except Exception:
+            pass
+
         # Save face image
         folder_path = os.path.join("static", "faces", str(employee_id))
         ensure_folder(folder_path)
@@ -119,10 +126,22 @@ def capture_face():
             (employee_id, emb_bytes, file_path, datetime.now())
         )
         db.commit()
-        if hasattr(kiosk_utils, "reload_embeddings"):
+        try:
+            kiosk_utils.reload_embeddings(force=True)
+        except TypeError:
+            # older signature: call without force
             kiosk_utils.reload_embeddings()
-        else:
-            kiosk_utils.embeddings_cache = None
+        # Invalidate face-encoder cache so recognizer reloads from DB
+        try:
+            invalidate_embeddings_cache()
+        except Exception:
+            pass
+        # Immediately reload face_encoder embeddings so kiosk recognizer
+        # sees the new embedding without waiting for another trigger.
+        try:
+            face_encoder.load_all_embeddings()
+        except Exception:
+            pass
 
         return jsonify({
             "status": "success",
@@ -167,6 +186,12 @@ def update_capture_face():
         new_embedding = face.normed_embedding.astype("float32")
         new_emb_bytes = new_embedding.astype(np.float32).tobytes()
 
+        # Log embedding byte length for diagnostics
+        try:
+            print(f"[+] New embedding bytes length: {len(new_emb_bytes)} for emp {employee_id}")
+        except Exception:
+            pass
+
         db = get_db()
         cursor = db.cursor()
 
@@ -200,10 +225,22 @@ def update_capture_face():
         )
  
         db.commit()
-        if hasattr(kiosk_utils, "reload_embeddings"):
+        try:
+            kiosk_utils.reload_embeddings(force=True)
+        except TypeError:
+            # older signature: call without force
             kiosk_utils.reload_embeddings()
-        else:
-            kiosk_utils.embeddings_cache = None
+        # Invalidate face-encoder cache so recognizer reloads from DB
+        try:
+            invalidate_embeddings_cache()
+        except Exception:
+            pass
+        # Immediately reload face_encoder embeddings so kiosk recognizer
+        # sees the new embedding without waiting for another trigger.
+        try:
+            face_encoder.load_all_embeddings()
+        except Exception:
+            pass
 
         return jsonify({
             "status": "success",

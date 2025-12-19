@@ -117,4 +117,37 @@ class FaceEncoder:
         raise TypeError(f"Unsupported embedding type {type(emb_blob)}")
 
 
+
 face_encoder = FaceEncoder()
+
+
+def clear_embeddings_cache():
+    """Clear the in-memory embeddings stored on the face_encoder instance.
+
+    This is used after enrollment/update operations so that future
+    recognition calls will reload embeddings from the database.
+    """
+    global face_encoder
+    try:
+        face_encoder.embeddings = []
+        face_encoder.employee_ids = []
+        face_encoder._emb_matrix = np.empty((0, 512), dtype=np.float32)
+    except Exception:
+        # best-effort; do not raise in production flow
+        pass
+
+
+def invalidate_embeddings_cache():
+    """Invalidate the face embeddings cache (production-ready helper).
+
+    Clears in-memory embeddings on the `face_encoder` instance so that
+    subsequent recognition operations will reload embeddings from the DB.
+    """
+    global face_encoder
+    try:
+        face_encoder.embeddings = []
+        face_encoder.employee_ids = []
+        face_encoder._emb_matrix = np.empty((0, 512), dtype=np.float32)
+        print("🔄 Face embeddings cache invalidated")
+    except Exception:
+        pass

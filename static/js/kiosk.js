@@ -21,6 +21,7 @@ document.addEventListener('fullscreenchange', () => {
 let lastSpokenName = null;
 let lastSpokenTime = 0;
 const VOICE_COOLDOWN_MS = 5000; // 5 seconds
+let hardCooldownUntil = 0;
 
 
 // ---------------- SOUND FEEDBACK ----------------
@@ -227,7 +228,7 @@ async function checkLiveness(frameData) {
 
 
 // ---------------- POLLING LOOP ----------------
-const POLLING_DELAY_MS = 650;  // interval between loops (reduced CPU usage)
+const POLLING_DELAY_MS = 1200;  // interval between loops (reduced CPU usage)
 let sendingFrame = false;
 
 async function sendFrame() {
@@ -251,6 +252,13 @@ async function sendFrame() {
         // small debounce: if last success very recent, wait a bit
         const now = Date.now();
         if (now - lastSuccessTime < 500) return;
+
+        // hard cooldown: pause sending frames for a short period after a
+        // successful recognition to avoid repeated actions.
+        if (now < hardCooldownUntil) {
+            sendingFrame = false;
+            return;
+        }
 
         // Use promise-chain so we can match the expected pattern
         fetch("/kiosk/recognize", {
@@ -298,6 +306,11 @@ async function sendFrame() {
             if (data.status === "already" && canSpeak(data.name)) {
                 speak(`${data.name}, your attendance is already marked.`);
             }
+
+            // apply hard cooldown so a single face causes one action
+            try {
+                hardCooldownUntil = Date.now() + 4000; // 4 sec pause
+            } catch (e) {}
 
             // Reset liveness after showing UI for a short while
             setTimeout(resetLiveness, 3000);

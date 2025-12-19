@@ -83,3 +83,8 @@ ERD_Documentation.md
 ERD_FaceTrack.svg
 wireframes_index.md
 demo_data.sql
+
+# runtime uploads
+static/uploads/
+static/faces/
+static/snapshots/

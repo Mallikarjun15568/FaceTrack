@@ -12,6 +12,11 @@ from db_utils import fetchall, fetchone, execute
 
 from blueprints.settings.routes import load_settings
 
+# Toggle saving snapshots globally. Default from environment variable
+# Use app.config['SAVE_SNAPSHOTS'] to override at runtime (True/False)
+_env_snap = os.getenv("SAVE_SNAPSHOTS", "1")
+SAVE_SNAPSHOTS = str(_env_snap).lower() not in ("0", "false", "no", "off")
+
 
 # -------------------------------------------------------------
 # MODEL + EMBEDDING CACHES
@@ -49,9 +54,22 @@ def decode_frame(frame_b64):
 
 
 def save_snapshot(img, app, filename):
+    # app-level override if explicitly set
+    app_override = app.config.get("SAVE_SNAPSHOTS", None)
+    if app_override is not None:
+        try:
+            if not bool(app_override):
+                return None
+        except Exception:
+            pass
+
+    if not SAVE_SNAPSHOTS:
+        return None  # 🔕 demo mode: no snapshots at all
+
     settings = load_settings()
     if settings.get("snapshot_mode", "off") != "on":
         return None
+
     folder = app.config.get("SNAPSHOT_DIR", "static/snapshots")
     os.makedirs(folder, exist_ok=True)
     path = os.path.join(folder, filename)
@@ -111,8 +129,13 @@ def load_embeddings():
     return embeddings_cache
 
 
-def reload_embeddings():
-    """Force reload the cached embeddings from the database."""
+def reload_embeddings(force=False):
+    """Force reload the cached embeddings from the database.
+
+    `force` is kept for backward compatibility. This function will
+    clear the in-memory cache and reload from the DB so kiosk
+    recognition uses a single source of truth.
+    """
     global embeddings_cache
     embeddings_cache = None
     return load_embeddings()
