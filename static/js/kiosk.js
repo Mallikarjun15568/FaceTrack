@@ -17,6 +17,11 @@ document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement) setTimeout(enableFullscreen, 3000);
 });
 
+// ---------------- VOICE COOLDOWN ----------------
+let lastSpokenName = null;
+let lastSpokenTime = 0;
+const VOICE_COOLDOWN_MS = 5000; // 5 seconds
+
 
 // ---------------- SOUND FEEDBACK ----------------
 // Reuse AudioContext where possible (some browsers disallow creating many)
@@ -130,6 +135,19 @@ function addLog(name, status, time, photo) {
     if (logsList.children.length > 5) logsList.removeChild(logsList.lastChild);
 }
 
+function canSpeak(name) {
+    const now = Date.now();
+
+    // same person + within cooldown
+    if (lastSpokenName === name && (now - lastSpokenTime) < VOICE_COOLDOWN_MS) {
+        return false;
+    }
+
+    lastSpokenName = name;
+    lastSpokenTime = now;
+    return true;
+}
+
 
 // ---------------- UPDATE UI AFTER RECOGNITION ----------------
 function updateUI(result) {
@@ -234,44 +252,59 @@ async function sendFrame() {
         const now = Date.now();
         if (now - lastSuccessTime < 500) return;
 
-        const res = await fetch("/kiosk/recognize", {
+        // Use promise-chain so we can match the expected pattern
+        fetch("/kiosk/recognize", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ frame: frameData })
-        });
+        })
+        .then(res => {
+            if (!res.ok) {
+                return res.json().catch(() => null).then(data => {
+                    if (res.status === 403 && data && data.message === "Liveness check required") {
+                        resetLiveness();
+                        showLivenessChallenge("blink", 0, "Session expired — please verify again");
+                    }
+                    return null;
+                });
+            }
+            return res.json().catch(() => null);
+        })
+        .then(data => {
+            if (!data) return;
 
-        if (!res.ok) {
-            // try to display server message if present
-            const data = await res.json().catch(() => null);
-            // Recognition server error (silent in production)
-            // If session expired or forbidden, optionally reload / redirect
-            if (res.status === 403 && data && data.message === "Liveness check required") {
-                // UI fallback: require liveness again
+            console.log("KIOSK RESPONSE:", data);
+
+            if (data.status === "ignore") return;
+            if (data.status === "unknown") {
+                showUnknownAlert(data.time);
                 resetLiveness();
-                showLivenessChallenge("blink", 0, "Session expired — please verify again");
                 return;
             }
-            return;
-        }
 
-        const data = await res.json().catch(() => null);
-        if (!data) return;
+            // Matched — update UI
+            console.log("Recognition result:", data);
+            updateUI(data);
 
-        if (data.status === "ignore") {
-            return;
-        }
-        if (data.status === "unknown") {
-            showUnknownAlert(data.time);
-            resetLiveness();
-            return;
-        }
+            // speak based on actual backend statuses
+            if (data.status === "check-in" && canSpeak(data.name)) {
+                speak(`Welcome ${data.name}. Attendance marked successfully.`);
+            }
 
-        // Matched — update UI
-        console.log("Recognition result:", data);
-        updateUI(data);
+            if (data.status === "check-out" && canSpeak(data.name)) {
+                speak(`Goodbye ${data.name}. Check-out recorded.`);
+            }
 
-        // Reset liveness after showing UI for a short while
-        setTimeout(resetLiveness, 3000);
+            if (data.status === "already" && canSpeak(data.name)) {
+                speak(`${data.name}, your attendance is already marked.`);
+            }
+
+            // Reset liveness after showing UI for a short while
+            setTimeout(resetLiveness, 3000);
+        })
+        .catch(() => {
+            // silent failure
+        });
 
     } catch (err) {
         // Recognition error (silent in production)
@@ -297,3 +330,23 @@ async function startRecognitionLoop() {
 }
 
 startRecognitionLoop();
+
+// =======================
+// VOICE ANNOUNCEMENT (global)
+// =======================
+window.speak = function (message) {
+    console.log("🔊 SPEAK:", message);
+
+    if (!("speechSynthesis" in window)) {
+        console.log("Speech API not supported");
+        return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(message);
+    utterance.lang = "en-IN";
+    utterance.rate = 1;
+    utterance.pitch = 1;
+
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utterance);
+};
