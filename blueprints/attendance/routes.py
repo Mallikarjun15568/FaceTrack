@@ -1,5 +1,6 @@
 from . import bp
 from flask import jsonify, request, render_template
+from flask import session
 from utils.db import get_db
 from blueprints.auth.utils import login_required
 
@@ -29,11 +30,21 @@ def attendance_logs():
 # USER LIST  (for username filter dropdown)
 # --------------------------------------------------
 @bp.route("/api/usernames")
+@login_required
 def api_usernames():
     db = get_db()
     cur = db.cursor(dictionary=True)
 
-    cur.execute("SELECT id, full_name FROM employees ORDER BY full_name ASC")
+    # EMPLOYEE → only self
+    if session.get("role") == "employee":
+        cur.execute(
+            "SELECT id, full_name FROM employees WHERE id = %s",
+            (session.get("employee_id"),)
+        )
+    else:
+        # ADMIN / HR → all
+        cur.execute("SELECT id, full_name FROM employees ORDER BY full_name ASC")
+
     rows = cur.fetchall()
 
     cur.close()
@@ -44,9 +55,13 @@ def api_usernames():
 # ATTENDANCE TABLE DATA API
 # --------------------------------------------------
 @bp.route("/api/attendance")
+@login_required
 def api_attendance():
     date = request.args.get("date")
     user = request.args.get("user")
+
+    role = session.get("role")
+    emp_id = session.get("employee_id")
 
     db = get_db()
     cur = db.cursor(dictionary=True)
@@ -71,21 +86,28 @@ def api_attendance():
                 LIMIT 1
             ) AS snapshot
         FROM attendance a
-        LEFT JOIN employees e ON e.id = a.employee_id
+        JOIN employees e ON e.id = a.employee_id
         WHERE 1=1
     """
 
     params = []
 
+    # 🔒 EMPLOYEE → ONLY OWN DATA
+    if role == "employee":
+        base_query += " AND a.employee_id = %s"
+        params.append(emp_id)
+
+    # 👑 ADMIN / HR FILTERS
+    if role in ["admin", "hr"]:
+        if user:
+            base_query += " AND e.full_name = %s"
+            params.append(user)
+
     if date:
         base_query += " AND a.date = %s"
         params.append(date)
 
-    if user:
-        base_query += " AND e.full_name = %s"
-        params.append(user)
-
-    base_query += " ORDER BY a.check_in_time ASC"
+    base_query += " ORDER BY a.date DESC, a.check_in_time ASC"
 
     cur.execute(base_query, tuple(params))
     rows = cur.fetchall()

@@ -2,6 +2,7 @@ from flask import Flask, render_template, redirect, url_for, flash, session, jso
 import logging
 import time
 import os
+from dotenv import load_dotenv
 
 from config import SECRET_KEY
 from db_utils import get_connection, close_db
@@ -18,6 +19,9 @@ from blueprints.kiosk import bp as kiosk_bp
 from blueprints.dashboard import bp as dashboard_bp
 from blueprints.settings import bp as settings_bp
 from blueprints.reports import bp as reports_bp
+from blueprints.leave import bp as leave_bp
+from blueprints.charts import bp as charts_bp
+from utils.email_service import email_service
 
 
 # --------------------------
@@ -43,6 +47,20 @@ app.config["KIOSK_COOLDOWN_SECONDS"] = float(os.getenv("KIOSK_COOLDOWN_SECONDS",
 app.config["KIOSK_UNKNOWN_COOLDOWN"] = float(os.getenv("KIOSK_UNKNOWN_COOLDOWN", "3"))
 app.config["EMBED_THRESHOLD"] = float(os.getenv("EMBED_THRESHOLD", "0.75"))
 
+load_dotenv()
+
+# ==========================
+# EMAIL (SYSTEM EMAIL CONFIG) - load from environment (.env)
+# ==========================
+app.config['SMTP_SERVER'] = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
+app.config['SMTP_PORT'] = int(os.getenv('SMTP_PORT', 587))
+app.config['SENDER_EMAIL'] = os.getenv('SENDER_EMAIL')
+app.config['SENDER_PASSWORD'] = os.getenv('SENDER_PASSWORD')
+app.config['SENDER_NAME'] = os.getenv('SENDER_NAME', 'FaceTrack Pro')
+
+# init email service (loads SMTP config from app.config)
+email_service.init_app(app)
+
 
 # --------------------------
 # LOGGING SETUP
@@ -66,6 +84,8 @@ app.register_blueprint(kiosk_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(settings_bp)
 app.register_blueprint(reports_bp)
+app.register_blueprint(leave_bp)
+app.register_blueprint(charts_bp)
 
 
 # --------------------------

@@ -48,12 +48,14 @@
     <nav class="px-4 pb-6 pt-4">
       <ul class="space-y-2">
 
+        {% if session.role in ['admin', 'hr'] %}
         <li>
           <a href="/dashboard" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
             <i data-feather="grid"></i>
             <span class="text-sm font-medium">Dashboard</span>
           </a>
         </li>
+        {% endif %}
 
         <!-- Admin & HR only -->
         {% if session.role in ['admin', 'hr'] %}
@@ -72,17 +74,27 @@
         </li>
         {% endif %}
 
+        {% if session.role in ['admin', 'hr'] %}
         <li>
           <a href="/kiosk" class="nav-link {% if 'kiosk' in request.endpoint or 'recognition' in request.endpoint %}active{% endif %}">
           <i data-feather="monitor"></i>
           <span class="text-sm font-medium">Kiosk Mode</span>
          </a>
         </li>
+        {% endif %}
 
         <li>
           <a href="/attendance" class="nav-link {% if 'attendance' in request.endpoint %}active{% endif %}">
             <i data-feather="check-circle"></i>
             <span class="text-sm font-medium">Attendance</span>
+          </a>
+        </li>
+
+        <li>
+          <a href="{{ url_for('leave.index') }}"
+             class="nav-link {% if 'leave' in request.endpoint %}active{% endif %}">
+            <i data-feather="calendar"></i>
+            <span class="text-sm font-medium">Leave Management</span>
           </a>
         </li>
 

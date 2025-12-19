@@ -25,12 +25,22 @@ def login():
             flash("Invalid username or password", "error")
             return redirect(url_for("auth.login"))
 
+        # Fetch linked employee row (if any)
+        conn = get_connection()
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT * FROM employees WHERE user_id=%s", (user["id"],))
+        employee = cur.fetchone()
+        cur.close()
+        conn.close()
+
         # Clear old session
         session.clear()
         session["logged_in"] = True
         session["user_id"] = user["id"]
         session["username"] = user["username"]
         session["role"] = user.get("role")
+        session['employee_id'] = employee['id'] if employee else None
+        session['full_name'] = employee['full_name'] if employee and employee.get('full_name') else user.get('username')
 
         # Single unified dashboard
         return redirect("/dashboard")

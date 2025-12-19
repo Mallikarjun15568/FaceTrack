@@ -1,31 +1,11 @@
-{% extends "base_kiosk.html" %}
+{% extends "base.html" %}
 {% block title %}Exit Kiosk Mode{% endblock %}
-
-{% block head %}
-<style>
-    html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-    }
-</style>
-{% endblock %}
 
 {% block content %}
 
-<!-- Full Screen Kiosk Exit -->
-<div class="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 px-4 relative">
-
-    <!-- Animated Background Elements with Pulse -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute top-20 left-20 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div class="absolute bottom-20 right-20 w-[500px] h-[500px] bg-pink-500/20 rounded-full blur-3xl animate-pulse" style="animation-delay: 0.5s;"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
-    </div>
-
-    <div class="w-full max-w-lg relative z-10 animate-fadeIn">
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-3xl mx-auto px-4">
+    <div class="relative z-10 animate-fadeIn">
 
         <!-- Clean Card with Glassmorphism -->
         <div class="glass-dark rounded-3xl shadow-2xl border border-white/20 p-10 backdrop-blur-xl">
@@ -46,46 +26,46 @@
 
                 <!-- PIN Input -->
                 <div>
-                    <label class="block text-center text-sm font-semibold text--200 mb-6 uppercase tracking-wider">
+                    <label class="block text-center text-sm font-semibold text-blue-200 mb-6 uppercase tracking-wider">
                         <i class="fas fa-lock mr-2 text-blue-400"></i>Enter Admin PIN
                     </label>
 
                     <!-- OTP Style PIN Boxes -->
                     <div class="flex justify-center gap-3 mb-4" id="pin-boxes">
-                        <input type="password" maxlength="1"
+                           <input type="password" maxlength="1"
                             class="w-16 h-20 text-center text-5xl font-bold rounded-2xl
-                                   bg-gradient-to-br from-blue-500/20 to-cyan-500/20
-                                   border-3 border-blue-400/40 text-white
-                                   focus:border-blue-400 focus:ring-4 focus:ring-blue-500/50 focus:scale-110
-                                   transition-all duration-200 outline-none backdrop-blur-xl shadow-2xl
-                                   hover:border-blue-300/60"
+                                bg-gradient-to-br from-blue-500/20 to-cyan-500/20
+                                border-3 border-blue-400/40 text-gray-900
+                                focus:border-blue-400 focus:ring-4 focus:ring-blue-500/50 focus:scale-110
+                                transition-all duration-200 outline-none backdrop-blur-xl shadow-2xl
+                                hover:border-blue-300/60"
                             data-index="0" autocomplete="off">
 
-                        <input type="password" maxlength="1"
+                           <input type="password" maxlength="1"
                             class="w-16 h-20 text-center text-5xl font-bold rounded-2xl
-                                   bg-gradient-to-br from-blue-500/20 to-cyan-500/20
-                                   border-3 border-blue-400/40 text-white
-                                   focus:border-blue-400 focus:ring-4 focus:ring-blue-500/50 focus:scale-110
-                                   transition-all duration-200 outline-none backdrop-blur-xl shadow-2xl
-                                   hover:border-blue-300/60"
+                                bg-gradient-to-br from-blue-500/20 to-cyan-500/20
+                                border-3 border-blue-400/40 text-gray-900
+                                focus:border-blue-400 focus:ring-4 focus:ring-blue-500/50 focus:scale-110
+                                transition-all duration-200 outline-none backdrop-blur-xl shadow-2xl
+                                hover:border-blue-300/60"
                             data-index="1" autocomplete="off">
 
-                        <input type="password" maxlength="1"
+                           <input type="password" maxlength="1"
                             class="w-16 h-20 text-center text-5xl font-bold rounded-2xl
-                                   bg-gradient-to-br from-blue-500/20 to-cyan-500/20
-                                   border-3 border-blue-400/40 text-white
-                                   focus:border-blue-400 focus:ring-4 focus:ring-blue-500/50 focus:scale-110
-                                   transition-all duration-200 outline-none backdrop-blur-xl shadow-2xl
-                                   hover:border-blue-300/60"
+                                bg-gradient-to-br from-blue-500/20 to-cyan-500/20
+                                border-3 border-blue-400/40 text-gray-900
+                                focus:border-blue-400 focus:ring-4 focus:ring-blue-500/50 focus:scale-110
+                                transition-all duration-200 outline-none backdrop-blur-xl shadow-2xl
+                                hover:border-blue-300/60"
                             data-index="2" autocomplete="off">
 
-                        <input type="password" maxlength="1"
+                           <input type="password" maxlength="1"
                             class="w-16 h-20 text-center text-5xl font-bold rounded-2xl
-                                   bg-gradient-to-br from-blue-500/20 to-cyan-500/20
-                                   border-3 border-blue-400/40 text-white
-                                   focus:border-blue-400 focus:ring-4 focus:ring-blue-500/50 focus:scale-110
-                                   transition-all duration-200 outline-none backdrop-blur-xl shadow-2xl
-                                   hover:border-blue-300/60"
+                                bg-gradient-to-br from-blue-500/20 to-cyan-500/20
+                                border-3 border-blue-400/40 text-gray-900
+                                focus:border-blue-400 focus:ring-4 focus:ring-blue-500/50 focus:scale-110
+                                transition-all duration-200 outline-none backdrop-blur-xl shadow-2xl
+                                hover:border-blue-300/60"
                             data-index="3" autocomplete="off">
                     </div>
 
@@ -144,6 +124,7 @@
             </div>
         </div>
 
+        </div>
     </div>
 </div>
 

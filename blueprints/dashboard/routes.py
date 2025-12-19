@@ -13,7 +13,12 @@ from blueprints.auth.utils import login_required
 @bp.route("/dashboard")
 @login_required
 def admin_dashboard():
-    # Role check removed — system is now single admin
+    role = session.get('role')
+
+    # If user is not admin/hr, show employee dashboard
+    if role not in ["admin", "hr"]:
+        return render_template("dashboard_employee.html")
+
     db = get_db()
     cursor = db.cursor(dictionary=True)
 

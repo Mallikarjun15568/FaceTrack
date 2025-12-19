@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="space-y-8">
+
+    <!-- Welcome Card -->
+    <div class="bg-white rounded-2xl shadow-md p-6">
+        <h2 class="text-2xl font-bold text-gray-800">
+            Welcome, {{ session.get('full_name') }} 👋
+        </h2>
+        <p class="text-gray-600 mt-2">
+            Here’s a quick overview of your attendance and leave status.
+        </p>
+    </div>
+
+    <!-- Quick Status Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- Today Status -->
+        <div class="bg-white rounded-2xl shadow-md p-6">
+            <h3 class="text-sm font-semibold text-gray-500">Today Status</h3>
+            <p class="mt-3 text-2xl font-bold text-blue-600">
+                {{ today_status | default("Not Marked") }}
+            </p>
+        </div>
+
+        <!-- Last Check-in -->
+        <div class="bg-white rounded-2xl shadow-md p-6">
+            <h3 class="text-sm font-semibold text-gray-500">Last Check-In</h3>
+            <p class="mt-3 text-xl font-semibold text-gray-800">
+                {{ last_check_in | default("--:--") }}
+            </p>
+        </div>
+
+        <!-- Working Hours -->
+        <div class="bg-white rounded-2xl shadow-md p-6">
+            <h3 class="text-sm font-semibold text-gray-500">Working Hours</h3>
+            <p class="mt-3 text-xl font-semibold text-gray-800">
+                {{ working_hours | default("0h") }}
+            </p>
+        </div>
+
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-2xl shadow-md p-6">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">Quick Actions</h3>
+
+        <div class="flex flex-wrap gap-4">
+            <a href="/attendance"
+               class="px-6 py-3 rounded-xl bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition">
+                📋 My Attendance
+            </a>
+
+            <a href="/leave/apply"
+               class="px-6 py-3 rounded-xl bg-green-600 text-white font-medium shadow hover:bg-green-700 transition">
+                📝 Apply Leave
+            </a>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
