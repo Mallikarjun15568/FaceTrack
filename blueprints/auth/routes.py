@@ -136,7 +136,7 @@ def logout():
     """Clear session and redirect to login page"""
     session.clear()
     flash("Logged out successfully", "success")
-    return redirect(url_for("auth.login"))
+    return redirect(url_for("index"))
 
 
 

@@ -5,7 +5,9 @@ import os
 from dotenv import load_dotenv
 
 from config import SECRET_KEY
-from db_utils import get_connection, close_db
+from db_utils import get_connection, close_db, get_setting
+import shutil
+import tempfile
 from utils.face_encoder import face_encoder
 
 # --------------------------
@@ -18,6 +20,7 @@ from blueprints.enroll import bp as enroll_bp
 from blueprints.kiosk import bp as kiosk_bp
 from blueprints.dashboard import bp as dashboard_bp
 from blueprints.settings import bp as settings_bp
+from blueprints.settings.routes import load_settings
 from blueprints.reports import bp as reports_bp
 from blueprints.leave import bp as leave_bp
 from blueprints.charts import bp as charts_bp
@@ -121,25 +124,7 @@ def login_redirect():
     return redirect(url_for("auth.login"))
 
 
-# --------------------------
-# DB HEALTH CHECK
-# --------------------------
-@app.route("/db-health")
-def db_health():
-    start = time.time()
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT 1")
-        cursor.fetchone()
-        cursor.close()
-        conn.close()
-
-        latency = int((time.time() - start) * 1000)
-        return jsonify({"status": "ok", "latency_ms": latency}), 200
-    except Exception as e:
-        logger.exception("DB health check failed")
-        return jsonify({"status": "error", "message": str(e)}), 500
+# DB health and deep health endpoints removed per user request.
 
 
 # --------------------------
@@ -154,6 +139,69 @@ def teardown_db(exception):
 # LOAD FACE EMBEDDINGS AT STARTUP
 # --------------------------
 with app.app_context():
+    # --- Startup: sync persistent settings from DB into runtime config ---
+    try:
+        saved_settings = load_settings()
+        if saved_settings:
+            # Recognition threshold
+            try:
+                if 'recognition_threshold' in saved_settings:
+                    app.config['EMBED_THRESHOLD'] = float(saved_settings.get('recognition_threshold'))
+            except Exception:
+                pass
+
+            # Duplicate attendance interval (minutes) -> cooldown seconds
+            try:
+                if 'duplicate_interval' in saved_settings:
+                    mins = float(saved_settings.get('duplicate_interval'))
+                    app.config['KIOSK_COOLDOWN_SECONDS'] = mins * 60.0
+            except Exception:
+                pass
+
+            # Snapshot mode
+            try:
+                if 'snapshot_mode' in saved_settings:
+                    app.config['SAVE_SNAPSHOTS'] = str(saved_settings.get('snapshot_mode')).lower() == 'on'
+            except Exception:
+                pass
+
+            # Minimum confidence
+            try:
+                if 'min_confidence' in saved_settings:
+                    app.config['MIN_CONFIDENCE'] = float(saved_settings.get('min_confidence'))
+            except Exception:
+                pass
+
+            # Camera index
+            try:
+                if 'camera_index' in saved_settings:
+                    app.config['DEFAULT_CAMERA_INDEX'] = int(saved_settings.get('camera_index'))
+            except Exception:
+                pass
+
+            # Session timeout (minutes)
+            try:
+                if 'session_timeout' in saved_settings:
+                    app.config['PERMANENT_SESSION_LIFETIME'] = int(saved_settings.get('session_timeout')) * 60
+            except Exception:
+                pass
+
+            # Misc mirrors
+            try:
+                if 'login_alert' in saved_settings:
+                    app.config['LOGIN_ALERT'] = saved_settings.get('login_alert')
+                if 'company_name' in saved_settings:
+                    app.config['COMPANY_NAME'] = saved_settings.get('company_name')
+                if 'company_logo' in saved_settings:
+                    app.config['COMPANY_LOGO'] = saved_settings.get('company_logo')
+                if 'late_time' in saved_settings:
+                    app.config['LATE_TIME'] = saved_settings.get('late_time')
+            except Exception:
+                pass
+
+    except Exception as e:
+        logger.exception("Failed to sync settings from DB at startup: %s", e)
+
     print("[*] Loading face embeddings from DB...")
     face_encoder.load_all_embeddings()
     print("[+] Embeddings loaded successfully!")

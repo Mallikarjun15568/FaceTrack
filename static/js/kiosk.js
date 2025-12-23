@@ -1,365 +1,801 @@
-// ---------------- FULLSCREEN AUTO-ENABLE ----------------
-function enableFullscreen() {
-    const elem = document.documentElement;
-    if (elem.requestFullscreen) {
-        elem.requestFullscreen().catch(() => {});
-    } else if (elem.webkitRequestFullscreen) {
-        elem.webkitRequestFullscreen();
-    } else if (elem.msRequestFullscreen) {
-        elem.msRequestFullscreen();
-    }
-}
-// try once after load (browsers often require user gesture; it's ok if denied)
-setTimeout(() => {
-    if (!document.fullscreenElement) enableFullscreen();
-}, 2000);
-document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement) setTimeout(enableFullscreen, 3000);
-});
+// =======================
+// KIOSK CAMERA + RECOGNITION
+// Enhanced with Advanced Animations
+// =======================
 
-// ---------------- VOICE COOLDOWN ----------------
+// -------- DOM ELEMENTS --------
+const video = document.getElementById("kioskVideo");
+const startBtn = document.getElementById("startCameraBtn");
+const stopBtn = document.getElementById("stopCameraBtn");
+const cameraSelect = document.getElementById("cameraSelect");
+const statusText = document.getElementById("cameraStatus");
+const statusDot = document.getElementById("statusDot");
+
+const scanRing = document.getElementById("scanRing");
+const scanBorderEffect = document.getElementById("scanBorderEffect");
+const scanStatusText = document.getElementById("scanStatusText");
+const scanSubText = document.getElementById("scanSubText");
+const waitingBlock = document.getElementById("waiting-block");
+const employeeCard = document.getElementById("employee-card");
+const empPhoto = document.getElementById("emp-photo");
+const empName = document.getElementById("emp-name");
+const empDept = document.getElementById("emp-dept");
+const empStatus = document.getElementById("emp-status");
+const unknownCard = document.getElementById("unknown-card");
+const resultsPlaceholder = document.getElementById("resultsPlaceholder");
+const logsList = document.getElementById("logs-list");
+
+// -------- STATE --------
+let stream = null;
+let cameraRunning = false;
+let startingCamera = false;
+let recognitionRunning = false;
+let selectedDeviceId = null;
+let sendingFrame = false;
+
+// Confetti fired flag to ensure confetti runs only once
+let confettiFired = false;
+
 let lastSpokenName = null;
 let lastSpokenTime = 0;
-const VOICE_COOLDOWN_MS = 5000; // 5 seconds
+const VOICE_COOLDOWN_MS = 5000;
 let hardCooldownUntil = 0;
 
+const RECOGNITION_COOLDOWN_MS = parseInt(localStorage.getItem('recognitionCooldownMs') || '4000', 10);
 
-// ---------------- SOUND FEEDBACK ----------------
-// Reuse AudioContext where possible (some browsers disallow creating many)
+// Settings state
+let voiceEnabled = true;
+let cameraSwitchAllowed = true;
+let showCameraStatus = true;
+
+// ===== Enhanced Scan Ring State Helpers with Animations =====
+function setScanIdle() {
+    scanRing.className = "relative w-56 h-56 rounded-full border-4 border-gray-500 flex items-center justify-center transition-all duration-500 shadow-2xl";
+    
+    if (scanBorderEffect) {
+        scanBorderEffect.style.opacity = '0';
+    }
+    
+    scanStatusText.textContent = "CAMERA IS OFF";
+    scanSubText.textContent = "Start camera to begin";
+    scanStatusText.className = "text-white font-bold text-base drop-shadow-2xl tracking-wide";
+    
+    const iconContainer = scanRing.querySelector('.text-center');
+    if (iconContainer) {
+        iconContainer.innerHTML = `
+            <i class="fas fa-video-slash text-5xl text-gray-400 mb-3 animate-bounce-slow"></i>
+            <p id="scanStatusText" class="text-white font-bold text-base drop-shadow-2xl tracking-wide">CAMERA IS OFF</p>
+            <p id="scanSubText" class="text-gray-300 text-xs mt-2 drop-shadow-lg">Start camera to begin</p>
+        `;
+    }
+    
+    if (waitingBlock) {
+        const primary = waitingBlock.querySelector('p');
+        const secondary = waitingBlock.querySelector('p.text-sm');
+        if (primary) primary.textContent = 'Waiting for face…';
+        if (secondary) secondary.textContent = 'Please look at the camera';
+    }
+    if (resultsPlaceholder) resultsPlaceholder.classList.remove('hidden');
+}
+
+function setScanScanning() {
+    scanRing.className = "relative w-56 h-56 rounded-full border-4 border-blue-500 flex items-center justify-center transition-all duration-500 shadow-2xl animate-pulse-slow";
+    
+    // Enable rotating border effect
+    if (scanBorderEffect) {
+        scanBorderEffect.style.opacity = '0.5';
+    }
+    
+    scanStatusText.textContent = "SCANNING";
+    scanSubText.textContent = "Hold steady...";
+    scanStatusText.className = "text-blue-400 font-bold text-base drop-shadow-2xl tracking-wide animate-pulse";
+    
+    const iconContainer = scanRing.querySelector('.text-center');
+    if (iconContainer) {
+        iconContainer.innerHTML = `
+            <i class="fas fa-user-circle text-5xl text-blue-400 mb-3 animate-pulse"></i>
+            <p id="scanStatusText" class="text-blue-400 font-bold text-base drop-shadow-2xl tracking-wide animate-pulse">SCANNING</p>
+            <p id="scanSubText" class="text-blue-300 text-xs mt-2 drop-shadow-lg">Hold steady...</p>
+        `;
+    }
+    
+    if (waitingBlock) {
+        const primary = waitingBlock.querySelector('p');
+        const secondary = waitingBlock.querySelector('p.text-sm');
+        if (primary) primary.textContent = 'Scanning face';
+        if (secondary) secondary.textContent = 'Hold steady and face the camera';
+        waitingBlock.classList.remove('hidden');
+        if (employeeCard) employeeCard.classList.add('hidden');
+        if (unknownCard) unknownCard.classList.add('hidden');
+    }
+    if (resultsPlaceholder) resultsPlaceholder.classList.add('hidden');
+}
+
+function setScanSuccess() {
+    scanRing.className = "relative w-56 h-56 rounded-full border-4 border-green-500 flex items-center justify-center transition-all duration-500 shadow-2xl shadow-green-500/50 animate-scale-in";
+    
+    if (scanBorderEffect) {
+        scanBorderEffect.style.opacity = '0';
+    }
+    
+    scanStatusText.textContent = "✓ VERIFIED";
+    scanSubText.textContent = "Success!";
+    scanStatusText.className = "text-green-400 font-bold text-xl drop-shadow-2xl tracking-wide";
+    
+    const iconContainer = scanRing.querySelector('.text-center');
+    if (iconContainer) {
+        iconContainer.innerHTML = `
+            <i class="fas fa-check-circle text-6xl text-green-400 mb-3 animate-bounce-slow"></i>
+            <p id="scanStatusText" class="text-green-400 font-bold text-xl drop-shadow-2xl tracking-wide">✓ VERIFIED</p>
+            <p id="scanSubText" class="text-green-300 text-sm mt-2 drop-shadow-lg font-semibold">Success!</p>
+        `;
+    }
+    
+    if (resultsPlaceholder) resultsPlaceholder.classList.add('hidden');
+    
+    // Confetti effect
+    createConfetti();
+    
+    setTimeout(() => {
+        if (cameraRunning) setScanScanning();
+    }, 2500);
+}
+
+function setScanError() {
+    scanRing.className = "relative w-56 h-56 rounded-full border-4 border-red-500 flex items-center justify-center transition-all duration-500 shadow-2xl shadow-red-500/50 animate-shake";
+    
+    if (scanBorderEffect) {
+        scanBorderEffect.style.opacity = '0';
+    }
+    
+    scanStatusText.textContent = "✗ NOT FOUND";
+    scanSubText.textContent = "Try again";
+    scanStatusText.className = "text-red-400 font-bold text-xl drop-shadow-2xl tracking-wide";
+    
+    const iconContainer = scanRing.querySelector('.text-center');
+    if (iconContainer) {
+        iconContainer.innerHTML = `
+            <i class="fas fa-times-circle text-6xl text-red-400 mb-3 animate-bounce-slow"></i>
+            <p id="scanStatusText" class="text-red-400 font-bold text-xl drop-shadow-2xl tracking-wide">✗ NOT FOUND</p>
+            <p id="scanSubText" class="text-red-300 text-sm mt-2 drop-shadow-lg font-semibold">Try again</p>
+        `;
+    }
+    
+    if (resultsPlaceholder) resultsPlaceholder.classList.add('hidden');
+    
+    setTimeout(() => {
+        if (cameraRunning) setScanScanning();
+    }, 2500);
+}
+
+// ===== Confetti Animation =====
+function createConfetti() {
+    if (confettiFired) return;
+    confettiFired = true;
+    const colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'];
+    const confettiCount = 30;
+    
+    for (let i = 0; i < confettiCount; i++) {
+        const confetti = document.createElement('div');
+        confetti.style.position = 'fixed';
+        confetti.style.width = '10px';
+        confetti.style.height = '10px';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.left = '50%';
+        confetti.style.top = '50%';
+        confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+        confetti.style.zIndex = '9999';
+        confetti.style.pointerEvents = 'none';
+        
+        document.body.appendChild(confetti);
+        
+        const angle = (Math.PI * 2 * i) / confettiCount;
+        const velocity = 3 + Math.random() * 4;
+        const tx = Math.cos(angle) * velocity * 50;
+        const ty = Math.sin(angle) * velocity * 50;
+        
+        confetti.animate([
+            { transform: 'translate(0, 0) rotate(0deg)', opacity: 1 },
+            { transform: `translate(${tx}px, ${ty}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+        ], {
+            duration: 800 + Math.random() * 400,
+            easing: 'cubic-bezier(0, .9, .57, 1)'
+        }).onfinish = () => confetti.remove();
+    }
+}
+
+// =======================
+// CLOCK UPDATE with Animation
+// =======================
+function updateClock() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    });
+    const clockEl = document.getElementById('currentTime');
+    if (clockEl) {
+        if (clockEl.textContent !== timeStr) {
+            clockEl.style.transform = 'scale(1.05)';
+            setTimeout(() => clockEl.style.transform = 'scale(1)', 200);
+        }
+        clockEl.textContent = timeStr;
+    }
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// =======================
+// AUDIO & SOUND
+// =======================
 const _sharedAudio = { ctx: null };
 function getAudioCtx() {
     if (_sharedAudio.ctx) return _sharedAudio.ctx;
     try {
         _sharedAudio.ctx = new (window.AudioContext || window.webkitAudioContext)();
         return _sharedAudio.ctx;
-    } catch (e) {
+    } catch {
         return null;
     }
 }
-function playBeep(frequency = 800, duration = 200) {
-    const audioContext = getAudioCtx();
-    if (!audioContext) return;
-    try {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        oscillator.frequency.value = frequency;
-        oscillator.type = 'sine';
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + duration / 1000);
-    } catch (e) {
-        // Audio playback failed silently
-    }
-}
-const sounds = {
-    success: () => playBeep(1000, 150),
-    error: () => playBeep(400, 300),
-    unknown: () => playBeep(600, 200)
-};
 
-
-// ---------------- CAMERA START ----------------
-const video = document.getElementById("video");
-async function startCamera() {
-    if (!video) return console.error("Video element not found");
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { width: 640, height: 480, facingMode: "user" }
-        });
-        video.srcObject = stream;
-        // ensure video plays (some browsers require play call)
-        try { await video.play(); } catch (e) { /* ignore */ }
-    } catch (error) {
-        console.error("Camera Error:", error);
-        // Show user-friendly UI if desired
-    }
-}
-startCamera();
-
-
-// ---------------- UI ELEMENTS ----------------
-const waitingBlock = document.getElementById("waiting-block");
-const waitingBlockDefaultContent = waitingBlock ? waitingBlock.innerHTML : "";
-const employeeCard = document.getElementById("employee-card");
-const empPhoto = document.getElementById("emp-photo");
-const empName = document.getElementById("emp-name");
-const empDept = document.getElementById("emp-dept");
-const statusArea = document.getElementById("status-area");
-const logsList = document.getElementById("logs-list");
-
-// guard: if essential DOM missing, stop
-if (!waitingBlock || !employeeCard || !video) {
-    console.error("Kiosk DOM missing elements — check HTML IDs.");
+function playBeep(freq = 800, dur = 200) {
+    // Disabled per request
+    return;
 }
 
-
-// ---------------- STATUS BADGES ----------------
-const BADGE = {
-    "check-in":  { text:"CHECK-IN SUCCESS",  cls:"bg-green-500 text-white" },
-    "check-out": { text:"CHECK-OUT SUCCESS", cls:"bg-sky-500 text-white" },
-    "already":   { text:"ALREADY MARKED",    cls:"bg-yellow-400 text-black" },
-    "unknown":   { text:"UNKNOWN FACE",      cls:"bg-red-500 text-white" },
-};
-
-
-// ---------------- HELPER FUNCTIONS ----------------
-function getCurrentTime() {
-    return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-function makeBadge(status) {
-    const div = document.createElement("div");
-    const meta = BADGE[status] || { text: status, cls: "bg-gray-200" };
-    div.className = `px-6 py-2 rounded-full text-sm font-semibold shadow ${meta.cls}`;
-    div.textContent = meta.text;
-    return div;
-}
-function addLog(name, status, time, photo) {
-    if (!logsList) return;
-    const row = document.createElement("div");
-    row.className = "flex items-center gap-3 bg-gray-50 border border-gray-200 p-2 rounded-lg";
-    const img = document.createElement("img");
-    img.src = photo || "/static/default_user.png";
-    img.className = "w-10 h-10 rounded-md border object-cover";
-    const meta = document.createElement("div");
-    const n = document.createElement("p");
-    const s = document.createElement("p");
-    n.className = "font-semibold text-gray-800";
-    s.className = "text-sm text-gray-500";
-    n.textContent = name || "Unknown";
-    s.textContent = `${(BADGE[status]||{text:status}).text} • ${time || getCurrentTime()}`;
-    meta.appendChild(n); meta.appendChild(s);
-    row.appendChild(img); row.appendChild(meta);
-    logsList.prepend(row);
-    if (logsList.children.length > 5) logsList.removeChild(logsList.lastChild);
-}
-
+// =======================
+// SPEAK with Animation
+// =======================
 function canSpeak(name) {
+    if (!voiceEnabled) return false;
+    
     const now = Date.now();
-
-    // same person + within cooldown
     if (lastSpokenName === name && (now - lastSpokenTime) < VOICE_COOLDOWN_MS) {
         return false;
     }
-
     lastSpokenName = name;
     lastSpokenTime = now;
     return true;
 }
 
+window.speak = function (msg) {
+    if (!voiceEnabled) return;
+    if (!("speechSynthesis" in window)) return;
+    const u = new SpeechSynthesisUtterance(msg);
+    u.lang = "en-IN";
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+};
 
-// ---------------- UPDATE UI AFTER RECOGNITION ----------------
-function updateUI(result) {
-    console.log("updateUI called with:", result);
-    if (!waitingBlock) return;
-    
-    waitingBlock.innerHTML = waitingBlockDefaultContent;
-    waitingBlock.classList.add("hidden");
-    employeeCard.classList.remove("hidden");
-    
-    empName.textContent = result.name || "Unknown";
-    empDept.textContent = result.dept || "";
-    empPhoto.src = result.photoUrl || "/static/default_user.png";
-    
-    statusArea.innerHTML = "";
-    statusArea.appendChild(makeBadge(result.status));
-    
-    if (result.status === "check-in" || result.status === "check-out") sounds.success();
-    else if (result.status === "already") sounds.error();
-    
-    if (result.status !== "already") addLog(result.name, result.status, result.time, result.photoUrl);
-    
-    console.log("UI updated successfully");
-}
-
-function showUnknownAlert(time) {
-    if (!waitingBlock) return;
-    waitingBlock.classList.remove("hidden");
-    employeeCard.classList.add("hidden");
-    waitingBlock.innerHTML = `
-        <p class="font-semibold text-gray-900">Unknown face detected</p>
-        <p class="text-xs text-gray-500">Please center your face in the frame and hold still.</p>
-        <p class="text-xs text-gray-400 mt-1">Last seen at ${time || getCurrentTime()}</p>
-    `;
-    sounds.unknown();
-}
-
-
-// ---------------- LIVENESS DETECTION ----------------
-let livenessCheckActive = false;
-let livenessPassed = true; // always allow recognition
-let currentChallenge = null;
-
-// display messages for challenges
-function getChallengeMessage(challenge) {
-    const messages = {
-        "blink": "👁️ Please blink naturally",
-        "head_left": "⬅️ Turn your head LEFT",
-        "head_right": "➡️ Turn your head RIGHT"
-    };
-    return messages[challenge] || "Verifying...";
-}
-function showLivenessChallenge(challenge, progress, message) {
-    if (!waitingBlock) return;
-    waitingBlock.classList.remove("hidden");
-    employeeCard.classList.add("hidden");
-    const progressBar = Math.max(0, Math.min(100, progress || 0));
-    waitingBlock.innerHTML = `
-        <div class="text-center">
-            <p class="text-2xl mb-2">${getChallengeMessage(challenge)}</p>
-            <p class="text-sm text-gray-600 mb-3">${message || ""}</p>
-            <div class="w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-blue-500 h-2 rounded-full transition-all" style="width: ${progressBar}%"></div>
-            </div>
-        </div>
-    `;
-}
-
-
-// ---------------- NETWORK + LIVENESS CHECK with backoff ----------------
-let consecutiveErrors = 0;
-let lastSuccessTime = 0;
-const MAX_BACKOFF = 3000; // ms
-async function checkLiveness(frameData) {
-    return true;  // always pass - liveness disabled
-}
-
-
-// ---------------- POLLING LOOP ----------------
-const POLLING_DELAY_MS = 1200;  // interval between loops (reduced CPU usage)
-let sendingFrame = false;
-
-async function sendFrame() {
-    if (sendingFrame) return;
-    if (!video || !video.videoWidth || !video.videoHeight) return;
-
-    sendingFrame = true;
-
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
-    const frameData = canvas.toDataURL("image/jpeg", 0.7);
-
+// =======================
+// CAMERA DETECTION
+// =======================
+async function loadCameras() {
     try {
-        // Liveness disabled - always proceed to recognition
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        if (!cameraSelect) return;
+        
+        const currentValue = cameraSelect.value;
+        cameraSelect.innerHTML = '<option value="">📹 Select Camera Device</option>';
+        
+        devices.forEach((d, idx) => {
+            if (d.kind === "videoinput") {
+                const o = document.createElement("option");
+                o.value = d.deviceId;
+                o.textContent = d.label || `Camera ${idx + 1}`;
+                cameraSelect.appendChild(o);
+            }
+        });
+        
+        if (currentValue) cameraSelect.value = currentValue;
+    } catch (err) {
+        console.error("Error loading cameras:", err);
+    }
+}
 
-        // Step 2: Recognition
+document.addEventListener("DOMContentLoaded", () => {
+    loadCameras();
+    // Add initial page load animation
+    document.body.style.opacity = '0';
+    setTimeout(() => {
+        document.body.style.transition = 'opacity 0.5s';
+        document.body.style.opacity = '1';
+    }, 100);
+});
 
-        // small debounce: if last success very recent, wait a bit
-        const now = Date.now();
-        if (now - lastSuccessTime < 500) return;
+navigator.mediaDevices.ondevicechange = async () => {
+    await loadCameras();
+    console.log("📹 Camera devices updated");
+};
 
-        // hard cooldown: pause sending frames for a short period after a
-        // successful recognition to avoid repeated actions.
-        if (now < hardCooldownUntil) {
-            sendingFrame = false;
+// =======================
+// START CAMERA with Animation
+// =======================
+if (startBtn) {
+    startBtn.addEventListener("click", async () => {
+        if (cameraRunning || startingCamera) return;
+
+        if (!cameraSelect.value) {
+            // Shake the select element
+            cameraSelect.classList.add('animate-shake');
+            setTimeout(() => cameraSelect.classList.remove('animate-shake'), 500);
+            alert("⚠️ Please select a camera device first");
+            cameraSelect.focus();
             return;
         }
 
-        // Use promise-chain so we can match the expected pattern
-        fetch("/kiosk/recognize", {
+        selectedDeviceId = cameraSelect.value;
+        
+        // Add loading animation to button
+        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+        startBtn.disabled = true;
+        
+        try {
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+                video.srcObject = null;
+                stream = null;
+            }
+
+            startingCamera = true;
+
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true
+            });
+
+            video.muted = true;
+            video.playsInline = true;
+            video.srcObject = stream;
+
+            try {
+                await video.play();
+            } catch (playErr) {
+                if (playErr.name === 'AbortError') {
+                    await new Promise(r => setTimeout(r, 120));
+                    await video.play();
+                } else {
+                    throw playErr;
+                }
+            }
+
+            startingCamera = false;
+            cameraRunning = true;
+            
+            startBtn.classList.add("hidden");
+            if (stopBtn) stopBtn.classList.remove("hidden");
+            
+            if (!cameraSwitchAllowed) {
+                cameraSelect.disabled = true;
+                cameraSelect.classList.add("opacity-50", "cursor-not-allowed");
+            } else {
+                cameraSelect.classList.add("hidden");
+            }
+            
+            if (statusText) {
+                statusText.textContent = "Camera Active";
+                statusText.classList.add('animate-pulse-slow');
+            }
+            if (statusDot) {
+                statusDot.classList.remove("bg-red-500");
+                statusDot.classList.add("bg-green-500");
+            }
+
+            setScanScanning();
+            await loadCameras();
+            if (selectedDeviceId) {
+                cameraSelect.value = selectedDeviceId;
+            }
+
+            startRecognitionLoop();
+        } catch (err) {
+            alert("❌ Camera access denied or unavailable");
+            console.error("Camera error:", err);
+            startingCamera = false;
+            startBtn.innerHTML = '<i class="fas fa-play text-sm"></i> Start Camera';
+            startBtn.disabled = false;
+        }
+    });
+}
+
+// =======================
+// STOP CAMERA
+// =======================
+if (stopBtn) {
+    stopBtn.addEventListener("click", () => {
+        if (!stream) return;
+
+        stopRecognitionLoop();
+        stream.getTracks().forEach(t => t.stop());
+        video.srcObject = null;
+        stream = null;
+
+        cameraRunning = false;
+        stopBtn.classList.add("hidden");
+        if (startBtn) {
+            startBtn.classList.remove("hidden");
+            startBtn.innerHTML = '<i class="fas fa-play text-sm"></i> Start Camera';
+            startBtn.disabled = false;
+        }
+        
+        if (cameraSelect) {
+            cameraSelect.disabled = false;
+            cameraSelect.classList.remove("opacity-50", "cursor-not-allowed", "hidden");
+        }
+        
+        if (statusText) {
+            statusText.textContent = "Camera Off";
+            statusText.classList.remove('animate-pulse-slow');
+        }
+        if (statusDot) {
+            statusDot.classList.remove("bg-green-500");
+            statusDot.classList.add("bg-red-500");
+        }
+
+        setScanIdle();
+        
+        if (waitingBlock) waitingBlock.classList.remove("hidden");
+        if (employeeCard) employeeCard.classList.add("hidden");
+        if (unknownCard) unknownCard.classList.add("hidden");
+    });
+}
+
+// =======================
+// UI UPDATE with Animations
+// =======================
+function updateUI(data) {
+    if (waitingBlock) waitingBlock.classList.add("hidden");
+    if (unknownCard) unknownCard.classList.add("hidden");
+    
+    if (employeeCard) {
+        employeeCard.classList.remove("hidden");
+        employeeCard.classList.add("animate-scale-in");
+    }
+
+    if (empName) empName.textContent = data.name || "Unknown";
+    if (empDept) empDept.textContent = data.dept || "";
+    if (empPhoto) {
+        empPhoto.src = data.photoUrl || "/static/default_user.png";
+        empPhoto.classList.add("animate-scale-in");
+    }
+
+    if (empStatus) {
+        empStatus.className = 'px-4 py-2 text-sm font-bold rounded-xl shadow-lg';
+        
+        if (data.status === "check-in") {
+            empStatus.textContent = "✓ CHECKED IN";
+            empStatus.classList.add('bg-gradient-to-r', 'from-green-600', 'to-emerald-600', 'text-white', 'animate-pulse-slow');
+        } else if (data.status === "check-out") {
+            empStatus.textContent = "→ CHECKED OUT";
+            empStatus.classList.add('bg-gradient-to-r', 'from-blue-600', 'to-indigo-600', 'text-white', 'animate-pulse-slow');
+        } else if (data.status === "already") {
+            empStatus.textContent = "⚠ ALREADY MARKED";
+            empStatus.classList.add('bg-gradient-to-r', 'from-amber-600', 'to-orange-600', 'text-white');
+        } else {
+            empStatus.textContent = data.status || "";
+        }
+    }
+
+    if (data.status === "check-in") {
+        playBeep(1000, 150);
+        if (canSpeak(data.name)) speak(`Welcome ${data.name}`);
+        setScanSuccess();
+    } else if (data.status === "check-out") {
+        playBeep(900, 150);
+        if (canSpeak(data.name)) speak(`Goodbye ${data.name}`);
+        setScanSuccess();
+    } else if (data.status === "already") {
+        playBeep(400, 300);
+        if (canSpeak(data.name)) speak(`${data.name}, already marked`);
+    }
+
+    addLog(data.name, data.status, data.time, data.photoUrl);
+}
+
+// =======================
+// LOGS with Slide Animation
+// =======================
+function addLog(name, status, time, photo) {
+    if (!logsList) return;
+    
+    const row = document.createElement("div");
+    row.className = "flex items-center gap-4 bg-gradient-to-r from-gray-50 to-white border-2 border-gray-200 p-4 rounded-xl hover:shadow-xl transition-all duration-300 hover:scale-[1.02] animate-slide-in-right";
+
+    const img = document.createElement("img");
+    img.src = photo || "/static/default_user.png";
+    img.className = "w-12 h-12 rounded-xl border-2 border-gray-300 object-cover shadow-lg";
+
+    const meta = document.createElement("div");
+    meta.className = "flex-1 min-w-0";
+
+    const nameEl = document.createElement("p");
+    nameEl.className = "font-bold text-gray-900 text-base truncate";
+    nameEl.textContent = name || "Unknown";
+
+    const statusEl = document.createElement("p");
+    statusEl.className = "text-xs text-gray-600 mt-1 font-medium";
+    const statusIcon = status === "check-in" ? "✓" : status === "check-out" ? "→" : "⚠";
+    statusEl.textContent = `${statusIcon} ${status.toUpperCase()} • ${time || new Date().toLocaleTimeString()}`;
+
+    meta.appendChild(nameEl);
+    meta.appendChild(statusEl);
+    row.appendChild(img);
+    row.appendChild(meta);
+
+    logsList.prepend(row);
+    
+    while (logsList.children.length > 5) {
+        logsList.removeChild(logsList.lastChild);
+    }
+}
+
+// =======================
+// RECOGNITION LOOP
+// =======================
+const POLLING_DELAY_MS = 1200;
+
+async function sendFrame() {
+    if (!cameraRunning || sendingFrame || !video.videoWidth) return;
+    sendingFrame = true;
+
+    try {
+        if (Date.now() < hardCooldownUntil) return;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+        const frame = canvas.toDataURL("image/jpeg", 0.7);
+
+        const res = await fetch("/kiosk/recognize", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ frame: frameData })
-        })
-        .then(res => {
-            if (!res.ok) {
-                return res.json().catch(() => null).then(data => {
-                    if (res.status === 403 && data && data.message === "Liveness check required") {
-                        resetLiveness();
-                        showLivenessChallenge("blink", 0, "Session expired — please verify again");
-                    }
-                    return null;
-                });
-            }
-            return res.json().catch(() => null);
-        })
-        .then(data => {
-            if (!data) return;
-
-            console.log("KIOSK RESPONSE:", data);
-
-            if (data.status === "ignore") return;
-            if (data.status === "unknown") {
-                showUnknownAlert(data.time);
-                resetLiveness();
-                return;
-            }
-
-            // Matched — update UI
-            console.log("Recognition result:", data);
-            updateUI(data);
-
-            // speak based on actual backend statuses
-            if (data.status === "check-in" && canSpeak(data.name)) {
-                speak(`Welcome ${data.name}. Attendance marked successfully.`);
-            }
-
-            if (data.status === "check-out" && canSpeak(data.name)) {
-                speak(`Goodbye ${data.name}. Check-out recorded.`);
-            }
-
-            if (data.status === "already" && canSpeak(data.name)) {
-                speak(`${data.name}, your attendance is already marked.`);
-            }
-
-            // apply hard cooldown so a single face causes one action
-            try {
-                hardCooldownUntil = Date.now() + 4000; // 4 sec pause
-            } catch (e) {}
-
-            // Reset liveness after showing UI for a short while
-            setTimeout(resetLiveness, 3000);
-        })
-        .catch(() => {
-            // silent failure
+            body: JSON.stringify({ frame })
         });
+        
+        const data = await res.json();
+        if (!data) return;
+
+        if (data.status === "unknown") {
+            playBeep(600, 200);
+            if (canSpeak("unknown")) speak("Face not recognized");
+            showUnknownCard();
+            hardCooldownUntil = Date.now() + RECOGNITION_COOLDOWN_MS;
+            return;
+        }
+
+        updateUI(data);
+        hardCooldownUntil = Date.now() + RECOGNITION_COOLDOWN_MS;
 
     } catch (err) {
-        // Recognition error (silent in production)
+        console.error("Recognition error:", err);
     } finally {
         sendingFrame = false;
     }
 }
 
-function resetLiveness() {
-    livenessCheckActive = false;  // keep liveness disabled
-    livenessPassed = true;  // always allow recognition
-    currentChallenge = null;
-    // restore waitingBlock default (prevents stuck hidden)
-    if (waitingBlock) waitingBlock.innerHTML = waitingBlockDefaultContent;
-}
-
-// loop driver with setInterval-like scheduling that tolerates drift
 async function startRecognitionLoop() {
-    while (true) {
+    if (recognitionRunning) return;
+    recognitionRunning = true;
+    while (recognitionRunning) {
         await sendFrame();
         await new Promise(r => setTimeout(r, POLLING_DELAY_MS));
     }
 }
 
-startRecognitionLoop();
+function stopRecognitionLoop() {
+    recognitionRunning = false;
+}
 
 // =======================
-// VOICE ANNOUNCEMENT (global)
+// SHOW UNKNOWN CARD
 // =======================
-window.speak = function (message) {
-    console.log("🔊 SPEAK:", message);
+function showUnknownCard() {
+    if (!unknownCard || !waitingBlock || !employeeCard) return;
+    
+    waitingBlock.classList.add('hidden');
+    employeeCard.classList.add('hidden');
+    unknownCard.classList.remove('hidden');
+    unknownCard.classList.add('animate-shake');
+    
+    setScanError();
 
-    if (!("speechSynthesis" in window)) {
-        console.log("Speech API not supported");
-        return;
+    setTimeout(() => {
+        unknownCard.classList.add('hidden');
+        unknownCard.classList.remove('animate-shake');
+        waitingBlock.classList.remove('hidden');
+    }, 2500);
+}
+
+// =======================
+// SETTINGS + PIN LOGIC
+// =======================
+const openSettingsBtn = document.getElementById("openSettingsBtn");
+const openExitBtn = document.getElementById("openExitBtn");
+const pinModal = document.getElementById("pinModal");
+const pinInput = document.getElementById("pinInput");
+const pinVerify = document.getElementById("pinVerify");
+const pinCancel = document.getElementById("pinCancel");
+const settingsPanel = document.getElementById("settingsPanel");
+const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+
+const voiceToggle = document.getElementById("voiceToggle");
+const cameraSwitchToggle = document.getElementById("cameraSwitchToggle");
+const cameraStatusToggle = document.getElementById("cameraStatusToggle");
+const cameraStatusBlock = document.getElementById("cameraStatusBlock");
+
+let pendingExit = false;
+
+function updateToggleUI(toggleElement, isEnabled) {
+    const toggle = toggleElement.querySelector(".toggle-switch");
+    const knob = toggleElement.querySelector(".toggle-knob");
+    
+    if (!toggle || !knob) return;
+    
+    if (isEnabled) {
+        toggle.classList.remove("bg-gray-400");
+        toggle.classList.add("bg-green-500");
+        knob.classList.remove("translate-x-0");
+        knob.classList.add("translate-x-7");
+    } else {
+        toggle.classList.remove("bg-green-500");
+        toggle.classList.add("bg-gray-400");
+        knob.classList.remove("translate-x-7");
+        knob.classList.add("translate-x-0");
     }
+}
 
-    const utterance = new SpeechSynthesisUtterance(message);
-    utterance.lang = "en-IN";
-    utterance.rate = 1;
-    utterance.pitch = 1;
+if (openSettingsBtn && pinModal) {
+    openSettingsBtn.addEventListener("click", () => {
+        pendingExit = false;
+        pinInput.value = "";
+        pinModal.classList.remove("hidden");
+        pinModal.classList.add("flex");
+        setTimeout(() => pinInput.focus(), 50);
+    });
+}
 
-    speechSynthesis.cancel();
-    speechSynthesis.speak(utterance);
-};
+if (openExitBtn && pinModal) {
+    openExitBtn.addEventListener("click", () => {
+        pendingExit = true;
+        pinInput.value = "";
+        pinModal.classList.remove("hidden");
+        pinModal.classList.add("flex");
+        setTimeout(() => pinInput.focus(), 50);
+    });
+}
+
+if (pinCancel && pinModal) {
+    pinCancel.addEventListener("click", () => {
+        pendingExit = false;
+        pinModal.classList.add("hidden");
+        pinModal.classList.remove("flex");
+    });
+}
+
+if (pinVerify) {
+    pinVerify.addEventListener("click", async () => {
+        const pin = (pinInput.value || "").trim();
+        if (!pin) {
+            pinInput.classList.add('animate-shake');
+            setTimeout(() => pinInput.classList.remove('animate-shake'), 500);
+            alert("Enter PIN");
+            pinInput.focus();
+            return;
+        }
+
+        if (pendingExit) {
+            pinVerify.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            pinVerify.disabled = true;
+            try {
+                const res = await fetch('/kiosk/exit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.success) {
+                    window.location.href = data.redirect || '/';
+                } else {
+                    alert(data.message || 'Invalid PIN');
+                    pinInput.value = '';
+                    pinInput.focus();
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Network error. Try again.');
+            } finally {
+                pinVerify.innerHTML = 'Verify';
+                pinVerify.disabled = false;
+                pendingExit = false;
+            }
+            return;
+        }
+
+        pinVerify.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        pinVerify.disabled = true;
+        try {
+            const res = await fetch('/kiosk/verify_pin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin })
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok && data.success) {
+                pinModal.classList.add("hidden");
+                pinModal.classList.remove("flex");
+                settingsPanel.classList.remove("translate-x-full");
+            } else {
+                alert(data.message || "Invalid PIN");
+                pinInput.value = "";
+                pinInput.focus();
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Network error. Try again.");
+        } finally {
+            pinVerify.innerHTML = 'Verify';
+            pinVerify.disabled = false;
+        }
+    });
+}
+
+if (pinInput) {
+    pinInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter" && pinVerify) {
+            pinVerify.click();
+        }
+    });
+}
+
+if (closeSettingsBtn && settingsPanel) {
+    closeSettingsBtn.addEventListener("click", () => {
+        settingsPanel.classList.add("translate-x-full");
+    });
+}
+
+if (voiceToggle) {
+    voiceToggle.addEventListener("click", () => {
+        voiceEnabled = !voiceEnabled;
+        updateToggleUI(voiceToggle, voiceEnabled);
+        console.log("🔊 Voice:", voiceEnabled ? "ON" : "OFF");
+    });
+}
+
+if (cameraSwitchToggle) {
+    cameraSwitchToggle.addEventListener("click", () => {
+        cameraSwitchAllowed = !cameraSwitchAllowed;
+        updateToggleUI(cameraSwitchToggle, cameraSwitchAllowed);
+        
+        if (cameraSelect) {
+            if (cameraRunning && !cameraSwitchAllowed) {
+                cameraSelect.disabled = true;
+                cameraSelect.classList.add("opacity-50", "cursor-not-allowed");
+            } else if (!cameraRunning) {
+                cameraSelect.disabled = false;
+                cameraSelect.classList.remove("opacity-50", "cursor-not-allowed");
+            }
+        }
+        
+        console.log("📹 Camera Switch:", cameraSwitchAllowed ? "ALLOWED" : "BLOCKED");
+    });
+}
+
+if (cameraStatusToggle) {
+    cameraStatusToggle.addEventListener("click", () => {
+        showCameraStatus = !showCameraStatus;
+        updateToggleUI(cameraStatusToggle, showCameraStatus);
+        if (cameraStatusBlock) {
+            if (showCameraStatus) {
+                cameraStatusBlock.classList.remove('hidden');
+            } else {
+                cameraStatusBlock.classList.add('hidden');
+            }
+        }
+        console.log("ℹ️ Show Camera Status:", showCameraStatus ? "ON" : "OFF");
+    });
+}

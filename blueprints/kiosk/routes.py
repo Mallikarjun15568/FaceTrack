@@ -127,7 +127,8 @@ def kiosk_recognize():
 def kiosk_exit():
     """Exit kiosk mode - requires PIN authentication to prevent unauthorized exit"""
     if request.method == "GET":
-        return render_template("kiosk_exit.html")
+        # Redirect GET requests to the kiosk UI — we use the PIN modal there.
+        return redirect(url_for("kiosk.kiosk_page"))
 
     # POST: Verify PIN
     data = request.get_json()
@@ -154,6 +155,47 @@ def kiosk_exit():
         session.pop("in_kiosk", None)
         session["pin_attempts"] = 0
         return jsonify({"success": True, "redirect": "/dashboard"})
+    else:
+        attempts = session.get("pin_attempts", 0) + 1
+        session["pin_attempts"] = attempts
+
+        if attempts >= 5:
+            session["pin_lockout_until"] = time.time() + 300  # 5 min lockout
+            session["pin_attempts"] = 0
+            return jsonify({"success": False, "message": "Too many attempts. Locked for 5 minutes."}), 403
+
+        return jsonify({"success": False, "message": f"Incorrect PIN. {5 - attempts} attempts left."}), 401
+
+
+# ---------------------------------------------------------
+# VERIFY PIN (for UI-only checks, does NOT exit kiosk)
+# ---------------------------------------------------------
+@bp.route("/verify_pin", methods=["POST"])
+def verify_pin():
+    """Verify PIN without exiting kiosk mode (used by kiosk UI to unlock settings)."""
+    data = request.get_json()
+    pin = data.get("pin", "")
+
+    # Brute-force protection (reuse same session keys)
+    lockout_until = session.get("pin_lockout_until", 0)
+    if time.time() < lockout_until:
+        remaining = int(lockout_until - time.time())
+        return jsonify({"success": False, "message": f"Locked out. Try again in {remaining}s"}), 403
+
+    # Get stored PIN hash
+    pin_hash = get_setting("kiosk_pin_hash")
+    if not pin_hash or pin_hash == "NULL":
+        return jsonify({"success": False, "message": "No PIN set. Contact admin."}), 403
+
+    # Verify PIN
+    try:
+        pin_valid = check_password_hash(pin_hash, pin)
+    except Exception:
+        return jsonify({"success": False, "message": "PIN verification error."}), 500
+
+    if pin_valid:
+        session["pin_attempts"] = 0
+        return jsonify({"success": True, "message": "PIN verified."})
     else:
         attempts = session.get("pin_attempts", 0) + 1
         session["pin_attempts"] = attempts

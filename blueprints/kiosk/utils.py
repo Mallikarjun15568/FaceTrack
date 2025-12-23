@@ -176,6 +176,7 @@ def mark_attendance(emp_id, snap_path, app=None):
         """, (emp_id, today_date, now, "check-in", snap_path, now))
         return {"status": "check-in", "timestamp": now}
 
+    # cooldown_seconds controlled by app.config['KIOSK_COOLDOWN_SECONDS'] (seconds)
     cooldown_seconds = float(app.config.get("KIOSK_COOLDOWN_SECONDS", 5)) if app else 5
     last_timestamp = previous.get("timestamp") or previous.get("check_in_time") or now
 
@@ -252,14 +253,13 @@ def recognize_and_mark(frame_b64, app):
     from utils.face_encoder import face_encoder
     threshold = float(app.config.get("EMBED_THRESHOLD", 0.75))
     result = face_encoder.match(embedding, threshold=threshold)
-    
+
     if result is None:
         match = None
         sim_score = 0.0
     else:
-        emp_id_match, distance = result
-        # Convert distance back to similarity for display
-        sim_score = 1.0 - distance
+        emp_id_match, similarity = result
+        sim_score = float(similarity)
         # Find full employee details from cache
         db_entries = load_embeddings()
         match = next((e for e in db_entries if e["emp_id"] == emp_id_match), None)

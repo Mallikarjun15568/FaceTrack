@@ -3,6 +3,14 @@ module.exports = {
     "./templates/**/*.html",
     "./static/js/**/*.js"
   ],
+  safelist: [
+    'btn-primary',
+    'badge-already',
+    'kiosk-left--premium',
+    'kiosk-top--premium',
+    'pill-btn',
+    'btn-muted'
+  ],
   theme: {
     extend: {
       keyframes: {

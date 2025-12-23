@@ -2,7 +2,7 @@ import os
 import csv
 import io
 from datetime import datetime
-from flask import render_template, request, jsonify, send_file, session, redirect, url_for, flash
+from flask import render_template, request, jsonify, send_file, session, redirect, url_for, flash, current_app
 from utils.db import get_connection, close_db
 from blueprints.auth.utils import login_required
 from . import bp
@@ -91,6 +91,64 @@ def settings_api():
     for key in DEFAULTS.keys():
         if key in data:
             save_setting(key, data[key])
+
+    # --- Apply immediate runtime config updates for important keys ---
+    try:
+        # Recognition threshold -> EMBED_THRESHOLD (float)
+        if 'recognition_threshold' in data:
+            try:
+                current_app.config['EMBED_THRESHOLD'] = float(data.get('recognition_threshold'))
+            except Exception:
+                pass
+
+        # Duplicate Attendance Interval (minutes) -> KIOSK_COOLDOWN_SECONDS (seconds)
+        if 'duplicate_interval' in data:
+            try:
+                mins = float(data.get('duplicate_interval'))
+                # if invalid or zero, keep existing
+                if mins >= 0:
+                    current_app.config['KIOSK_COOLDOWN_SECONDS'] = mins * 60.0
+            except Exception:
+                pass
+
+        # Snapshot mode -> SAVE_SNAPSHOTS (boolean override)
+        if 'snapshot_mode' in data:
+            current_app.config['SAVE_SNAPSHOTS'] = (str(data.get('snapshot_mode')).lower() == 'on')
+
+        # Minimum confidence (store for runtime checks)
+        if 'min_confidence' in data:
+            try:
+                current_app.config['MIN_CONFIDENCE'] = float(data.get('min_confidence'))
+            except Exception:
+                pass
+
+        # Camera index (runtime default)
+        if 'camera_index' in data:
+            try:
+                current_app.config['DEFAULT_CAMERA_INDEX'] = int(data.get('camera_index'))
+            except Exception:
+                pass
+
+        # Session timeout -> PERMANENT_SESSION_LIFETIME (seconds)
+        if 'session_timeout' in data:
+            try:
+                st_min = int(data.get('session_timeout'))
+                current_app.config['PERMANENT_SESSION_LIFETIME'] = st_min * 60
+            except Exception:
+                pass
+
+        # Misc: login_alert, company_name, company_logo, late_time saved already; optionally mirror to config
+        if 'login_alert' in data:
+            current_app.config['LOGIN_ALERT'] = data.get('login_alert')
+        if 'company_name' in data:
+            current_app.config['COMPANY_NAME'] = data.get('company_name')
+        if 'company_logo' in data:
+            current_app.config['COMPANY_LOGO'] = data.get('company_logo')
+        if 'late_time' in data:
+            current_app.config['LATE_TIME'] = data.get('late_time')
+    except Exception:
+        # don't fail saving if runtime sync has a problem
+        pass
 
     return jsonify(success=True)
 

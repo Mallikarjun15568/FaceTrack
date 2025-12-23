@@ -33,7 +33,7 @@ class FaceEncoder:
             emb_blob = row.get("embedding")
             if emb_blob is None:
                 continue
-
+            
             try:
                 emb = self._decode_embedding(emb_blob)
             except Exception as exc:
@@ -44,11 +44,22 @@ class FaceEncoder:
                 print("[!] Skipping embedding with unexpected size", emb.shape)
                 continue
 
+            # Normalize embedding to unit length to allow cosine similarity
+            try:
+                norm = np.linalg.norm(emb)
+                if norm > 0:
+                    emb = emb.astype(np.float32) / float(norm)
+                else:
+                    emb = emb.astype(np.float32)
+            except Exception:
+                emb = emb.astype(np.float32)
+
             self.embeddings.append(emb)
             self.employee_ids.append(row["emp_id"])
 
         if self.embeddings:
-            self._emb_matrix = np.vstack(self.embeddings)
+            # Stack normalized embeddings as rows
+            self._emb_matrix = np.vstack(self.embeddings).astype(np.float32)
         else:
             self._emb_matrix = np.empty((0, 512), dtype=np.float32)
 
@@ -85,15 +96,32 @@ class FaceEncoder:
         if self._emb_matrix.size == 0:
             return None
 
-        dists = np.linalg.norm(self._emb_matrix - emb, axis=1)
+        # Ensure incoming embedding is normalized
+        try:
+            emb_arr = np.asarray(emb, dtype=np.float32)
+            nrm = np.linalg.norm(emb_arr)
+            if nrm > 0:
+                emb_arr = emb_arr / float(nrm)
+        except Exception:
+            emb_arr = np.asarray(emb, dtype=np.float32)
 
-        idx = int(np.argmin(dists))
-        dist = float(dists[idx])
+        # Compute cosine similarities (dot product since vectors are normalized)
+        sims = np.dot(self._emb_matrix, emb_arr)
+        idx = int(np.argmax(sims))
+        best_sim = float(sims[idx])
 
-        print("🔍 Match Score:", dist)
+        print("🔍 Match Score:", best_sim)
 
-        if dist <= threshold:
-            return self.employee_ids[idx], dist
+        # For cosine similarity, higher is better. Threshold is interpreted as minimum similarity.
+        if threshold is None:
+            from flask import current_app
+            try:
+                threshold = float(current_app.config.get("EMBED_THRESHOLD", 0.75))
+            except:
+                threshold = 0.75
+
+        if best_sim >= threshold:
+            return self.employee_ids[idx], best_sim
 
         return None
 
