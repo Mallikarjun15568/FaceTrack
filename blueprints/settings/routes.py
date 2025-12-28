@@ -6,6 +6,8 @@ from flask import render_template, request, jsonify, send_file, session, redirec
 from utils.db import get_connection, close_db
 from blueprints.auth.utils import login_required
 from . import bp
+from werkzeug.utils import secure_filename
+from PIL import Image
 
 UPLOAD_FOLDER = "static/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -53,6 +55,150 @@ def load_settings():
     return out
 
 
+# ------------------
+# Validation helpers
+# ------------------
+ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "webp"}
+ALLOWED_MIME = {"image/png", "image/jpeg", "image/webp"}
+
+
+def _bad_request_with_audit(message):
+    # Log validation/upload failure to audit_logs with minimal info
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO audit_logs (user_id, action, module, details, ip_address)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            session.get("user_id"),
+            "REJECT",
+            "settings",
+            message,
+            request.remote_addr,
+        ))
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception:
+        # Keep failure silent for audit logging, return original error to client
+        pass
+
+    return jsonify(success=False, error=message), 400
+
+
+def _validate_time_hhmm(value):
+    if not isinstance(value, str):
+        return False
+    parts = value.split(":")
+    if len(parts) != 2:
+        return False
+    hh, mm = parts
+    if not (hh.isdigit() and mm.isdigit()):
+        return False
+    h = int(hh)
+    m = int(mm)
+    return 0 <= h <= 23 and 0 <= m <= 59
+
+
+def _validate_settings_payload(data):
+    # Ensure dict
+    if not isinstance(data, dict):
+        return False, "Invalid JSON payload"
+
+    # Reject unknown keys
+    for k in data.keys():
+        if k not in DEFAULTS:
+            return False, f"Unknown setting key: {k}"
+
+    # Per-key validation
+    # recognition_threshold: float between 0.30 and 0.80
+    if 'recognition_threshold' in data:
+        try:
+            v = float(data.get('recognition_threshold'))
+        except Exception:
+            return False, "recognition_threshold must be a float"
+        if not (0.30 <= v <= 0.80):
+            return False, "recognition_threshold out of allowed range (0.30-0.80)"
+
+    # duplicate_interval: numeric minutes, 0 <= v <= 1440
+    if 'duplicate_interval' in data:
+        try:
+            v = float(data.get('duplicate_interval'))
+        except Exception:
+            return False, "duplicate_interval must be a number"
+        if v < 0 or v > 1440:
+            return False, "duplicate_interval out of range (0-1440 minutes)"
+
+    # snapshot_mode: enum
+    if 'snapshot_mode' in data:
+        v = str(data.get('snapshot_mode')).lower()
+        if v not in ('on', 'off'):
+            return False, "snapshot_mode must be 'on' or 'off'"
+
+    # late_time: HH:MM
+    if 'late_time' in data:
+        if not _validate_time_hhmm(data.get('late_time')):
+            return False, "late_time must be in HH:MM 24-hour format"
+
+    # min_confidence: 0-100
+    if 'min_confidence' in data:
+        try:
+            v = float(data.get('min_confidence'))
+        except Exception:
+            return False, "min_confidence must be a number"
+        if v < 0 or v > 100:
+            return False, "min_confidence must be between 0 and 100"
+
+    # company_name: string <=255
+    if 'company_name' in data:
+        v = data.get('company_name')
+        if v is None:
+            return False, "company_name cannot be null"
+        if not isinstance(v, str):
+            return False, "company_name must be a string"
+        if len(v) > 255:
+            return False, "company_name too long"
+
+    # company_logo: string path (optional)
+    if 'company_logo' in data:
+        v = data.get('company_logo')
+        if v is None:
+            return False, "company_logo cannot be null"
+        if not isinstance(v, str):
+            return False, "company_logo must be a string path"
+        if len(v) > 1024:
+            return False, "company_logo path too long"
+
+    # camera_index: int 0-10
+    if 'camera_index' in data:
+        try:
+            v = int(data.get('camera_index'))
+        except Exception:
+            return False, "camera_index must be an integer"
+        if v < 0 or v > 10:
+            return False, "camera_index out of allowed range (0-10)"
+
+    # session_timeout: allowed values 15,30,60
+    if 'session_timeout' in data:
+        try:
+            v = int(data.get('session_timeout'))
+        except Exception:
+            return False, "session_timeout must be an integer"
+        if v not in (15, 30, 60):
+            return False, "session_timeout must be one of 15, 30, 60"
+
+    # login_alert: 'off' or a non-empty string (e.g., 'email')
+    if 'login_alert' in data:
+        v = data.get('login_alert')
+        if not isinstance(v, str):
+            return False, "login_alert must be a string"
+        if v != 'off' and len(v.strip()) == 0:
+            return False, "login_alert invalid"
+
+    return True, None
+
+
 # ---------------------------------------------------------
 # Save/update a single setting
 # ---------------------------------------------------------
@@ -69,6 +215,23 @@ def save_setting(key, value):
     conn.commit()
     cur.close()
     conn.close()
+
+
+def log_setting_change(cursor, user_id, key, old, new, ip):
+    # Only log when value actually changed
+    if str(old) == str(new):
+        return
+
+    cursor.execute("""
+        INSERT INTO audit_logs (user_id, action, module, details, ip_address)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (
+        user_id,
+        "UPDATE",
+        "settings",
+        f"{key}: {old} → {new}",
+        ip
+    ))
 
 
 # ---------------------------------------------------------
@@ -88,9 +251,44 @@ def settings_page():
 def settings_api():
     data = request.get_json()
 
-    for key in DEFAULTS.keys():
-        if key in data:
-            save_setting(key, data[key])
+    # Validate payload strictly (all-or-nothing)
+    ok, err = _validate_settings_payload(data)
+    if not ok:
+        return _bad_request_with_audit(f"Settings validation failed: {err}")
+
+    # Read current settings snapshot for auditing
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT setting_key, setting_value FROM settings")
+    rows = cur.fetchall()
+    old_settings = {k: v for k, v in rows}
+
+    # Upsert incoming settings and write audit logs only for changed values
+    for key, new_value in data.items():
+        # Persist (insert or update) - keys are already validated
+        cur.execute("""
+            INSERT INTO settings (setting_key, setting_value)
+            VALUES (%s, %s)
+            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
+        """, (key, str(new_value)))
+
+        # Audit log when changed
+        try:
+            log_setting_change(
+                cursor=cur,
+                user_id=session.get("user_id"),
+                key=key,
+                old=old_settings.get(key),
+                new=new_value,
+                ip=request.remote_addr
+            )
+        except Exception:
+            # keep saving even if logging fails
+            pass
+
+    conn.commit()
+    cur.close()
+    conn.close()
 
     # --- Apply immediate runtime config updates for important keys ---
     try:
@@ -159,20 +357,71 @@ def settings_api():
 @bp.route("/upload-logo", methods=["POST"])
 def upload_logo():
     if "company_logo" not in request.files:
-        return jsonify(success=False, error="File missing")
+        return _bad_request_with_audit("File missing")
 
     file = request.files["company_logo"]
     if not file.filename:
-        return jsonify(success=False, error="Empty filename")
+        return _bad_request_with_audit("Empty filename")
+    # Extension check
+    secure_name = secure_filename(file.filename)
+    if '.' not in secure_name:
+        return _bad_request_with_audit("Invalid file extension")
+    ext = secure_name.rsplit('.', 1)[-1].lower()
+    if ext not in ALLOWED_IMAGE_EXT:
+        return _bad_request_with_audit("File type not allowed")
 
-    ext = file.filename.rsplit(".", 1)[-1].lower()
+    # MIME type check
+    mimetype = file.mimetype or ''
+    if mimetype not in ALLOWED_MIME:
+        return _bad_request_with_audit("MIME type not allowed")
+
+    # Verify image content with Pillow
+    try:
+        file.stream.seek(0)
+        img = Image.open(file.stream)
+        img.verify()
+    except Exception:
+        return _bad_request_with_audit("Uploaded file is not a valid image")
+
+    # Reset stream position and save using existing generated name
+    file.stream.seek(0)
     filename = f"logo_{int(datetime.utcnow().timestamp())}.{ext}"
-
     full_path = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(full_path)
+    try:
+        file.save(full_path)
+    except Exception:
+        return _bad_request_with_audit("Failed to save uploaded file")
 
     web_path = f"/static/uploads/{filename}"
-    save_setting("company_logo", web_path)
+    try:
+        save_setting("company_logo", web_path)
+    except Exception:
+        # Attempt to remove file if DB save fails
+        try:
+            os.remove(full_path)
+        except Exception:
+            pass
+        return _bad_request_with_audit("Failed to persist company_logo setting")
+
+    # Audit successful upload
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO audit_logs (user_id, action, module, details, ip_address)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            session.get("user_id"),
+            "UPLOAD",
+            "settings",
+            f"upload_logo success: {web_path}",
+            request.remote_addr,
+        ))
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception:
+        pass
 
     return jsonify(success=True, path=web_path)
 

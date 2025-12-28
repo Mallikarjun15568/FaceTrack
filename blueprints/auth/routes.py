@@ -48,6 +48,19 @@ def login():
     return render_template("login.html")
 
 
+# During blueprint registration, exempt the specific `login` view from CSRF
+# This avoids importing the CSRF instance here and prevents circular imports.
+def _exempt_login_record(state):
+    try:
+        state.app.csrf.exempt(login)
+    except Exception:
+        # if something is not available, fail silently — blueprint-level
+        # exemption may already be applied elsewhere (app.py)
+        pass
+
+bp.record(_exempt_login_record)
+
+
 
 # ============================================================
 # SIGNUP (Clean – No roles)

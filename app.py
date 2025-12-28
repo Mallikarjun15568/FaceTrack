@@ -3,6 +3,7 @@ import logging
 import time
 import os
 from dotenv import load_dotenv
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 
 from config import SECRET_KEY
 from db_utils import get_connection, close_db, get_setting
@@ -32,6 +33,20 @@ from utils.email_service import email_service
 # --------------------------
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
+
+# Initialize CSRF for templates (settings page uses csrf_token())
+csrf = CSRFProtect(app)
+
+# expose csrf on the app object so blueprints can safely call "state.app.csrf"
+app.csrf = csrf
+
+
+@app.context_processor
+def inject_csrf_token():
+    return dict(csrf_token=generate_csrf)
+
+# Ensure global access as well (fallback for templates)
+app.jinja_env.globals['csrf_token'] = generate_csrf
 
 # Secure session configuration
 app.config["SESSION_COOKIE_HTTPONLY"] = True
@@ -89,6 +104,9 @@ app.register_blueprint(settings_bp)
 app.register_blueprint(reports_bp)
 app.register_blueprint(leave_bp)
 app.register_blueprint(charts_bp)
+
+# Exempt auth blueprint (login/logout) from CSRF token requirement
+csrf.exempt(auth_bp)
 
 
 # --------------------------
