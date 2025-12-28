@@ -85,11 +85,6 @@ def _exempt_login_record(state):
 bp.record(_exempt_login_record)
 
 
-                try:
-                    log_audit(user_id=None, action='FAILED_LOGIN', module='auth', details=f'username={username}', ip_address=request.remote_addr)
-                except Exception:
-                    pass
-
 # ============================================================
 # SIGNUP (Clean – No roles)
 # ============================================================
@@ -108,11 +103,6 @@ def signup():
         confirm = request.form.get("confirm_password")
 
         # 1. Password match
-            # Audit successful login
-            try:
-                log_audit(user_id=user['id'], action='LOGIN', module='auth', details=f'username={username}', ip_address=request.remote_addr)
-            except Exception:
-                pass
         if password != confirm:
             flash("Passwords do not match", "error")
             return redirect(url_for("auth.signup"))

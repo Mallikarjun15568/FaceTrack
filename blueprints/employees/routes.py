@@ -55,7 +55,8 @@ def list_employees():
     elif sort == "name_desc":
         order_by = "e.full_name DESC"
 
-    query = """
+    query = (
+        """
         SELECT 
             e.id, 
             e.full_name, 
@@ -73,9 +74,12 @@ def list_employees():
         FROM employees e
         LEFT JOIN departments d ON e.department_id = d.id
         LEFT JOIN face_data fd ON fd.emp_id = e.id
-        """ + where_sql + "\n        ORDER BY " + order_by + "\n        LIMIT %s OFFSET %s"
-        LIMIT %s OFFSET %s
-    """
+        """
+        + where_sql
+        + "\n        ORDER BY "
+        + order_by
+        + "\n        LIMIT %s OFFSET %s"
+    )
 
     cursor.execute(query, tuple(params) + (per_page, offset))
     employees = cursor.fetchall()
