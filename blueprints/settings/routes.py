@@ -26,6 +26,16 @@ DEFAULTS = {
     "login_alert": "off"
 }
 
+
+# Helper: programmatic admin check for JSON endpoints
+def require_admin():
+    if session.get("role") != "admin":
+        return jsonify({
+            "success": False,
+            "error": "Admin access required"
+        }), 403
+    return None
+
 # ---------------------------------------------------------
 # Admin-only protection
 # ---------------------------------------------------------
@@ -249,6 +259,11 @@ def settings_page():
 # ---------------------------------------------------------
 @bp.route("/api", methods=["POST"])
 def settings_api():
+    # admin-only guard for API saves
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+
     data = request.get_json()
 
     # Validate payload strictly (all-or-nothing)
@@ -356,6 +371,11 @@ def settings_api():
 # ---------------------------------------------------------
 @bp.route("/upload-logo", methods=["POST"])
 def upload_logo():
+    # admin-only guard for uploads
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+
     if "company_logo" not in request.files:
         return _bad_request_with_audit("File missing")
 
