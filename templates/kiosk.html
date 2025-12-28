@@ -24,10 +24,6 @@
     <!-- Animated Clock -->
     <div id="currentTime" class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-sm shadow-lg animate-fade-in"></div>
     
-    <button id="openExitBtn" class="w-10 h-10 rounded-xl bg-white hover:bg-red-50 border border-gray-200 hover:border-red-300 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-lg group">
-      <i class="fas fa-sign-out-alt text-gray-600 group-hover:text-red-600 transition-colors"></i>
-    </button>
-    
     <button id="openSettingsBtn" class="w-10 h-10 rounded-xl bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-lg group">
       <i class="fas fa-cog text-gray-600 group-hover:text-blue-600 group-hover:rotate-90 transition-all duration-300"></i>
     </button>
@@ -83,10 +79,7 @@
 
       <!-- Controls with Hover Effects -->
       <div class="mt-6 space-y-4">
-        <select id="cameraSelect"
-                class="w-full h-12 rounded-xl border-2 border-gray-200 px-4 text-sm font-medium focus:ring-4 focus:ring-blue-200 focus:border-blue-500 focus:outline-none transition-all duration-300 hover:border-blue-300 hover:shadow-lg bg-white">
-          <option value="">📹 Select Camera Device</option>
-        </select>
+        <!-- Camera select removed from main UI (kiosk mode uses default camera) -->
 
         <div class="flex gap-3">
           <button id="startCameraBtn"
@@ -120,15 +113,15 @@
       <p class="text-sm text-gray-600 mb-4">🎯 Real-time recognition system</p>
 
       <!-- Waiting Card with Shimmer Effect -->
-      <div id="waiting-block"
-           class="relative overflow-hidden border-2 border-blue-200 rounded-2xl p-5 flex items-center gap-4 mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 transition-all duration-500 hover:shadow-xl hover:scale-[1.02]">
+       <div id="waiting-block"
+         class="relative overflow-hidden border border-blue-200/70 rounded-2xl p-5 flex items-center gap-4 mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 transition-all duration-500 hover:shadow-xl hover:scale-[1.02]">
         <div class="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-3xl shadow-lg animate-bounce-slow">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-3xl shadow-lg animate-pulse-slow">
           ⏳
         </div>
         <div class="flex-1 z-10">
           <p class="font-bold text-gray-800 text-lg">Waiting for face…</p>
-          <p class="text-sm text-gray-600 mt-1">Please look at the camera</p>
+          <p class="text-sm text-gray-500 mt-1 font-normal">Please look at the camera</p>
         </div>
       </div>
 
@@ -169,7 +162,7 @@
           <i class="fas fa-history text-purple-600"></i>
           <h3 class="text-base font-bold text-gray-800">Recent Activity</h3>
         </div>
-        <div id="logs-list" class="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+        <div id="logs-list" class="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
           <!-- Log entries will be added here dynamically -->
         </div>
       </div>
@@ -208,14 +201,19 @@
 
 <!-- SETTINGS PANEL with Smooth Slide -->
 <div id="settingsPanel"
-     class="fixed inset-y-0 right-0 w-96 bg-white/95 backdrop-blur-xl border-l-2 border-gray-200 shadow-2xl translate-x-full transition-transform duration-500 z-50">
+  class="fixed inset-y-0 right-0 w-96 bg-white/95 backdrop-blur-xl border-l-2 border-gray-200 shadow-2xl translate-x-full transition-transform duration-500 z-50 flex flex-col">
 
   <div class="p-6 border-b-2 border-gray-200 bg-gradient-to-r from-blue-500 to-indigo-600">
     <h3 class="text-2xl font-bold text-white mb-1">Kiosk Settings</h3>
     <p class="text-sm text-blue-100">Administrator controls</p>
   </div>
 
-  <div class="p-6 space-y-4 overflow-y-auto h-[calc(100vh-200px)] custom-scrollbar">
+  <div class="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+    <!-- Admin-only camera selection (hidden from main UI) -->
+    <div class="border-2 border-gray-200 rounded-xl p-4">
+      <label class="block text-sm font-bold text-gray-700 mb-2">Camera Device</label>
+      <select id="adminCameraSelect" class="w-full h-11 rounded-lg border border-gray-300 px-3"></select>
+    </div>
     <!-- Voice Toggle -->
     <div id="voiceToggle" class="flex items-center justify-between border-2 border-gray-200 rounded-xl p-5 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group">
       <div class="flex items-center gap-3">
@@ -250,7 +248,12 @@
     </div>
   </div>
 
-  <div class="p-6 border-t-2 border-gray-200 bg-gray-50">
+  <div class="p-6 border-t-2 border-gray-200 bg-white">
+    <button id="exitKioskBtn"
+            class="w-full h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold mb-3 transition-all duration-300 hover:scale-105 hover:shadow-xl">
+      Exit Kiosk
+    </button>
+
     <button id="closeSettingsBtn"
             class="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold transition-all duration-300 hover:scale-105 hover:shadow-xl">
       Close Settings

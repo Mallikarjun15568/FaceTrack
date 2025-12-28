@@ -40,6 +40,7 @@ static/faces/
 static/attendance_photos/
 static/snapshots/
 static/face_login_temp/
+static/images/*.png
 
 # -------------------------------
 # InsightFace Models (VERY LARGE)
@@ -88,3 +89,6 @@ demo_data.sql
 static/uploads/
 static/faces/
 static/snapshots/
+
+scripts/
+templates/backups/

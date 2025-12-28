@@ -5,147 +5,243 @@
   <title>FaceTrack Pro — AI Attendance</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/static/css/output.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .hero-gradient {
+      background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 50%, #fef3f2 100%);
+    }
+    
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+    
+    .card-hover:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    }
+    
+    .floating {
+      animation: floating 3s ease-in-out infinite;
+    }
+    
+    @keyframes floating {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
+    
+    .pulse-slow {
+      animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    .glow-effect {
+      box-shadow: 0 0 30px rgba(37, 99, 235, 0.3);
+    }
+  </style>
 </head>
 
-<body class="bg-gray-50 text-gray-900 overflow-x-hidden">
+<body class="bg-white text-gray-900 overflow-x-hidden">
 
 <!-- ================= NAVBAR ================= -->
-<header class="fixed top-0 inset-x-0 z-50 bg-white border-b border-gray-200">
-  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-
-    <!-- Logo -->
-    <div class="flex items-center gap-2">
-      <span class="text-2xl font-extrabold text-blue-600">
-        FaceTrack <span class="text-gray-800 font-semibold">Pro</span>
+<header class="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100">
+  <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+    
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+        <span class="text-white text-xl font-bold">F</span>
+      </div>
+      <span class="text-2xl font-extrabold">
+        <span class="gradient-text">FaceTrack</span>
+        <span class="text-gray-800"> Pro</span>
       </span>
     </div>
 
-    <!-- Menu -->
-    <nav class="hidden md:flex items-center gap-8 text-sm text-gray-600">
-
-      <a href="/"
-         class="text-gray-900 font-medium border-b-2 border-blue-600 pb-1">
-        Home
-      </a>
-
-      <a href="#features"
-         class="font-medium pb-1 border-b-2 border-transparent
-                hover:border-blue-600 hover:text-gray-900 transition">
-        Features
-      </a>
-
-      <a href="/auth/login"
-         class="font-medium pb-1 border-b-2 border-transparent
-                hover:border-blue-600 hover:text-gray-900 transition">
+    <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
+      <a href="/" class="text-blue-600 pb-1 border-b-2 border-blue-600">Home</a>
+      <a href="#features" class="text-gray-600 hover:text-blue-600 transition">Features</a>
+      <a href="#how-it-works" class="text-gray-600 hover:text-blue-600 transition">How It Works</a>
+      <a href="/auth/login" 
+         class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
         Login
       </a>
     </nav>
 
-    <!-- Profile -->
-    <div class="flex items-center gap-3">
-      <img src="{{ url_for('static', filename='default_user.png') }}"
-           class="w-9 h-9 rounded-full border border-gray-300">
-      <span class="text-sm text-gray-700">profile</span>
-    </div>
+    <!-- Mobile Menu Button -->
+    <button class="md:hidden p-2">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
   </div>
 </header>
 
 <!-- ================= HERO ================= -->
-<section class="pt-40 pb-24">
-  <div class="max-w-6xl mx-auto px-6 text-center">
+<section class="pt-32 pb-20 hero-gradient relative overflow-hidden">
+  <!-- Decorative Elements -->
+  <div class="absolute top-20 right-10 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl"></div>
+  <div class="absolute bottom-10 left-10 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl"></div>
+  
+  <div class="max-w-7xl mx-auto px-6 relative z-10">
+    <div class="grid md:grid-cols-2 gap-16 items-center">
 
-    <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight">
-      Track Smarter.<br>
-      Work Better.
-    </h1>
+      <!-- Left Content -->
+      <div>
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-full text-sm font-medium text-blue-600 mb-6">
+          <span class="w-2 h-2 bg-blue-600 rounded-full pulse-slow"></span>
+          AI-Powered Attendance System
+        </div>
+        
+        <h1 class="text-5xl md:text-7xl font-extrabold leading-tight mb-6">
+          Smart Attendance
+          <span class="gradient-text block">Made Simple</span>
+        </h1>
 
-    <p class="mt-6 text-lg text-gray-600 max-w-2xl mx-auto">
-      AI-powered facial recognition for seamless attendance
-      and workplace insights.
-    </p>
+        <p class="text-xl text-gray-600 mb-8 max-w-xl leading-relaxed">
+          Transform your workplace with cutting-edge facial recognition technology. 
+          Track attendance effortlessly and gain powerful workforce insights.
+        </p>
 
-    <!-- Buttons -->
-    <div class="mt-10 flex justify-center gap-6 flex-wrap">
-      <a href="/auth/login"
-         class="px-10 py-4 text-lg font-semibold rounded-xl
-                bg-blue-600 text-white hover:bg-blue-700 transition">
-        Launch Dashboard
-      </a>
-      <a href="/kiosk"
-         class="px-10 py-4 text-lg font-semibold rounded-xl
-                border border-gray-300 bg-white hover:bg-gray-100 transition">
-        Try Kiosk Mode
-      </a>
-    </div>
+        <div class="flex flex-wrap gap-4 mb-12">
+          <a href="/auth/login"
+             class="px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-lg hover:shadow-xl glow-effect">
+            Get Started Free
+          </a>
+          <a href="#features"
+             class="px-8 py-4 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition border-2 border-gray-200">
+            Learn More →
+          </a>
+        </div>
 
-    <!-- Stats -->
-    <div class="mt-14 grid grid-cols-2 md:grid-cols-4 gap-6">
-
-      <div class="card-modern p-6 text-left">
-        <div class="text-3xl mb-3">👤</div>
-        <p class="text-sm text-gray-500">Total Employees</p>
-        <p class="mt-1 text-3xl font-bold">419</p>
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-8">
+          <div>
+            <div class="text-3xl font-bold text-gray-900">99.9%</div>
+            <div class="text-sm text-gray-600 mt-1">Accuracy</div>
+          </div>
+          <div>
+            <div class="text-3xl font-bold text-gray-900">&lt;1s</div>
+            <div class="text-sm text-gray-600 mt-1">Recognition</div>
+          </div>
+          <div>
+            <div class="text-3xl font-bold text-gray-900">24/7</div>
+            <div class="text-sm text-gray-600 mt-1">Monitoring</div>
+          </div>
+        </div>
       </div>
 
-      <div class="card-modern p-6 text-left">
-        <div class="text-3xl mb-3">🔁</div>
-        <p class="text-sm text-gray-500">Daily Scans</p>
-        <p class="mt-1 text-3xl font-bold">991</p>
-      </div>
-
-      <div class="card-modern p-6 text-left">
-        <div class="text-3xl mb-3">💻</div>
-        <p class="text-sm text-gray-500">Active Devices</p>
-        <p class="mt-1 text-3xl font-bold">199</p>
-      </div>
-
-      <div class="card-modern p-6 text-left border-blue-200 bg-blue-50">
-        <div class="text-3xl mb-3">✅</div>
-        <p class="text-sm text-blue-700">Accuracy</p>
-        <p class="mt-1 text-3xl font-bold text-blue-700">99.8%</p>
+      <!-- Right Image -->
+      <div class="relative floating">
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-3xl blur-2xl"></div>
+        <img src="/static/images/hero_dashboard.png"
+             alt="Dashboard Preview"
+             class="relative rounded-3xl shadow-2xl w-full border-8 border-white">
       </div>
 
     </div>
   </div>
 </section>
 
-<!-- ================= DEMO SECTION ================= -->
+<!-- ================= FEATURES ================= -->
 <section class="py-24 bg-white" id="features">
   <div class="max-w-7xl mx-auto px-6">
-
-    <h2 class="text-3xl font-bold mb-16 text-center">
-      See FaceTrack in Action
-    </h2>
+    
+    <div class="text-center mb-16">
+      <h2 class="text-4xl md:text-5xl font-extrabold mb-4">
+        Powerful Features for <span class="gradient-text">Modern Teams</span>
+      </h2>
+      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+        Everything you need to manage attendance efficiently and securely
+      </p>
+    </div>
 
     <div class="grid md:grid-cols-3 gap-8">
 
-      <div class="card-modern p-6">
-        <div class="aspect-[4/3] bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
-          Demo Screenshot
+      <!-- Feature Card 1 -->
+      <div class="bg-gradient-to-br from-blue-50 to-white rounded-3xl p-8 card-hover border border-blue-100">
+        <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-6">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
         </div>
-        <h3 class="mt-5 font-semibold">Realtime Recognition</h3>
-        <p class="mt-2 text-sm text-gray-600">
-          Instant face detection with live feedback.
+        <h3 class="font-bold text-xl mb-3">Lightning Fast Recognition</h3>
+        <p class="text-gray-600 leading-relaxed">
+          Instantly identify employees with 99.9% accuracy using advanced AI algorithms.
         </p>
       </div>
 
-      <div class="card-modern p-6">
-        <div class="aspect-[4/3] bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
-          Demo Screenshot
+      <!-- Feature Card 2 -->
+      <div class="bg-gradient-to-br from-purple-50 to-white rounded-3xl p-8 card-hover border border-purple-100">
+        <div class="w-14 h-14 bg-purple-600 rounded-2xl flex items-center justify-center mb-6">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
         </div>
-        <h3 class="mt-5 font-semibold">Automated Attendance</h3>
-        <p class="mt-2 text-sm text-gray-600">
-          Accurate check-in and check-out logs.
+        <h3 class="font-bold text-xl mb-3">Automated Attendance</h3>
+        <p class="text-gray-600 leading-relaxed">
+          Say goodbye to manual check-ins. Automatically record arrivals and departures.
         </p>
       </div>
 
-      <div class="card-modern p-6">
-        <div class="aspect-[4/3] bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
-          Demo Screenshot
+      <!-- Feature Card 3 -->
+      <div class="bg-gradient-to-br from-orange-50 to-white rounded-3xl p-8 card-hover border border-orange-100">
+        <div class="w-14 h-14 bg-orange-600 rounded-2xl flex items-center justify-center mb-6">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
         </div>
-        <h3 class="mt-5 font-semibold">Smart Reports</h3>
-        <p class="mt-2 text-sm text-gray-600">
-          Analytics-driven workforce insights.
+        <h3 class="font-bold text-xl mb-3">Smart Analytics</h3>
+        <p class="text-gray-600 leading-relaxed">
+          Generate detailed reports and gain insights into workforce patterns and trends.
+        </p>
+      </div>
+
+      <!-- Feature Card 4 -->
+      <div class="bg-gradient-to-br from-green-50 to-white rounded-3xl p-8 card-hover border border-green-100">
+        <div class="w-14 h-14 bg-green-600 rounded-2xl flex items-center justify-center mb-6">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-xl mb-3">Secure & Private</h3>
+        <p class="text-gray-600 leading-relaxed">
+          Enterprise-grade encryption ensures your data remains safe and confidential.
+        </p>
+      </div>
+
+      <!-- Feature Card 5 -->
+      <div class="bg-gradient-to-br from-pink-50 to-white rounded-3xl p-8 card-hover border border-pink-100">
+        <div class="w-14 h-14 bg-pink-600 rounded-2xl flex items-center justify-center mb-6">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-xl mb-3">Real-Time Monitoring</h3>
+        <p class="text-gray-600 leading-relaxed">
+          Track attendance in real-time with instant notifications and alerts.
+        </p>
+      </div>
+
+      <!-- Feature Card 6 -->
+      <div class="bg-gradient-to-br from-indigo-50 to-white rounded-3xl p-8 card-hover border border-indigo-100">
+        <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mb-6">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-xl mb-3">Multi-Device Support</h3>
+        <p class="text-gray-600 leading-relaxed">
+          Works seamlessly across desktop, mobile, and kiosk devices.
         </p>
       </div>
 
@@ -153,103 +249,140 @@
   </div>
 </section>
 
-<!-- ================= FEATURE STRIP ================= -->
-<section class="pb-28 bg-gray-50">
-  <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-8">
-
-    <div class="card-modern p-8">
-      <h3 class="text-xl font-semibold mb-3">Face Enrollment</h3>
-      <p class="text-gray-600 text-sm">
-        Securely register employees using AI embeddings.
-      </p>
+<!-- ================= HOW IT WORKS ================= -->
+<section class="py-24 bg-gray-50" id="how-it-works">
+  <div class="max-w-7xl mx-auto px-6">
+    
+    <div class="text-center mb-16">
+      <h2 class="text-4xl md:text-5xl font-extrabold mb-4">
+        How <span class="gradient-text">It Works</span>
+      </h2>
+      <p class="text-xl text-gray-600">Simple, fast, and efficient in 3 easy steps</p>
     </div>
 
-    <div class="card-modern p-8">
-      <h3 class="text-xl font-semibold mb-3">Audit & Recognition Logs</h3>
-      <p class="text-gray-600 text-sm">
-        Complete traceability for security and compliance.
-      </p>
-    </div>
+    <div class="grid md:grid-cols-3 gap-12">
+      
+      <div class="text-center">
+        <div class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6 glow-effect">
+          <span class="text-3xl font-bold text-white">1</span>
+        </div>
+        <h3 class="text-xl font-bold mb-3">Register Faces</h3>
+        <p class="text-gray-600">
+          Simply capture employee photos to build your secure face database.
+        </p>
+      </div>
 
+      <div class="text-center">
+        <div class="w-20 h-20 bg-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 glow-effect">
+          <span class="text-3xl font-bold text-white">2</span>
+        </div>
+        <h3 class="text-xl font-bold mb-3">Instant Recognition</h3>
+        <p class="text-gray-600">
+          AI automatically identifies employees as they arrive or depart.
+        </p>
+      </div>
+
+      <div class="text-center">
+        <div class="w-20 h-20 bg-orange-600 rounded-3xl flex items-center justify-center mx-auto mb-6 glow-effect">
+          <span class="text-3xl font-bold text-white">3</span>
+        </div>
+        <h3 class="text-xl font-bold mb-3">Track & Analyze</h3>
+        <p class="text-gray-600">
+          View real-time data and generate comprehensive attendance reports.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA SECTION ================= -->
+<section class="py-24 bg-gradient-to-br from-blue-600 to-purple-600 text-white relative overflow-hidden">
+  <div class="absolute inset-0 opacity-10">
+    <div class="absolute top-0 left-1/4 w-96 h-96 bg-white rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-white rounded-full blur-3xl"></div>
+  </div>
+  
+  <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+    <h2 class="text-4xl md:text-5xl font-extrabold mb-6">
+      Ready to Transform Your Attendance System?
+    </h2>
+    <p class="text-xl mb-10 opacity-90">
+      Join modern companies using FaceTrack Pro for seamless attendance management
+    </p>
+    
+    <div class="flex flex-wrap gap-4 justify-center">
+      <a href="/auth/login"
+         class="px-10 py-4 bg-white text-blue-600 font-bold rounded-xl hover:bg-gray-100 transition shadow-2xl">
+        Start Free Trial
+      </a>
+      <a href="#features"
+         class="px-10 py-4 bg-blue-700/50 backdrop-blur text-white font-bold rounded-xl hover:bg-blue-700/70 transition border-2 border-white/30">
+        View Demo
+      </a>
+    </div>
   </div>
 </section>
 
 <!-- ================= FOOTER ================= -->
-<footer class="border-t border-gray-200 bg-gray-900 text-gray-300 mt-24">
-  <div class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-10">
+<footer class="bg-gray-900 text-gray-400 pt-16 pb-8">
+  <div class="max-w-7xl mx-auto px-6">
+    
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
 
-    <!-- 1️⃣ FaceTrack Pro -->
-    <div>
-      <h3 class="text-xl font-bold text-blue-400">
-        FaceTrack <span class="text-gray-300">Pro</span>
-      </h3>
-      <p class="mt-3 text-sm text-gray-400 max-w-xs">
-        AI-powered facial recognition attendance system designed for secure
-        and efficient attendance management.
-      </p>
+      <div>
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+            <span class="text-white text-xl font-bold">F</span>
+          </div>
+          <span class="text-xl font-bold text-white">FaceTrack Pro</span>
+        </div>
+        <p class="text-sm leading-relaxed">
+          Next-generation AI-powered facial recognition system for modern workplace attendance management.
+        </p>
+      </div>
+
+      <div>
+        <h4 class="text-white font-semibold mb-4">Product</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/" class="hover:text-white transition">Home</a></li>
+          <li><a href="#features" class="hover:text-white transition">Features</a></li>
+          <li><a href="#how-it-works" class="hover:text-white transition">How It Works</a></li>
+          <li><a href="/auth/login" class="hover:text-white transition">Login</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="text-white font-semibold mb-4">Developer</h4>
+        <ul class="space-y-2 text-sm">
+          <li class="font-medium text-white">Mallikarjun S. Asapure</li>
+          <li>📧 asapuremallikarjun23@gmail.com</li>
+          <li>📞 +91 95796 88201</li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="text-white font-semibold mb-4">Project Info</h4>
+        <ul class="space-y-2 text-sm">
+          <li>Face Recognition System</li>
+          <li>Web Application</li>
+          <li>Version 1.0</li>
+          <li class="pt-2">
+            <span class="inline-flex items-center gap-1 px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">
+              <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+              Active
+            </span>
+          </li>
+        </ul>
+      </div>
+
     </div>
 
-    <!-- 2️⃣ Product -->
-    <div>
-      <h4 class="text-sm font-semibold mb-4 uppercase tracking-wider">
-        Product
-      </h4>
-      <ul class="space-y-2 text-sm text-gray-400">
-        <li><a href="/" class="hover:text-white">Home</a></li>
-        <li><a href="#features" class="hover:text-white">Features</a></li>
-        <li><a href="/auth/login" class="hover:text-white">Login</a></li>
-      </ul>
+    <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm">
+      <p>© 2025 FaceTrack Pro. All rights reserved.</p>
+      <p class="mt-2 md:mt-0">Built with ❤️ by Mallikarjun S. Asapure</p>
     </div>
 
-    <!-- 3️⃣ Support -->
-    <div>
-      <h4 class="text-sm font-semibold mb-4 uppercase tracking-wider">
-        Support
-      </h4>
-      <ul class="space-y-2 text-sm text-gray-400">
-        <li>
-          <strong>Developer:</strong><br>
-          Mallikarjun S. Asapure
-        </li>
-        <li>
-          <a href="mailto:asapuremallikarjun23@gmail.com" class="hover:text-white">
-            📧 asapuremallikarjun23@gmail.com
-          </a>
-        </li>
-        <li>
-          <a href="tel:+919579688201" class="hover:text-white">
-            📞 +91 95796 88201
-          </a>
-        </li>
-        <li class="text-gray-500">
-          Face recognition system support and assistance
-        </li>
-      </ul>
-    </div>
-
-    <!-- 4️⃣ Project & Legal -->
-    <div>
-      <h4 class="text-sm font-semibold mb-4 uppercase tracking-wider">
-        Project & Legal
-      </h4>
-      <ul class="space-y-2 text-sm text-gray-400">
-        <li>Face Recognition System</li>
-        <li>Web-Based Application</li>
-        <li>Version 1.0</li>
-        <li>
-          <a href="#"
-             class="hover:text-white cursor-not-allowed"
-             title="LinkedIn profile will be added soon">
-            LinkedIn (Developer)
-          </a>
-        </li>
-      </ul>
-    </div>
-
-  </div>
-
-  <div class="border-t border-gray-800 py-5 text-center text-xs text-gray-500">
-    © 2025 FaceTrack Pro | Version 1.0
   </div>
 </footer>
 

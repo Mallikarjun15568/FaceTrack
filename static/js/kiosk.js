@@ -8,6 +8,8 @@ const video = document.getElementById("kioskVideo");
 const startBtn = document.getElementById("startCameraBtn");
 const stopBtn = document.getElementById("stopCameraBtn");
 const cameraSelect = document.getElementById("cameraSelect");
+const adminCameraSelect = document.getElementById("adminCameraSelect");
+const exitKioskBtn = document.getElementById("exitKioskBtn");
 const statusText = document.getElementById("cameraStatus");
 const statusDot = document.getElementById("statusDot");
 
@@ -50,7 +52,7 @@ let showCameraStatus = true;
 
 // ===== Enhanced Scan Ring State Helpers with Animations =====
 function setScanIdle() {
-    scanRing.className = "relative w-56 h-56 rounded-full border-4 border-gray-500 flex items-center justify-center transition-all duration-500 shadow-2xl";
+    scanRing.className = "relative w-56 h-56 rounded-full border-3 border-gray-400 flex items-center justify-center transition-all duration-500 shadow-lg";
     
     if (scanBorderEffect) {
         scanBorderEffect.style.opacity = '0';
@@ -79,7 +81,7 @@ function setScanIdle() {
 }
 
 function setScanScanning() {
-    scanRing.className = "relative w-56 h-56 rounded-full border-4 border-blue-500 flex items-center justify-center transition-all duration-500 shadow-2xl animate-pulse-slow";
+    scanRing.className = "relative w-56 h-56 rounded-full border-3 border-blue-500 flex items-center justify-center transition-all duration-500 shadow-lg animate-pulse-slow";
     
     // Enable rotating border effect
     if (scanBorderEffect) {
@@ -112,7 +114,7 @@ function setScanScanning() {
 }
 
 function setScanSuccess() {
-    scanRing.className = "relative w-56 h-56 rounded-full border-4 border-green-500 flex items-center justify-center transition-all duration-500 shadow-2xl shadow-green-500/50 animate-scale-in";
+    scanRing.className = "relative w-56 h-56 rounded-full border-3 border-green-500 flex items-center justify-center transition-all duration-500 shadow-lg shadow-green-500/30 animate-scale-in";
     
     if (scanBorderEffect) {
         scanBorderEffect.style.opacity = '0';
@@ -317,17 +319,7 @@ navigator.mediaDevices.ondevicechange = async () => {
 if (startBtn) {
     startBtn.addEventListener("click", async () => {
         if (cameraRunning || startingCamera) return;
-
-        if (!cameraSelect.value) {
-            // Shake the select element
-            cameraSelect.classList.add('animate-shake');
-            setTimeout(() => cameraSelect.classList.remove('animate-shake'), 500);
-            alert("⚠️ Please select a camera device first");
-            cameraSelect.focus();
-            return;
-        }
-
-        selectedDeviceId = cameraSelect.value;
+        // Kiosk mode: use browser default camera (no employee-facing select)
         
         // Add loading animation to button
         startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
@@ -342,9 +334,7 @@ if (startBtn) {
 
             startingCamera = true;
 
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true
-            });
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
 
             video.muted = true;
             video.playsInline = true;
@@ -367,11 +357,13 @@ if (startBtn) {
             startBtn.classList.add("hidden");
             if (stopBtn) stopBtn.classList.remove("hidden");
             
-            if (!cameraSwitchAllowed) {
-                cameraSelect.disabled = true;
-                cameraSelect.classList.add("opacity-50", "cursor-not-allowed");
-            } else {
-                cameraSelect.classList.add("hidden");
+            if (cameraSelect) {
+                if (!cameraSwitchAllowed) {
+                    cameraSelect.disabled = true;
+                    cameraSelect.classList.add("opacity-50", "cursor-not-allowed");
+                } else {
+                    cameraSelect.classList.add("hidden");
+                }
             }
             
             if (statusText) {
@@ -385,9 +377,6 @@ if (startBtn) {
 
             setScanScanning();
             await loadCameras();
-            if (selectedDeviceId) {
-                cameraSelect.value = selectedDeviceId;
-            }
 
             startRecognitionLoop();
         } catch (err) {
@@ -501,11 +490,11 @@ function addLog(name, status, time, photo) {
     if (!logsList) return;
     
     const row = document.createElement("div");
-    row.className = "flex items-center gap-4 bg-gradient-to-r from-gray-50 to-white border-2 border-gray-200 p-4 rounded-xl hover:shadow-xl transition-all duration-300 hover:scale-[1.02] animate-slide-in-right";
+    row.className = "flex items-center gap-4 bg-gradient-to-r from-gray-50 to-white border-2 border-gray-200 p-4 rounded-xl hover:shadow-xl transition-all duration-300 hover:scale-[1.02] animate-fade-in";
 
     const img = document.createElement("img");
     img.src = photo || "/static/default_user.png";
-    img.className = "w-12 h-12 rounded-xl border-2 border-gray-300 object-cover shadow-lg";
+    img.className = "w-12 h-12 rounded-xl border border-gray-200 object-cover shadow-lg";
 
     const meta = document.createElement("div");
     meta.className = "flex-1 min-w-0";
@@ -526,7 +515,7 @@ function addLog(name, status, time, photo) {
 
     logsList.prepend(row);
     
-    while (logsList.children.length > 5) {
+    while (logsList.children.length > 4) {
         logsList.removeChild(logsList.lastChild);
     }
 }
@@ -657,8 +646,9 @@ if (openSettingsBtn && pinModal) {
     });
 }
 
-if (openExitBtn && pinModal) {
-    openExitBtn.addEventListener("click", () => {
+// Wire admin exit button inside settings panel
+if (exitKioskBtn && pinModal) {
+    exitKioskBtn.addEventListener("click", () => {
         pendingExit = true;
         pinInput.value = "";
         pinModal.classList.remove("hidden");
@@ -728,6 +718,8 @@ if (pinVerify) {
             if (res.ok && data.success) {
                 pinModal.classList.add("hidden");
                 pinModal.classList.remove("flex");
+                // Populate admin camera list before showing settings
+                try { await loadAdminCameras(); } catch (e) { console.error(e); }
                 settingsPanel.classList.remove("translate-x-full");
             } else {
                 alert(data.message || "Invalid PIN");
@@ -798,4 +790,23 @@ if (cameraStatusToggle) {
         }
         console.log("ℹ️ Show Camera Status:", showCameraStatus ? "ON" : "OFF");
     });
+}
+
+// ===== Admin camera loader (populates admin-only select in settings) =====
+async function loadAdminCameras() {
+    try {
+        if (!adminCameraSelect) return;
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        adminCameraSelect.innerHTML = '';
+        devices.forEach((d, idx) => {
+            if (d.kind === 'videoinput') {
+                const o = document.createElement('option');
+                o.value = d.deviceId;
+                o.textContent = d.label || `Camera ${idx + 1}`;
+                adminCameraSelect.appendChild(o);
+            }
+        });
+    } catch (err) {
+        console.error('Error loading admin cameras:', err);
+    }
 }

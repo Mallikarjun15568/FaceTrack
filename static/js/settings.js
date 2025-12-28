@@ -1,46 +1,173 @@
-document.addEventListener("DOMContentLoaded", () => {
+if (window.__settingsLoaded) {
+    console.warn('settings.js already initialized');
+} else {
+    window.__settingsLoaded = true;
+
+    setTimeout(() => {
+    // Dirty-tracking for smart Save enable/disable
+    let dirty = false;
+
+    const markDirty = () => {
+        dirty = true;
+        if (typeof saveBtn !== 'undefined' && saveBtn) saveBtn.disabled = false;
+        if (typeof statusEl !== 'undefined' && statusEl) {
+            statusEl.textContent = "Unsaved changes";
+            statusEl.className = "text-sm text-orange-600";
+        }
+    };
+    // Ensure persistent sticky action bar exists and is appended to document.body
+    // Use #stickyActions as the presence check (not #saveBtn) to avoid false negatives
+    if (!document.getElementById('stickyActions')) {
+        const container = document.createElement('div');
+        container.id = 'stickyActions';
+        Object.assign(container.style, {
+            position: 'fixed',
+            right: '24px',
+            bottom: '24px',
+            zIndex: '99999',
+            pointerEvents: 'auto',
+            background: 'rgba(255,255,255,0.98)',
+            padding: '8px 12px',
+            borderRadius: '12px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
+        });
+
+        const inner = document.createElement('div');
+        inner.style.display = 'flex';
+        inner.style.gap = '12px';
+        inner.style.alignItems = 'center';
+
+        const save = document.createElement('button');
+        save.id = 'saveBtn';
+        save.className = 'btn-primary px-6 py-3 rounded-xl shadow-md hover:shadow-lg text-lg font-semibold flex items-center gap-2';
+        save.innerHTML = '<i class="fas fa-save"></i> Save';
+
+        const reset = document.createElement('button');
+        reset.id = 'resetBtn';
+        reset.className = 'btn-warning px-6 py-3 rounded-xl shadow-md hover:shadow-lg text-lg font-semibold flex items-center gap-2';
+        reset.innerHTML = '<i class="fas fa-undo"></i> Reset';
+
+        const status = document.createElement('span');
+        status.id = 'status';
+        status.className = 'text-gray-600 text-sm ml-2';
+
+        inner.appendChild(save);
+        inner.appendChild(reset);
+        inner.appendChild(status);
+        container.appendChild(inner);
+
+        document.body.appendChild(container);
+
+        // Reset action: confirm only if there are unsaved changes
+        reset.addEventListener('click', () => {
+            if (!dirty || confirm('Discard all unsaved changes?')) {
+                location.reload();
+            }
+        });
+    }
 
     const th = document.getElementById("recognition_threshold");
     const thVal = document.getElementById("th-val");
-    thVal.textContent = th.value;
+    // Safety: ensure slider value does not exceed HTML max (protect against template errors)
+    const rawV = parseFloat(th.value);
+    const rawMax = parseFloat(th.max);
+    if (!isNaN(rawV) && !isNaN(rawMax) && rawV > rawMax) {
+        th.value = rawMax;
+        thVal.textContent = String(rawMax);
+    } else {
+        thVal.textContent = th.value;
+    }
 
     th.addEventListener("input", () => {
         thVal.textContent = th.value;
-    });
 
-    const saveBtn = document.getElementById("saveBtn");
-    const statusEl = document.getElementById("status");
+        const v = parseFloat(th.value);
+        if (!isNaN(v) && v > 0.55) {
+            thVal.className = "text-orange-600 font-bold";
+        } else {
+            thVal.className = "text-blue-600 font-bold";
+        }
+    }, 0);
 
-    saveBtn.onclick = () => {
-        saveBtn.disabled = true;
-        statusEl.textContent = "Saving...";
+        const saveBtn = document.getElementById("saveBtn");
+        const statusEl = document.getElementById("status");
 
-        const data = {
-            recognition_threshold: th.value,
-            duplicate_interval: document.getElementById("duplicate_interval").value,
-            snapshot_mode: document.getElementById("snapshot_mode").checked ? "on" : "off",
-            late_time: document.getElementById("late_time").value,
-            min_confidence: document.getElementById("min_confidence").value,
-            company_name: document.getElementById("company_name").value,
-            camera_index: document.getElementById("camera_index").value,
-            session_timeout: document.getElementById("session_timeout").value,
-            login_alert: document.getElementById("login_alert").value
+        // Initial save state
+        if (saveBtn) saveBtn.disabled = true;
+
+        // Attach dirty listeners to inputs
+        const inputs = document.querySelectorAll(
+            "#recognition_threshold, #duplicate_interval, #snapshot_mode, #late_time, #min_confidence, #company_name, #camera_index, #session_timeout, #login_alert"
+        );
+        inputs.forEach(el => {
+            if (!el) return;
+            el.addEventListener("change", markDirty);
+            el.addEventListener("input", markDirty);
+        });
+
+    // Attach click handler safely (guard against duplicate bindings)
+    if (saveBtn && !saveBtn.dataset.handlerAttached) {
+        const saveHandler = () => {
+            // start saving UI
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            }
+            if (statusEl) {
+                statusEl.textContent = "Saving...";
+                statusEl.className = "text-sm text-gray-600";
+            }
+
+            const data = {
+                recognition_threshold: th.value,
+                duplicate_interval: document.getElementById("duplicate_interval").value,
+                snapshot_mode: document.getElementById("snapshot_mode").checked ? "on" : "off",
+                late_time: document.getElementById("late_time").value,
+                min_confidence: document.getElementById("min_confidence").value,
+                company_name: document.getElementById("company_name").value,
+                camera_index: document.getElementById("camera_index").value,
+                session_timeout: document.getElementById("session_timeout").value,
+                login_alert: document.getElementById("login_alert").value
+            };
+
+            fetch("/settings/api", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res && res.success) {
+                    if (statusEl) {
+                        statusEl.textContent = "✓ Settings saved";
+                        statusEl.className = "text-sm text-green-600";
+                    }
+                    dirty = false;
+                } else {
+                    if (statusEl) {
+                        statusEl.textContent = "⚠ Failed to save";
+                        statusEl.className = "text-sm text-red-600";
+                    }
+                }
+            })
+            .catch(() => {
+                if (statusEl) {
+                    statusEl.textContent = "⚠ Failed to save";
+                    statusEl.className = "text-sm text-red-600";
+                }
+            })
+            .finally(() => {
+                if (saveBtn) {
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+                    saveBtn.disabled = !dirty;
+                }
+                setTimeout(() => { if (statusEl) statusEl.textContent = ""; }, 2500);
+            });
         };
 
-        fetch("/settings/api", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
-        })
-        .then(res => res.json())
-        .then(res => {
-            statusEl.textContent = res.success ? "Saved" : "Error";
-        })
-        .finally(() => {
-            saveBtn.disabled = false;
-            setTimeout(() => statusEl.textContent = "", 2000);
-        });
-    };
+        saveBtn.addEventListener('click', saveHandler);
+        saveBtn.dataset.handlerAttached = '1';
+    }
 
 
     // LOGO UPLOAD
@@ -179,4 +306,5 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-});
+    });
+}
