@@ -43,7 +43,7 @@ def list_employees():
     where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
     # Update total count query to include face_data join
-    count_query = f"SELECT COUNT(*) AS total FROM employees e LEFT JOIN face_data fd ON fd.emp_id = e.id {where_sql}"
+    count_query = "SELECT COUNT(*) AS total FROM employees e LEFT JOIN face_data fd ON fd.emp_id = e.id " + where_sql
     cursor.execute(count_query, tuple(params))
     total = cursor.fetchone()["total"]
 
@@ -55,7 +55,7 @@ def list_employees():
     elif sort == "name_desc":
         order_by = "e.full_name DESC"
 
-    query = f"""
+    query = """
         SELECT 
             e.id, 
             e.full_name, 
@@ -73,8 +73,7 @@ def list_employees():
         FROM employees e
         LEFT JOIN departments d ON e.department_id = d.id
         LEFT JOIN face_data fd ON fd.emp_id = e.id
-        {where_sql}
-        ORDER BY {order_by}
+        """ + where_sql + "\n        ORDER BY " + order_by + "\n        LIMIT %s OFFSET %s"
         LIMIT %s OFFSET %s
     """
 
@@ -216,7 +215,8 @@ def bulk_delete():
     cursor = db.cursor(dictionary=True)
 
     placeholders = ",".join(["%s"] * len(ids))
-    cursor.execute(f"DELETE FROM employees WHERE id IN ({placeholders})", ids)
+    query = "DELETE FROM employees WHERE id IN (" + placeholders + ")"
+    cursor.execute(query, tuple(ids))
     db.commit()
 
     return jsonify({"success": True})

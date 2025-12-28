@@ -1,12 +1,14 @@
-from flask import Flask, render_template, redirect, url_for, flash, session, jsonify, send_from_directory
+from flask import Flask, render_template, redirect, url_for, flash, session, jsonify, send_from_directory, request
 import logging
 import time
 import os
 from dotenv import load_dotenv
+from utils.extensions import limiter
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 
-from config import SECRET_KEY
+from config import Config
 from db_utils import get_connection, close_db, get_setting
+from utils.logger import logger
 import shutil
 import tempfile
 from utils.face_encoder import face_encoder
@@ -32,7 +34,8 @@ from utils.email_service import email_service
 # FLASK APP SETUP
 # --------------------------
 app = Flask(__name__)
-app.secret_key = SECRET_KEY
+app.config.from_object(Config)
+app.secret_key = app.config.get('SECRET_KEY')
 
 # Initialize CSRF for templates (settings page uses csrf_token())
 csrf = CSRFProtect(app)
@@ -40,6 +43,7 @@ csrf = CSRFProtect(app)
 # expose csrf on the app object so blueprints can safely call "state.app.csrf"
 app.csrf = csrf
 
+limiter.init_app(app)
 
 @app.context_processor
 def inject_csrf_token():
@@ -51,7 +55,10 @@ app.jinja_env.globals['csrf_token'] = generate_csrf
 # Secure session configuration
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-app.config["PERMANENT_SESSION_LIFETIME"] = 3600  # 1 hour
+# Set secure cookie flag in production
+app.config["SESSION_COOKIE_SECURE"] = app.config.get('APP_MODE', 'development') == 'production'
+# Lifetime in seconds
+app.config["PERMANENT_SESSION_LIFETIME"] = int(os.getenv('PERMANENT_SESSION_LIFETIME', 3600))  # 1 hour
 
 
 # --------------------------
@@ -77,7 +84,6 @@ app.config['SENDER_PASSWORD'] = os.getenv('SENDER_PASSWORD')
 app.config['SENDER_NAME'] = os.getenv('SENDER_NAME', 'FaceTrack Pro')
 
 # init email service (loads SMTP config from app.config)
-email_service.init_app(app)
 
 
 # --------------------------
@@ -140,6 +146,36 @@ def favicon():
 @app.route("/login")
 def login_redirect():
     return redirect(url_for("auth.login"))
+
+
+# --------------------------
+# ERROR HANDLERS
+# --------------------------
+@app.errorhandler(404)
+def not_found(error):
+    logger.warning(f"404 Error: {request.url}")
+    return render_template('404.html'), 404
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    logger.error(f"500 Error: {str(error)}", exc_info=True)
+    try:
+        # attempt to rollback any open DB transaction
+        close_db()
+    except Exception:
+        pass
+    return render_template('500.html'), 500
+
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    logger.error(f"Unhandled exception: {str(e)}", exc_info=True)
+    try:
+        close_db()
+    except Exception:
+        pass
+    return jsonify({'error': 'Internal server error', 'message': 'Something went wrong. Please try again.'}), 500
 
 
 # DB health and deep health endpoints removed per user request.
@@ -229,4 +265,11 @@ with app.app_context():
 # RUN SERVER
 # --------------------------
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    logger.info("=" * 50)
+    logger.info("FaceTrack Application Starting...")
+    logger.info(f"Environment: {app.config.get('APP_MODE', 'development')}")
+    logger.info(f"Debug Mode: {app.config.get('DEBUG', False)}")
+    logger.info("=" * 50)
+
+    debug_mode = bool(app.config.get('DEBUG', False))
+    app.run(debug=debug_mode, host='0.0.0.0', port=int(os.getenv('PORT', 5000)), use_reloader=False)

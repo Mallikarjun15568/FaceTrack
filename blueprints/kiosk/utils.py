@@ -5,7 +5,7 @@ from datetime import datetime
 import numpy as np
 from PIL import Image
 import cv2
-from flask import url_for
+from flask import url_for, request
 
 from insightface.app import FaceAnalysis
 from db_utils import fetchall, fetchone, execute
@@ -295,6 +295,20 @@ def recognize_and_mark(frame_b64, app):
     status = attendance_result.get("status", "unknown")
     display_timestamp = attendance_result.get("timestamp") or datetime.now()
     display_time = display_timestamp.strftime("%I:%M %p")
+
+    # Audit attendance marking
+    try:
+        from db_utils import log_audit
+        log_audit(
+            user_id=emp_id,
+            action="ATTENDANCE",
+            module="kiosk",
+            details=f"status={status} similarity={sim_score}",
+            ip_address=request.remote_addr if request else None
+        )
+    except Exception:
+        # best-effort; do not fail recognition flow on audit errors
+        pass
 
     return {
         "status": status,

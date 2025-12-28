@@ -1,7 +1,9 @@
 from . import bp
 from flask import render_template, request, redirect, url_for, session, flash, jsonify
+from utils.extensions import limiter
 from .utils import get_user_by_username, verify_password
 from db_utils import get_connection
+from db_utils import execute, log_audit
 from utils.db import get_db
 import base64, io, json
 from PIL import Image
@@ -13,37 +15,59 @@ from utils.face_encoder import face_encoder
 # LOGIN (Clean – No roles)
 # ============================================================
 @bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("5 per minute", methods=["POST"])
 def login():
     """Username/password authentication - redirects to unified dashboard"""
     if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
+        try:
+            username = request.form.get("username")
+            password = request.form.get("password")
 
-        user = get_user_by_username(username)
+            if not username or not password:
+                flash("Username and password required", "error")
+                return redirect(url_for("auth.login"))
 
-        if not user or not verify_password(user["password"], password):
-            flash("Invalid username or password", "error")
-            return redirect(url_for("auth.login"))
+            user = get_user_by_username(username)
 
-        # Fetch linked employee row (if any)
-        conn = get_connection()
-        cur = conn.cursor(dictionary=True)
-        cur.execute("SELECT * FROM employees WHERE user_id=%s", (user["id"],))
-        employee = cur.fetchone()
-        cur.close()
-        conn.close()
+            if not user or not verify_password(user["password"], password):
+                flash("Invalid username or password", "error")
+                try:
+                    log_audit(user_id=None, action='FAILED_LOGIN', module='auth', details=f'username={username}', ip_address=request.remote_addr)
+                except Exception:
+                    pass
+                return redirect(url_for("auth.login"))
 
-        # Clear old session
-        session.clear()
-        session["logged_in"] = True
-        session["user_id"] = user["id"]
-        session["username"] = user["username"]
-        session["role"] = user.get("role")
-        session['employee_id'] = employee['id'] if employee else None
-        session['full_name'] = employee['full_name'] if employee and employee.get('full_name') else user.get('username')
+            # Fetch linked employee row (if any)
+            conn = get_connection()
+            cur = conn.cursor(dictionary=True)
+            cur.execute("SELECT * FROM employees WHERE user_id=%s", (user["id"],))
+            employee = cur.fetchone()
+            cur.close()
+            conn.close()
 
-        # Single unified dashboard
-        return redirect("/dashboard")
+            # Clear old session
+            session.clear()
+            session["logged_in"] = True
+            session["user_id"] = user["id"]
+            session["username"] = user["username"]
+            session["role"] = user.get("role")
+            session['employee_id'] = employee['id'] if employee else None
+            session['full_name'] = employee['full_name'] if employee and employee.get('full_name') else user.get('username')
+
+            # Audit successful login
+            try:
+                log_audit(user_id=user['id'], action='LOGIN', module='auth', details=f'username={username}', ip_address=request.remote_addr)
+            except Exception:
+                pass
+
+            # Single unified dashboard
+            return redirect("/dashboard")
+
+        except Exception as e:
+            from utils.logger import logger
+            logger.error(f"Login handler error: {e}", exc_info=True)
+            flash('Login failed. Please try again.', 'error')
+            return redirect(url_for('auth.login'))
 
     return render_template("login.html")
 
@@ -61,11 +85,16 @@ def _exempt_login_record(state):
 bp.record(_exempt_login_record)
 
 
+                try:
+                    log_audit(user_id=None, action='FAILED_LOGIN', module='auth', details=f'username={username}', ip_address=request.remote_addr)
+                except Exception:
+                    pass
 
 # ============================================================
 # SIGNUP (Clean – No roles)
 # ============================================================
 @bp.route("/signup", methods=["GET", "POST"])
+@limiter.limit("5 per minute", methods=["POST"])
 def signup():
     """User registration - creates account with role-based access"""
 
@@ -79,6 +108,11 @@ def signup():
         confirm = request.form.get("confirm_password")
 
         # 1. Password match
+            # Audit successful login
+            try:
+                log_audit(user_id=user['id'], action='LOGIN', module='auth', details=f'username={username}', ip_address=request.remote_addr)
+            except Exception:
+                pass
         if password != confirm:
             flash("Passwords do not match", "error")
             return redirect(url_for("auth.signup"))
@@ -157,6 +191,7 @@ def logout():
 # FACE LOGIN (Clean redirect)
 # ============================================================
 @bp.route("/face_login", methods=["POST"])
+@limiter.limit("10 per hour")
 def face_login_api():
     """Face recognition login - matches face embedding to authenticate user"""
     """Face recognition login - matches face embedding to authenticate user"""

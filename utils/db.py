@@ -25,10 +25,10 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# Config (read from env with sane defaults)
+# Config (read from env; avoid hard-coded secrets)
 _DB_HOST = os.getenv("DB_HOST", "localhost")
 _DB_USER = os.getenv("DB_USER", "root")
-_DB_PASSWORD = os.getenv("DB_PASSWORD", "Mallikarjun*123")
+_DB_PASSWORD = os.getenv("DB_PASSWORD")
 _DB_NAME = os.getenv("DB_NAME", "facetrack_db")
 _DB_POOL_NAME = os.getenv("DB_POOL_NAME", "facetrack_pool")
 _DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "8"))
@@ -161,3 +161,45 @@ def execute_fetchall(query, params=None, dict_result=True):
             conn.close()
         except Exception:
             pass
+
+
+# -------------------------
+# Safe helpers
+# -------------------------
+def execute_query(cursor, query, params=None):
+    """Execute query with error handling"""
+    try:
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+        return True
+    except Exception as e:
+        logger.error(f"Query execution failed: {e}", exc_info=True)
+        return False
+
+
+def fetch_one(cursor, query, params=None):
+    """Fetch single row safely"""
+    try:
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+        return cursor.fetchone()
+    except Exception as e:
+        logger.error(f"Fetch one failed: {e}", exc_info=True)
+        return None
+
+
+def fetch_all(cursor, query, params=None):
+    """Fetch all rows safely"""
+    try:
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+        return cursor.fetchall()
+    except Exception as e:
+        logger.error(f"Fetch all failed: {e}", exc_info=True)
+        return []

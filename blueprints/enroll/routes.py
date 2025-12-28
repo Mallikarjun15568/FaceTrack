@@ -83,36 +83,67 @@ def capture_face():
         if not employee_id or not image_base64:
             return jsonify({"status": "error", "message": "Invalid data"}), 400
 
-        # Decode base64 image
+        # Decode base64 image and save temporary file for quality checks
         header, encoded = image_base64.split(",", 1)
         img_bytes = base64.b64decode(encoded)
         img_np = np.frombuffer(img_bytes, np.uint8)
         frame = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
 
-        # Detect face
+        # Save temporary image
+        temp_folder = os.path.join("static", "temp")
+        ensure_folder(temp_folder)
+        temp_filename = generate_unique_filename("jpg")
+        temp_path = os.path.join(temp_folder, temp_filename)
+        with open(temp_path, "wb") as f:
+            f.write(img_bytes)
+
+        # Run image quality checks using centralized face_encoder
+        try:
+            is_valid, quality_score, issues = face_encoder.check_image_quality(temp_path)
+        except Exception as e:
+            # If quality check fails unexpectedly, remove temp and return error
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+            return jsonify({"status": "error", "message": "Quality check failed"}), 500
+
+        if not is_valid:
+            # Cleanup and return issues
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+
+            feedback = face_encoder.get_quality_feedback(issues)
+            return jsonify({
+                "status": "quality_failed",
+                "message": "Image quality too low",
+                "quality_score": round(quality_score, 2),
+                "issues": issues,
+                "feedback": feedback
+            }), 400
+
+        # Quality OK - proceed to detect face and store embedding
         faces = model.get(frame)
         if len(faces) == 0:
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
             return jsonify({"status": "no_face", "message": "No Face Detected"})
 
         face = faces[0]
         embedding = face.normed_embedding.astype("float32")
         emb_bytes = embedding.astype(np.float32).tobytes()
 
-        # Log embedding byte length for diagnostics
-        try:
-            print(f"[+] Embedding bytes length: {len(emb_bytes)} for emp {employee_id}")
-        except Exception:
-            pass
-
-        # Save face image
+        # Save face image in per-employee folder
         folder_path = os.path.join("static", "faces", str(employee_id))
         ensure_folder(folder_path)
 
         filename = generate_unique_filename("jpg")
         file_path = os.path.join(folder_path, filename)
-
-        with open(file_path, "wb") as f:
-            f.write(img_bytes)
+        os.replace(temp_path, file_path)
 
         # Save to DB
         db = get_db()
@@ -171,26 +202,42 @@ def update_capture_face():
         if not employee_id or not image_base64:
             return jsonify({"status": "error", "message": "Invalid data"}), 400
 
-        # Decode Base64 Image
+        # Decode Base64 Image and save temporary file for quality checks
         header, encoded = image_base64.split(",", 1)
         img_bytes = base64.b64decode(encoded)
         img_np = np.frombuffer(img_bytes, np.uint8)
         frame = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
 
-        # Detect face
-        faces = model.get(frame)
-        if len(faces) == 0:
-            return jsonify({"status": "no_face", "message": "No Face Detected"})
+        temp_folder = os.path.join("static", "temp")
+        ensure_folder(temp_folder)
+        temp_filename = generate_unique_filename("jpg")
+        temp_path = os.path.join(temp_folder, temp_filename)
+        with open(temp_path, "wb") as f:
+            f.write(img_bytes)
 
-        face = faces[0]
-        new_embedding = face.normed_embedding.astype("float32")
-        new_emb_bytes = new_embedding.astype(np.float32).tobytes()
-
-        # Log embedding byte length for diagnostics
+        # Run quality check
         try:
-            print(f"[+] New embedding bytes length: {len(new_emb_bytes)} for emp {employee_id}")
-        except Exception:
-            pass
+            is_valid, quality_score, issues = face_encoder.check_image_quality(temp_path)
+        except Exception as e:
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+            return jsonify({"status": "error", "message": "Quality check failed"}), 500
+
+        if not is_valid:
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+            feedback = face_encoder.get_quality_feedback(issues)
+            return jsonify({
+                "status": "quality_failed",
+                "message": "Image quality too low",
+                "quality_score": round(quality_score, 2),
+                "issues": issues,
+                "feedback": feedback
+            }), 400
 
         db = get_db()
         cursor = db.cursor()

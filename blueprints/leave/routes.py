@@ -175,11 +175,14 @@ def approve(leave_id):
 
     column = leave_map.get(leave['leave_type'])
     if column:
-        execute(f"""
-            UPDATE leave_balance
-            SET {column} = {column} - %s
-            WHERE employee_id = %s
-        """, (leave['total_days'], leave['employee_id']))
+        # Ensure column is one of the known safe columns before interpolating
+        allowed_columns = set(leave_map.values())
+        if column in allowed_columns:
+            # Column names cannot be parameterized, validated above from fixed map
+            execute(
+                "UPDATE leave_balance SET " + column + " = " + column + " - %s WHERE employee_id = %s",
+                (leave['total_days'], leave['employee_id'])
+            )
 
     # Send approval email (best-effort, don't break flow on email errors)
     try:
