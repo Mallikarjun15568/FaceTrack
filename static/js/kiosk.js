@@ -27,6 +27,11 @@ const unknownCard = document.getElementById("unknown-card");
 const resultsPlaceholder = document.getElementById("resultsPlaceholder");
 const logsList = document.getElementById("logs-list");
 
+// Centralized scan message setter — single source of truth for scanSubText
+function setScanMessage(text) {
+    if (scanSubText) scanSubText.textContent = text;
+}
+
 // -------- STATE --------
 let stream = null;
 let cameraRunning = false;
@@ -59,7 +64,7 @@ function setScanIdle() {
     }
     
     scanStatusText.textContent = "CAMERA INACTIVE";
-    scanSubText.textContent = "Tap Start Camera to begin";
+    // scanSubText is controlled centrally via setScanMessage()
     scanStatusText.className = "text-white font-bold text-base drop-shadow-2xl tracking-wide";
     
     // Do not replace DOM nodes here. Update existing text nodes only.
@@ -82,7 +87,7 @@ function setScanScanning() {
     }
     
     scanStatusText.textContent = "VERIFYING IDENTITY";
-    scanSubText.textContent = "Please keep your face steady";
+    // scanSubText is controlled centrally via setScanMessage()
     scanStatusText.className = "text-blue-400 font-bold text-base drop-shadow-2xl tracking-wide animate-pulse";
     
     // Do not recreate DOM nodes; only update text and classes to preserve element references
@@ -107,7 +112,7 @@ function setScanSuccess() {
     }
     
     scanStatusText.textContent = "✓ ID VERIFIED";
-    scanSubText.textContent = "Attendance recorded";
+    // scanSubText is controlled centrally via setScanMessage()
     scanStatusText.className = "text-green-400 font-bold text-xl drop-shadow-2xl tracking-wide";
     
     // Preserve DOM nodes; update text instead of replacing elements
@@ -130,7 +135,7 @@ function setScanError() {
     }
     
     scanStatusText.textContent = "FACE NOT RECOGNIZED";
-    scanSubText.textContent = "Please try again";
+    // scanSubText is controlled centrally via setScanMessage()
     scanStatusText.className = "text-red-400 font-bold text-xl drop-shadow-2xl tracking-wide";
     
     // Preserve DOM nodes; update text instead of replacing elements
@@ -442,14 +447,17 @@ function updateUI(data) {
     if (data.status === "check-in") {
         playBeep(1000, 150);
         if (canSpeak(data.name)) speak(`Welcome ${data.name}`);
+        setScanMessage(`Welcome ${data.name}`);
         setScanSuccess();
     } else if (data.status === "check-out") {
         playBeep(900, 150);
         if (canSpeak(data.name)) speak(`Goodbye ${data.name}`);
+        setScanMessage(`Goodbye ${data.name}`);
         setScanSuccess();
     } else if (data.status === "already") {
         playBeep(400, 300);
         if (canSpeak(data.name)) speak(`${data.name}, already marked`);
+        setScanMessage(`${data.name}, already marked`);
     }
 
     addLog(data.name, data.status, data.time, data.photoUrl);
@@ -522,63 +530,46 @@ async function sendFrame() {
 
         // --- UI mapping for liveness WAIT messages ---
         if (data.status === "WAIT") {
-            const msg = data.message || "";
+            const msg = (data.message || "").toLowerCase();
 
-            // No face detected
-            if (msg.includes("No face") || msg.toLowerCase().includes("position your face")) {
+            setScanScanning();
+
+            if (msg.includes("no face")) {
                 setScanIdle();
-                if (scanSubText) scanSubText.textContent = "Please face the camera";
-                if (waitingBlock) {
-                    waitingBlock.classList.remove('hidden');
-                    if (employeeCard) employeeCard.classList.add('hidden');
-                    if (unknownCard) unknownCard.classList.add('hidden');
-                }
+                setScanMessage("Please face the camera");
             }
-            // Multiple faces
-            else if (msg.toLowerCase().includes("multiple")) {
+            else if (msg.includes("multiple")) {
                 setScanIdle();
-                if (scanSubText) scanSubText.textContent = "Only one person at a time";
+                setScanMessage("Only one person at a time");
             }
-            // Analyzing / collecting frames
-            else if (msg.toLowerCase().includes("analyzing")) {
-                setScanScanning();
-                if (scanSubText) scanSubText.textContent = "Please stay still... Verifying";
+            else if (msg.includes("analyzing")) {
+                setScanMessage("Please stay still… Verifying");
             }
-            // Pass ratio feedback (backend: "Pass Ratio: xx.xx% | Conf: y.y")
-            else if (msg.toLowerCase().includes("pass ratio")) {
-                const m = msg.match(/Pass Ratio:\s*([0-9.]+)%/i);
-                const ratio = m ? parseFloat(m[1]) / 100 : null;
-                if (ratio !== null) {
-                    if (ratio < 0.4) {
-                        setScanScanning();
-                        if (scanSubText) scanSubText.textContent = "Please blink once";
-                    } else if (ratio < 0.6) {
-                        setScanScanning();
-                        if (scanSubText) scanSubText.textContent = "Good. Hold steady";
-                    } else {
-                        setScanSuccess();
-                        if (scanSubText) scanSubText.textContent = "Verified. Marking attendance…";
-                    }
+            else if (msg.includes("pass ratio")) {
+                const m = msg.match(/pass ratio:\s*([0-9.]+)/i);
+                const ratio = m ? parseFloat(m[1]) : 0;
+
+                if (ratio < 0.4) {
+                    setScanMessage("Please blink or move slightly");
+                } else if (ratio < 0.6) {
+                    setScanMessage("Almost there… Keep looking");
                 } else {
-                    setScanScanning();
-                    if (scanSubText) scanSubText.textContent = msg;
+                    setScanMessage("Verified! Marking attendance…");
                 }
             }
-            // Generic liveness feedback
             else {
-                setScanScanning();
-                if (scanSubText) scanSubText.textContent = msg || "Verifying...";
+                setScanMessage("Verifying…");
             }
 
-            // Do not proceed to recognition; poll again
-            return;
+            return; // stop recognition flow on liveness WAIT
         }
 
         if (data.status === "unknown") {
             playBeep(600, 200);
             if (canSpeak("unknown")) speak("Face not recognized. Please try again");
             showUnknownCard();
-            if (scanSubText) scanSubText.textContent = "Face not recognized. Try again";
+            setScanMessage("Face not recognized. Please try again");
+            setScanError();
             hardCooldownUntil = Date.now() + RECOGNITION_COOLDOWN_MS;
             return;
         }

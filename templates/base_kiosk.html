@@ -6,8 +6,25 @@
     <title>{% block title %}Kiosk{% endblock %}</title>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
-    <link rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        <!-- Icons: prefer local copy, fallback to CDN if missing -->
+        <link rel="stylesheet" href="/static/vendor/fontawesome/css/all.min.css" id="fa-local-style">
+        <script>
+            (function(){
+                fetch('/static/vendor/fontawesome/css/all.min.css', {method: 'HEAD'}).then(function(res){
+                    if (!res.ok) {
+                        var l = document.createElement('link');
+                        l.rel = 'stylesheet';
+                        l.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css';
+                        document.head.appendChild(l);
+                    }
+                }).catch(function(){
+                    var l = document.createElement('link');
+                    l.rel = 'stylesheet';
+                    l.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css';
+                    document.head.appendChild(l);
+                });
+            })();
+        </script>
 
     {% block head %}{% endblock %}
 </head>

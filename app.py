@@ -115,6 +115,8 @@ app.register_blueprint(charts_bp)
 csrf.exempt(auth_bp)
 # Exempt kiosk blueprint (camera POST APIs) from CSRF - kiosk runs fullscreen JS POSTs
 csrf.exempt(kiosk_bp)
+# Exempt settings POST APIs from CSRF (used by admin JS)
+csrf.exempt(settings_bp)
 
 
 # --------------------------
