@@ -205,14 +205,21 @@ def set_setting(key, value):
 
 
 def log_audit(user_id, action, module=None, details=None, ip_address=None):
-    """Insert a row into audit_logs table. Safe wrapper to record audit events."""
+    """Insert a row into audit_logs table. Safe wrapper to record audit events.
+
+    The `audit_logs` table schema contains `user_id`, `action`, `details`, and
+    an auto-populated `timestamp`. Avoid inserting non-existent columns.
+    """
     try:
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO audit_logs (user_id, action, module, details, ip_address)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (user_id, action, module, details, ip_address))
+        cur.execute(
+            """
+            INSERT INTO audit_logs (user_id, action, details)
+            VALUES (%s, %s, %s)
+            """,
+            (user_id, action, details)
+        )
         conn.commit()
         cur.close()
         conn.close()

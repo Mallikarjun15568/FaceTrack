@@ -58,24 +58,17 @@ function setScanIdle() {
         scanBorderEffect.style.opacity = '0';
     }
     
-    scanStatusText.textContent = "CAMERA IS OFF";
-    scanSubText.textContent = "Start camera to begin";
+    scanStatusText.textContent = "CAMERA INACTIVE";
+    scanSubText.textContent = "Tap Start Camera to begin";
     scanStatusText.className = "text-white font-bold text-base drop-shadow-2xl tracking-wide";
     
-    const iconContainer = scanRing.querySelector('.text-center');
-    if (iconContainer) {
-        iconContainer.innerHTML = `
-            <i class="fas fa-video-slash text-5xl text-gray-400 mb-3 animate-bounce-slow"></i>
-            <p id="scanStatusText" class="text-white font-bold text-base drop-shadow-2xl tracking-wide">CAMERA IS OFF</p>
-            <p id="scanSubText" class="text-gray-300 text-xs mt-2 drop-shadow-lg">Start camera to begin</p>
-        `;
-    }
+    // Do not replace DOM nodes here. Update existing text nodes only.
     
     if (waitingBlock) {
         const primary = waitingBlock.querySelector('p');
         const secondary = waitingBlock.querySelector('p.text-sm');
-        if (primary) primary.textContent = 'Waiting for face…';
-        if (secondary) secondary.textContent = 'Please look at the camera';
+        if (primary) primary.textContent = 'Ready for identification';
+        if (secondary) secondary.textContent = 'Please look directly at the camera';
     }
     if (resultsPlaceholder) resultsPlaceholder.classList.remove('hidden');
 }
@@ -88,24 +81,17 @@ function setScanScanning() {
         scanBorderEffect.style.opacity = '0.5';
     }
     
-    scanStatusText.textContent = "SCANNING";
-    scanSubText.textContent = "Hold steady...";
+    scanStatusText.textContent = "VERIFYING IDENTITY";
+    scanSubText.textContent = "Please keep your face steady";
     scanStatusText.className = "text-blue-400 font-bold text-base drop-shadow-2xl tracking-wide animate-pulse";
     
-    const iconContainer = scanRing.querySelector('.text-center');
-    if (iconContainer) {
-        iconContainer.innerHTML = `
-            <i class="fas fa-user-circle text-5xl text-blue-400 mb-3 animate-pulse"></i>
-            <p id="scanStatusText" class="text-blue-400 font-bold text-base drop-shadow-2xl tracking-wide animate-pulse">SCANNING</p>
-            <p id="scanSubText" class="text-blue-300 text-xs mt-2 drop-shadow-lg">Hold steady...</p>
-        `;
-    }
+    // Do not recreate DOM nodes; only update text and classes to preserve element references
     
     if (waitingBlock) {
         const primary = waitingBlock.querySelector('p');
         const secondary = waitingBlock.querySelector('p.text-sm');
         if (primary) primary.textContent = 'Scanning face';
-        if (secondary) secondary.textContent = 'Hold steady and face the camera';
+        if (secondary) secondary.textContent = 'Please keep your face steady';
         waitingBlock.classList.remove('hidden');
         if (employeeCard) employeeCard.classList.add('hidden');
         if (unknownCard) unknownCard.classList.add('hidden');
@@ -120,18 +106,11 @@ function setScanSuccess() {
         scanBorderEffect.style.opacity = '0';
     }
     
-    scanStatusText.textContent = "✓ VERIFIED";
-    scanSubText.textContent = "Success!";
+    scanStatusText.textContent = "✓ ID VERIFIED";
+    scanSubText.textContent = "Attendance recorded";
     scanStatusText.className = "text-green-400 font-bold text-xl drop-shadow-2xl tracking-wide";
     
-    const iconContainer = scanRing.querySelector('.text-center');
-    if (iconContainer) {
-        iconContainer.innerHTML = `
-            <i class="fas fa-check-circle text-6xl text-green-400 mb-3 animate-bounce-slow"></i>
-            <p id="scanStatusText" class="text-green-400 font-bold text-xl drop-shadow-2xl tracking-wide">✓ VERIFIED</p>
-            <p id="scanSubText" class="text-green-300 text-sm mt-2 drop-shadow-lg font-semibold">Success!</p>
-        `;
-    }
+    // Preserve DOM nodes; update text instead of replacing elements
     
     if (resultsPlaceholder) resultsPlaceholder.classList.add('hidden');
     
@@ -150,18 +129,11 @@ function setScanError() {
         scanBorderEffect.style.opacity = '0';
     }
     
-    scanStatusText.textContent = "✗ NOT FOUND";
-    scanSubText.textContent = "Try again";
+    scanStatusText.textContent = "FACE NOT RECOGNIZED";
+    scanSubText.textContent = "Please try again";
     scanStatusText.className = "text-red-400 font-bold text-xl drop-shadow-2xl tracking-wide";
     
-    const iconContainer = scanRing.querySelector('.text-center');
-    if (iconContainer) {
-        iconContainer.innerHTML = `
-            <i class="fas fa-times-circle text-6xl text-red-400 mb-3 animate-bounce-slow"></i>
-            <p id="scanStatusText" class="text-red-400 font-bold text-xl drop-shadow-2xl tracking-wide">✗ NOT FOUND</p>
-            <p id="scanSubText" class="text-red-300 text-sm mt-2 drop-shadow-lg font-semibold">Try again</p>
-        `;
-    }
+    // Preserve DOM nodes; update text instead of replacing elements
     
     if (resultsPlaceholder) resultsPlaceholder.classList.add('hidden');
     
@@ -487,6 +459,7 @@ function updateUI(data) {
 // LOGS with Slide Animation
 // =======================
 function addLog(name, status, time, photo) {
+    if (!status) return;
     if (!logsList) return;
     
     const row = document.createElement("div");
@@ -547,10 +520,65 @@ async function sendFrame() {
         const data = await res.json();
         if (!data) return;
 
+        // --- UI mapping for liveness WAIT messages ---
+        if (data.status === "WAIT") {
+            const msg = data.message || "";
+
+            // No face detected
+            if (msg.includes("No face") || msg.toLowerCase().includes("position your face")) {
+                setScanIdle();
+                if (scanSubText) scanSubText.textContent = "Please face the camera";
+                if (waitingBlock) {
+                    waitingBlock.classList.remove('hidden');
+                    if (employeeCard) employeeCard.classList.add('hidden');
+                    if (unknownCard) unknownCard.classList.add('hidden');
+                }
+            }
+            // Multiple faces
+            else if (msg.toLowerCase().includes("multiple")) {
+                setScanIdle();
+                if (scanSubText) scanSubText.textContent = "Only one person at a time";
+            }
+            // Analyzing / collecting frames
+            else if (msg.toLowerCase().includes("analyzing")) {
+                setScanScanning();
+                if (scanSubText) scanSubText.textContent = "Please stay still... Verifying";
+            }
+            // Pass ratio feedback (backend: "Pass Ratio: xx.xx% | Conf: y.y")
+            else if (msg.toLowerCase().includes("pass ratio")) {
+                const m = msg.match(/Pass Ratio:\s*([0-9.]+)%/i);
+                const ratio = m ? parseFloat(m[1]) / 100 : null;
+                if (ratio !== null) {
+                    if (ratio < 0.4) {
+                        setScanScanning();
+                        if (scanSubText) scanSubText.textContent = "Please blink once";
+                    } else if (ratio < 0.6) {
+                        setScanScanning();
+                        if (scanSubText) scanSubText.textContent = "Good. Hold steady";
+                    } else {
+                        setScanSuccess();
+                        if (scanSubText) scanSubText.textContent = "Verified. Marking attendance…";
+                    }
+                } else {
+                    setScanScanning();
+                    if (scanSubText) scanSubText.textContent = msg;
+                }
+            }
+            // Generic liveness feedback
+            else {
+                setScanScanning();
+                if (scanSubText) scanSubText.textContent = msg || "Verifying...";
+            }
+
+            // Do not proceed to recognition; poll again
+            return;
+        }
+
         if (data.status === "unknown") {
             playBeep(600, 200);
-            if (canSpeak("unknown")) speak("Face not recognized");
+            if (canSpeak("unknown")) speak("Face not recognized. Please try again");
             showUnknownCard();
+            if (scanSubText) scanSubText.textContent = "Face not recognized. Try again";
             hardCooldownUntil = Date.now() + RECOGNITION_COOLDOWN_MS;
             return;
         }

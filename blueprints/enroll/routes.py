@@ -83,19 +83,23 @@ def capture_face():
         if not employee_id or not image_base64:
             return jsonify({"status": "error", "message": "Invalid data"}), 400
 
-        # Decode base64 image and save temporary file for quality checks
-        header, encoded = image_base64.split(",", 1)
-        img_bytes = base64.b64decode(encoded)
-        img_np = np.frombuffer(img_bytes, np.uint8)
-        frame = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
+        # Decode image using central helper
+        try:
+            pil_img, frame = kiosk_utils.decode_frame(image_base64)
+        except Exception:
+            return jsonify({"status": "error", "message": "Invalid image format"}), 400
 
         # Save temporary image
         temp_folder = os.path.join("static", "temp")
         ensure_folder(temp_folder)
         temp_filename = generate_unique_filename("jpg")
         temp_path = os.path.join(temp_folder, temp_filename)
-        with open(temp_path, "wb") as f:
-            f.write(img_bytes)
+        try:
+            pil_img.save(temp_path, "JPEG")
+        except Exception:
+            # fallback: write raw bytes if save fails
+            with open(temp_path, "wb") as f:
+                f.write(base64.b64decode(image_base64.split(',',1)[1] if ',' in image_base64 else image_base64))
 
         # Run image quality checks using centralized face_encoder
         try:
@@ -202,18 +206,21 @@ def update_capture_face():
         if not employee_id or not image_base64:
             return jsonify({"status": "error", "message": "Invalid data"}), 400
 
-        # Decode Base64 Image and save temporary file for quality checks
-        header, encoded = image_base64.split(",", 1)
-        img_bytes = base64.b64decode(encoded)
-        img_np = np.frombuffer(img_bytes, np.uint8)
-        frame = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
+        # Decode image using central helper
+        try:
+            pil_img, frame = kiosk_utils.decode_frame(image_base64)
+        except Exception:
+            return jsonify({"status": "error", "message": "Invalid image format"}), 400
 
         temp_folder = os.path.join("static", "temp")
         ensure_folder(temp_folder)
         temp_filename = generate_unique_filename("jpg")
         temp_path = os.path.join(temp_folder, temp_filename)
-        with open(temp_path, "wb") as f:
-            f.write(img_bytes)
+        try:
+            pil_img.save(temp_path, "JPEG")
+        except Exception:
+            with open(temp_path, "wb") as f:
+                f.write(base64.b64decode(image_base64.split(',',1)[1] if ',' in image_base64 else image_base64))
 
         # Run quality check
         try:

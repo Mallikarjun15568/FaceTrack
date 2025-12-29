@@ -1,7 +1,8 @@
 from flask import render_template, request, jsonify, current_app, session, redirect, url_for, flash
 from werkzeug.security import check_password_hash, generate_password_hash
 from . import bp
-from .utils import recognize_and_mark
+from .utils import recognize_and_mark, decode_frame
+from utils.liveness_detector import LivenessDetector
 from db_utils import get_setting, set_setting
 import time
 import random
@@ -22,6 +23,10 @@ def enforce_kiosk_lock():
         allowed = ["/kiosk/", "/kiosk/recognize", "/kiosk/exit", "/kiosk/api/status", "/kiosk/admin/"]
         if not any(request.path.startswith(route) for route in allowed):
             return redirect(url_for("kiosk.kiosk_page"))
+
+
+# --- Global liveness detector (single instance for the blueprint) ---
+liveness = LivenessDetector()
 
 
 # ---------------------------------------------------------
@@ -53,12 +58,13 @@ def liveness_check():
         
         data = request.get_json()
         frame_b64 = data.get("frame")
-        
-        # Decode frame
-        img_bytes = base64.b64decode(frame_b64.split(",")[1] if "," in frame_b64 else frame_b64)
-        img_array = np.frombuffer(img_bytes, dtype=np.uint8)
-        frame = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-        
+
+        # Use centralized decoder
+        try:
+            pil_img, frame = decode_frame(frame_b64)
+        except Exception:
+            frame = None
+
         if frame is None:
             return jsonify({"success": False, "message": "Invalid frame"}), 400
         
@@ -96,28 +102,69 @@ def liveness_check():
 def kiosk_recognize():
     """Face recognition + attendance marking (requires liveness pass)"""
     try:
-        # Check if liveness was passed
-        if not session.get("lv_pass", False):
-            return jsonify({
-                "status": "error",
-                "message": "Liveness check required"
-            }), 403
-        
+        import base64
+        import numpy as np
+        import cv2
+        import traceback
+
         data = request.get_json()
         frame_b64 = data.get("frame")
 
-        result = recognize_and_mark(frame_b64, current_app)
-        
-        # Reset liveness after successful recognition
-        if result.get("status") == "matched":
-            session["lv_pass"] = False
-            session["liveness_attempts"] = 0
-            session["liveness_challenge"] = random.choice(["blink", "head_left", "head_right"])
-        
-        return jsonify(result)
+        # --- SAFE FRAME DECODE (central helper) ---
+        try:
+            pil_img, frame = decode_frame(frame_b64)
+        except Exception:
+            frame = None
 
-    except Exception:
-        return jsonify({"status": "error", "message": "Recognition failed"}), 500
+        # If camera/frame not yet ready, return WAIT (do not proceed)
+        if frame is None:
+            return jsonify({
+                "status": "WAIT",
+                "message": "Camera frame not ready"
+            }), 200
+
+        # --- LIVENESS CHECK ---
+        is_live, confidence, message = liveness.check_liveness(frame)
+
+        if not is_live:
+            return jsonify({
+                "status": "WAIT",
+                "message": message
+            }), 200
+
+        # --- RECOGNITION (only when liveness passed) ---
+        result = recognize_and_mark(frame_b64, current_app)
+
+        # Debug/log the raw backend output to diagnose silent failures
+        try:
+            print("DEBUG recognize_and_mark result:", result)
+        except Exception:
+            pass
+
+        # If no structured result returned, ask client to keep scanning
+        if not result or not isinstance(result, dict):
+            return jsonify({
+                "status": "WAIT",
+                "message": "Face not matched yet"
+            }), 200
+
+        # Reset liveness detector after successful attendance marking
+        if result.get("status") in ("check-in", "check-out"):
+            liveness.reset()
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        # Defensive: never return 500 to kiosk frontend; print traceback and return 200 with error
+        try:
+            print("KIOSK RECOGNIZE ERROR:", e)
+            traceback.print_exc()
+        except Exception:
+            pass
+        return jsonify({
+            "status": "ERROR",
+            "message": "Internal processing error"
+        }), 200
 
 
 # ---------------------------------------------------------
