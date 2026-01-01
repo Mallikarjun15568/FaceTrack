@@ -6,16 +6,16 @@
 {% block title %}Leave Management{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-8">
+<div class="min-h-screen py-8">
     <div class="max-w-7xl mx-auto px-4">
         
         <!-- Header -->
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex justify-between items-center mb-8 scroll-reveal">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Leave Management</h1>
-                <p class="text-gray-600 mt-1">View and manage leave applications</p>
+                <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Leave Management</h1>
+                <p class="text-gray-600 mt-2 font-medium">View and manage leave applications</p>
             </div>
-            <a href="{{ url_for('leave.apply') }}" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+            <a href="{{ url_for('leave.apply') }}" class="btn-premium btn-premium-primary">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>
@@ -27,28 +27,28 @@
         {% if balance %}
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <!-- Casual Leave -->
-            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+            <div class="premium-card p-6 border-l-4 border-blue-500 scroll-reveal" style="--delay: 0.1s">
                 <p class="text-sm text-gray-600">Casual Leave</p>
                 <p class="text-3xl font-bold text-gray-900">{{ balance.casual_leave }}</p>
                 <p class="text-xs text-gray-500 mt-1">days remaining</p>
             </div>
 
             <!-- Sick Leave -->
-            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500">
+            <div class="premium-card p-6 border-l-4 border-red-500 scroll-reveal" style="--delay: 0.2s">
                 <p class="text-sm text-gray-600">Sick Leave</p>
                 <p class="text-3xl font-bold text-gray-900">{{ balance.sick_leave }}</p>
                 <p class="text-xs text-gray-500 mt-1">days remaining</p>
             </div>
 
             <!-- Vacation Leave -->
-            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+            <div class="premium-card p-6 border-l-4 border-green-500 scroll-reveal" style="--delay: 0.3s">
                 <p class="text-sm text-gray-600">Vacation Leave</p>
                 <p class="text-3xl font-bold text-gray-900">{{ balance.vacation_leave }}</p>
                 <p class="text-xs text-gray-500 mt-1">days remaining</p>
             </div>
 
             <!-- Work From Home -->
-            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+            <div class="premium-card p-6 border-l-4 border-purple-500 scroll-reveal" style="--delay: 0.4s">
                 <p class="text-sm text-gray-600">Work From Home</p>
                 <p class="text-3xl font-bold text-gray-900">{{ balance.work_from_home }}</p>
                 <p class="text-xs text-gray-500 mt-1">days remaining</p>
@@ -68,7 +68,7 @@
         {% endwith %}
 
         <!-- Leaves Table -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="premium-card overflow-hidden scroll-reveal" style="--delay: 0.5s">
             <div class="px-6 py-4 border-b border-gray-200">
                 <h2 class="text-xl font-semibold text-gray-900">
                     {% if role in ['admin', 'hr'] %}All Leave Applications{% else %}My Leave Applications{% endif %}
@@ -76,7 +76,7 @@
             </div>
 
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="table-premium">
                     <thead class="bg-gray-50">
                         <tr>
                             {% if role in ['admin', 'hr'] %}

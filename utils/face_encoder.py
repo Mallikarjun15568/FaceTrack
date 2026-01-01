@@ -25,7 +25,7 @@ class FaceEncoder:
     # LOAD EMBEDDINGS
     # ----------------------------------------------------
     def load_all_embeddings(self):
-        print("[*] Loading All Face Embeddings...")
+        logger.info("Loading all face embeddings from database...")
 
         db = get_db()
         cur = db.cursor(dictionary=True)
@@ -44,11 +44,11 @@ class FaceEncoder:
             try:
                 emb = self._decode_embedding(emb_blob)
             except Exception as exc:
-                print("[!] Failed to parse embedding:", exc)
+                logger.warning(f"Failed to parse embedding for emp_id {row.get('emp_id')}: {exc}")
                 continue
 
             if emb.shape != (512,):
-                print("[!] Skipping embedding with unexpected size", emb.shape)
+                logger.warning(f"Skipping embedding with unexpected size {emb.shape} for emp_id {row.get('emp_id')}")
                 continue
 
             # Normalize embedding to unit length to allow cosine similarity

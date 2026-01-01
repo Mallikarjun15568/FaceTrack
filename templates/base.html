@@ -11,27 +11,15 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <link rel="stylesheet" href="/static/css/output.css">
+  <link rel="stylesheet" href="/static/css/professional.css">
+  <link rel="stylesheet" href="/static/css/premium.css">
 
-  <!-- Icons: prefer local copy, fallback to CDN if missing -->
-  <link rel="stylesheet" href="/static/vendor/fontawesome/css/all.min.css" id="fa-local-style">
-  <script>
-    (function(){
-      // If local FontAwesome not available, append CDN link
-      fetch('/static/vendor/fontawesome/css/all.min.css', {method: 'HEAD'}).then(function(res){
-        if (!res.ok) {
-          var l = document.createElement('link');
-          l.rel = 'stylesheet';
-          l.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css';
-          document.head.appendChild(l);
-        }
-      }).catch(function(){
-        var l = document.createElement('link');
-        l.rel = 'stylesheet';
-        l.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css';
-        document.head.appendChild(l);
-      });
-    })();
-  </script>
+  <!-- Icons: prefer local copy (if available), otherwise use CDN -->
+  {% if FA_LOCAL_AVAILABLE %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+  {% else %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  {% endif %}
   <script src="https://unpkg.com/feather-icons"></script>
 
   <!-- Alerts -->
@@ -43,17 +31,17 @@
 <body class="bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 text-gray-800">
 
 <!-- Mobile Menu Toggle -->
-<button id="mobileMenuBtn" class="lg:hidden fixed top-4 left-4 z-50 w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl shadow-xl flex items-center justify-center text-white">
+<button id="mobileMenuBtn" class="lg:hidden fixed top-4 left-4 z-50 w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl shadow-xl flex items-center justify-center text-white hover:shadow-2xl transition-all duration-300">
   <i class="fas fa-bars text-xl"></i>
 </button>
 
 <div id="app" class="flex h-screen overflow-hidden">
 
-  <!-- SIDEBAR -->
-  <aside id="sidebar" class="w-72 bg-white/80 backdrop-blur-xl border-r border-gray-200 shadow-xl fixed lg:static inset-y-0 left-0 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
-    <div class="p-6 border-b border-gray-200">
-      <a href="/" class="flex items-center gap-3">
-        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+  <!-- SIDEBAR with Premium Glassmorphism -->
+  <aside id="sidebar" class="w-72 backdrop-blur-xl border-r shadow-2xl fixed lg:static inset-y-0 left-0 z-40 transform -translate-x-full lg:translate-x-0 transition-all duration-300 ease-in-out" style="background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%); border-color: rgba(226, 232, 240, 0.5);">
+    <div class="p-6 border-b border-gray-200/50">
+      <a href="/" class="flex items-center gap-3 group">
+        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
           <i class="fas fa-fingerprint text-white text-2xl"></i>
         </div>
         <div>
@@ -149,14 +137,14 @@
 
   <div class="flex-1 flex flex-col overflow-auto">
 
-    <header class="hidden lg:flex items-center justify-between bg-white/70 backdrop-blur-xl border-b border-gray-200 p-5 shadow-sm">
+    <header class="hidden lg:flex items-center justify-between bg-white/70 backdrop-blur-xl border-b border-gray-200/50 p-5 shadow-sm">
       <div>
-        <h1 class="text-2xl font-bold text-gray-800">{% block page_title %}Dashboard{% endblock %}</h1>
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">{% block page_title %}Dashboard{% endblock %}</h1>
         <!-- Breadcrumbs -->
         <nav class="flex items-center gap-2 text-sm text-gray-600 mt-1">
-          <a href="/dashboard" class="hover:text-blue-600 transition-colors">Home</a>
+          <a href="/dashboard" class="hover:text-blue-600 transition-colors font-medium">Home</a>
           <span class="text-gray-400">/</span>
-          <span class="text-gray-800 font-medium">{% block breadcrumb %}Dashboard{% endblock %}</span>
+          <span class="text-gray-800 font-semibold">{% block breadcrumb %}Dashboard{% endblock %}</span>
         </nav>
       </div>
       
@@ -164,23 +152,27 @@
       <div class="flex items-center gap-4">
         <div class="text-right">
           <div class="text-sm font-semibold text-gray-800">{{ session.get('full_name', 'User') }}</div>
-          <div class="text-xs text-gray-500">{{ session.get('role', 'employee').title() }}</div>
+          <div class="text-xs text-gray-500 flex items-center gap-1">
+            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            {{ session.get('role', 'employee').title() }}
+          </div>
         </div>
-        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-md hover:shadow-xl transition-shadow cursor-pointer">
           {{ session.get('full_name', 'U')[0] }}
         </div>
       </div>
     </header>
 
-    <main class="p-8">
+    <main class="p-8 scroll-reveal">
       {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-      <div class="space-y-2 mb-6">
+      <div class="space-y-2 mb-6" id="flashMessages">
         {% for category, msg in messages %}
-        <div class="p-3 rounded-lg 
-          {% if category=='error' %}bg-red-50 text-red-700
-          {% else %}bg-green-50 text-green-700{% endif %}">
-          {{ msg }}
+        <div class="p-4 rounded-xl shadow-sm border-l-4 animate-slideIn {% if category=='error' %}bg-red-50 border-red-500 text-red-700{% else %}bg-green-50 border-green-500 text-green-700{% endif %}">
+          <div class="flex items-center gap-3">
+            <i class="{% if category=='error' %}fas fa-exclamation-circle{% else %}fas fa-check-circle{% endif %} text-lg"></i>
+            <span class="font-medium">{{ msg }}</span>
+          </div>
         </div>
         {% endfor %}
       </div>
@@ -195,6 +187,7 @@
 
 <script>feather.replace();</script>
 <script src="/static/js/modal.js"></script>
+<script src="/static/js/ui-enhancements.js"></script>
 
 <!-- Mobile Menu Script -->
 <script>

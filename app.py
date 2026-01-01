@@ -37,6 +37,16 @@ app = Flask(__name__)
 app.config.from_object(Config)
 app.secret_key = app.config.get('SECRET_KEY')
 
+# Initialize database connection pool FIRST
+from db_utils import initialize_pool
+try:
+    logger.info("Initializing MySQL connection pool...")
+    initialize_pool()
+    logger.info("Database connection pool initialized successfully")
+except Exception as e:
+    logger.critical(f"Failed to initialize database connection pool: {e}", exc_info=True)
+    raise RuntimeError("Cannot start application without database connection")
+
 # Initialize CSRF for templates (settings page uses csrf_token())
 csrf = CSRFProtect(app)
 
@@ -73,6 +83,14 @@ app.config["KIOSK_UNKNOWN_COOLDOWN"] = float(os.getenv("KIOSK_UNKNOWN_COOLDOWN",
 app.config["EMBED_THRESHOLD"] = float(os.getenv("EMBED_THRESHOLD", "0.75"))
 
 load_dotenv()
+
+# Check for local FontAwesome bundle and expose flag to templates to avoid client-side 404s
+fa_local_path = os.path.join(app.root_path, 'static', 'vendor', 'fontawesome', 'css', 'all.min.css')
+app.config['FA_LOCAL_AVAILABLE'] = os.path.exists(fa_local_path)
+
+@app.context_processor
+def inject_feature_flags():
+    return dict(FA_LOCAL_AVAILABLE=app.config.get('FA_LOCAL_AVAILABLE', False))
 
 # ==========================
 # EMAIL (SYSTEM EMAIL CONFIG) - load from environment (.env)
@@ -111,12 +129,15 @@ app.register_blueprint(reports_bp)
 app.register_blueprint(leave_bp)
 app.register_blueprint(charts_bp)
 
-# Exempt auth blueprint (login/logout) from CSRF token requirement
-csrf.exempt(auth_bp)
-# Exempt kiosk blueprint (camera POST APIs) from CSRF - kiosk runs fullscreen JS POSTs
-csrf.exempt(kiosk_bp)
-# Exempt settings POST APIs from CSRF (used by admin JS)
-csrf.exempt(settings_bp)
+# Selective CSRF exemptions for specific endpoints only
+# Auth: Only exempt face login API (uses token-based auth)
+from blueprints.auth.routes import face_login_api
+csrf.exempt(face_login_api)
+
+# Kiosk: Exempt recognition endpoints (operates in fullscreen kiosk mode)
+from blueprints.kiosk.routes import kiosk_recognize, liveness_check
+csrf.exempt(kiosk_recognize)
+csrf.exempt(liveness_check)
 
 
 # --------------------------
@@ -260,9 +281,13 @@ with app.app_context():
     except Exception as e:
         logger.exception("Failed to sync settings from DB at startup: %s", e)
 
-    print("[*] Loading face embeddings from DB...")
-    face_encoder.load_all_embeddings()
-    print("[+] Embeddings loaded successfully!")
+    logger.info("Loading face embeddings from database...")
+    try:
+        face_encoder.load_all_embeddings()
+        logger.info(f"Successfully loaded {len(face_encoder.embeddings)} face embeddings")
+    except Exception as e:
+        logger.error(f"Failed to load face embeddings: {e}", exc_info=True)
+        logger.warning("Application will start but face recognition may not work properly")
 
 
 # --------------------------

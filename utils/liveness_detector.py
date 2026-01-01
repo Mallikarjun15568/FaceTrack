@@ -42,7 +42,10 @@ class LivenessDetector:
             self.detector = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
             self.eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
         except Exception as e:
-            print(f"Error loading cascade: {e}")
+            from utils.logger import logger
+            logger.error(f"Error loading cascade classifier: {e}")
+            self.detector = None
+            self.eye_cascade = None
 
     # --- MODULE 1: BLINK DETECTION ---
     def detect_blink(self, frame, face_coords):

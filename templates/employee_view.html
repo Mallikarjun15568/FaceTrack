@@ -7,7 +7,7 @@
 
   <h1 class="text-2xl font-bold">Employee Profile</h1>
 
-  <div class="bg-white p-6 rounded-2xl shadow flex flex-col md:flex-row gap-6">
+  <div class="premium-card p-6 flex flex-col md:flex-row gap-6">
 
     <!-- PHOTO -->
     <div>
@@ -43,17 +43,17 @@
   <div class="flex gap-4 pt-2">
 
     <a href="/employees/edit/{{ emp.id }}"
-       class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl">
+       class="btn-premium btn-premium-success">
       Edit
     </a>
 
     <button onclick="deleteEmp({{ emp.id }})"
-            class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl">
+            class="btn-premium btn-premium-danger">
       Delete
     </button>
 
     <button onclick="reenrollEmp({{ emp.id }})"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl">
+            class="btn-premium btn-premium-primary">
       Re-Enroll Face
     </button>
 

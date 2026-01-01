@@ -17,7 +17,7 @@
     </div>
 
     <!-- SECTION 1: RECOGNITION SETTINGS -->
-    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 hover:shadow-xl transition-shadow" style="transition-delay: 0.1s">
+    <div class="scroll-reveal premium-card p-8" style="--delay: 0.1s">
         <div class="flex items-center gap-3 mb-6">
             <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
                 <i class="fas fa-brain text-white text-xl"></i>
@@ -52,7 +52,7 @@
                 </label>
                 <input id="duplicate_interval" type="number"
                        value="{{ settings.duplicate_interval }}"
-                       class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm" />
+                       class="input-premium w-full" />
             </div>
 
             <!-- Snapshot Mode -->
@@ -74,7 +74,7 @@
 
 
     <!-- SECTION 2: ATTENDANCE RULES -->
-    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 hover:shadow-xl transition-shadow" style="transition-delay: 0.2s">
+    <div class="scroll-reveal premium-card p-8" style="--delay: 0.2s">
         <div class="flex items-center gap-3 mb-6">
             <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md">
                 <i class="fas fa-check-circle text-white text-xl"></i>
@@ -91,7 +91,7 @@
                 </label>
                 <input id="late_time" type="time"
                        value="{{ settings.late_time }}"
-                       class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm" />
+                       class="input-premium w-full" />
             </div>
 
             <div>
@@ -101,7 +101,7 @@
                 </label>
                 <input id="min_confidence" type="number"
                        value="{{ settings.min_confidence }}"
-                       class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm" />
+                       class="input-premium w-full" />
             </div>
 
         </div>
@@ -109,7 +109,7 @@
 
 
     <!-- SECTION 3: SYSTEM PREFERENCES -->
-    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 hover:shadow-xl transition-shadow" style="transition-delay: 0.3s">
+    <div class="scroll-reveal premium-card p-8" style="--delay: 0.3s">
         <div class="flex items-center gap-3 mb-6">
             <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center shadow-md">
                 <i class="fas fa-cog text-white text-xl"></i>
@@ -126,7 +126,7 @@
                 </label>
                 <input id="company_name" type="text"
                        value="{{ settings.company_name }}"
-                       class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm" />
+                       class="input-premium w-full" />
             </div>
 
             <div>
@@ -144,7 +144,7 @@
                             <input id="company_logo" name="company_logo" type="file" accept="image/*" class="mb-3" />
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="button" id="uploadLogoBtn"
-                                class="btn-primary px-5 py-2.5 rounded-xl shadow-md">
+                                class="btn-premium btn-premium-primary">
                             <i class="fas fa-upload mr-2"></i>Upload Logo
                         </button>
                     </form>
@@ -183,7 +183,7 @@
                 <label for="login_alert" class="block font-medium mb-1">Login Alert</label>
                 <input id="login_alert"
                        value="{{ settings.login_alert }}"
-                       class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm"
+                       class="input-premium w-full"
                        placeholder="off or email" />
             </div>
 

@@ -90,9 +90,17 @@ async function sendFrameToServer(imageData) {
   while (tries <= MAX_RETRY_NETWORK) {
     tries++;
     try {
+      // Get CSRF token from meta tag
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+      
+      const headers = { "Content-Type": "application/json" };
+      if (csrfToken) {
+        headers["X-CSRFToken"] = csrfToken;
+      }
+      
       const resp = await fetch("/auth/face_login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: headers,
         body: JSON.stringify({ image: imageData }),
       });
       if (!resp.ok) {

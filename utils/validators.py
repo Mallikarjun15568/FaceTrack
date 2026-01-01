@@ -1,7 +1,58 @@
 import re
+import imghdr
 from flask import jsonify
 from functools import wraps
 from utils.logger import logger
+
+# File upload configuration
+ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
+def validate_image_upload(file_storage):
+    """Validate uploaded image file for security
+    
+    Args:
+        file_storage: Flask FileStorage object
+        
+    Returns:
+        (is_valid: bool, error_message: str or None)
+    """
+    if not file_storage or not file_storage.filename:
+        return False, "No file provided"
+    
+    filename = file_storage.filename.lower()
+    
+    # Check file extension
+    if '.' not in filename:
+        return False, "File has no extension"
+    
+    ext = filename.rsplit('.', 1)[1]
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        return False, f"Invalid file type. Allowed: {', '.join(ALLOWED_IMAGE_EXTENSIONS)}"
+    
+    # Check file size (seek to end to get size)
+    file_storage.seek(0, 2)  # Seek to end
+    size = file_storage.tell()
+    file_storage.seek(0)  # Reset to beginning
+    
+    if size > MAX_FILE_SIZE:
+        return False, f"File too large. Max size: {MAX_FILE_SIZE // (1024*1024)}MB"
+    
+    if size == 0:
+        return False, "File is empty"
+    
+    # Verify actual file type using magic bytes
+    try:
+        file_type = imghdr.what(file_storage)
+        file_storage.seek(0)  # Reset after reading
+        
+        if file_type not in ['png', 'jpeg', 'gif', 'webp']:
+            return False, "File content does not match image format"
+    except Exception:
+        file_storage.seek(0)
+        return False, "Could not verify file type"
+    
+    return True, None
 
 def validate_employee_id(emp_id):
     """Validate employee ID format"""
@@ -12,6 +63,140 @@ def validate_employee_id(emp_id):
         return False, "Employee ID must be 3-20 alphanumeric characters"
 
     return True, None
+
+
+"""
+Input validation and sanitization utilities for FaceTrack
+Prevents XSS, injection attacks, and ensures data quality
+"""
+import re
+from markupsafe import escape
+
+
+def sanitize_text(text, max_length=255):
+    """
+    Sanitize text input - removes HTML, trims whitespace
+    
+    Args:
+        text: Raw text input
+        max_length: Maximum allowed length
+        
+    Returns:
+        Sanitized text string
+    """
+    if not text or not isinstance(text, str):
+        return ""
+    
+    # Remove leading/trailing whitespace
+    cleaned = text.strip()
+    
+    # Escape HTML special characters to prevent XSS
+    cleaned = escape(cleaned)
+    
+    # Truncate to max length
+    if len(cleaned) > max_length:
+        cleaned = cleaned[:max_length]
+    
+    return str(cleaned)  # Convert Markup back to str
+
+
+def sanitize_email(email):
+    """
+    Validate and sanitize email address
+    
+    Args:
+        email: Email string
+        
+    Returns:
+        Sanitized email or None if invalid
+    """
+    if not email or not isinstance(email, str):
+        return None
+    
+    email = email.strip().lower()
+    
+    # Basic email regex pattern
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    
+    if not re.match(pattern, email):
+        return None
+    
+    if len(email) > 255:
+        return None
+    
+    return email
+
+
+def sanitize_username(username):
+    """
+    Sanitize username - alphanumeric, underscore, hyphen only
+    
+    Args:
+        username: Username string
+        
+    Returns:
+        Sanitized username or None if invalid
+    """
+    if not username or not isinstance(username, str):
+        return None
+    
+    username = username.strip().lower()
+    
+    # Only allow alphanumeric, underscore, hyphen
+    if not re.match(r'^[a-z0-9_-]{3,50}$', username):
+        return None
+    
+    return username
+
+
+def validate_password(password):
+    """
+    Validate password strength
+    
+    Requirements:
+    - At least 8 characters
+    - At least 1 uppercase letter
+    - At least 1 lowercase letter
+    - At least 1 number
+    - At least 1 special character
+    
+    Args:
+        password: Password string
+        
+    Returns:
+        (is_valid: bool, message: str)
+    """
+    if not password or not isinstance(password, str):
+        return False, "Password is required"
+    
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters"
+    
+    if len(password) > 128:
+        return False, "Password too long (max 128 characters)"
+    
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter"
+    
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least one lowercase letter"
+    
+    if not re.search(r'\d', password):
+        return False, "Password must contain at least one number"
+    
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return False, "Password must contain at least one special character (!@#$%^&*...)"
+    
+    # Check against common passwords
+    common_passwords = [
+        'password', '12345678', 'qwerty', 'abc123', 'password123',
+        'admin123', 'letmein', 'welcome', 'monkey', '1234567890'
+    ]
+    
+    if password.lower() in common_passwords:
+        return False, "Password is too common, please choose a stronger one"
+    
+    return True, "Password is strong"
 
 
 def validate_email(email):

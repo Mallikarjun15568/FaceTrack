@@ -4,10 +4,14 @@ from flask import (
     url_for, flash, session, jsonify
 )
 import os
-import face_recognition
+import cv2
+import numpy as np
 from werkzeug.utils import secure_filename
 from utils.db import get_db
 from blueprints.auth.utils import login_required
+from utils.face_encoder import face_encoder, invalidate_embeddings_cache
+from utils.logger import logger
+from db_utils import log_audit
 
 
 # ============================================================
@@ -136,6 +140,13 @@ def add_employee():
     if not photo_file:
         flash("Please upload a photo!", "danger")
         return redirect(url_for("employees.add_employee"))
+    
+    # Validate file upload
+    from utils.validators import validate_image_upload
+    is_valid, error_msg = validate_image_upload(photo_file)
+    if not is_valid:
+        flash(f"Photo upload failed: {error_msg}", "danger")
+        return redirect(url_for("employees.add_employee"))
 
     cursor.execute("""
         INSERT INTO employees (full_name, email, phone, gender, job_title, department_id, join_date, status, photo_path, face_embedding)
@@ -152,26 +163,59 @@ def add_employee():
     image_path = os.path.join(folder_path, filename)
     photo_file.save(image_path)
 
-    img = face_recognition.load_image_file(image_path)
-    face_locations = face_recognition.face_locations(img)
+    try:
+        # Use InsightFace for consistent embeddings
+        img = cv2.imread(image_path)
+        if img is None:
+            flash("Failed to read uploaded photo!", "danger")
+            return redirect(url_for("employees.add_employee"))
 
-    if not face_locations:
-        flash("No face detected in the photo!", "danger")
+        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        embedding = face_encoder.get_embedding(rgb)
+
+        if embedding is None:
+            flash("No face detected in the photo!", "danger")
+            logger.warning(f"No face detected in uploaded photo for employee: {full_name}")
+            return redirect(url_for("employees.add_employee"))
+
+        # Store embedding in face_data table (512-dim float32)
+        embedding_bytes = embedding.astype(np.float32).tobytes()
+        
+        # Update employee photo path
+        cursor.execute("""
+            UPDATE employees
+            SET photo_path=%s
+            WHERE id=%s
+        """, (image_path, employee_id))
+        
+        # Insert into face_data table
+        cursor.execute("""
+            INSERT INTO face_data (emp_id, embedding, image_path, created_at)
+            VALUES (%s, %s, %s, NOW())
+        """, (employee_id, embedding_bytes, image_path))
+        
+        db.commit()
+
+        # Invalidate cache so new embedding is loaded
+        invalidate_embeddings_cache()
+
+        # Audit log
+        log_audit(
+            user_id=session.get('user_id'),
+            action='EMPLOYEE_ADDED',
+            module='employees',
+            details=f'Added employee: {full_name} (ID: {employee_id})',
+            ip_address=request.remote_addr
+        )
+
+        flash("Employee added successfully!", "success")
+        logger.info(f"Employee added: {full_name} (ID: {employee_id})")
+        return redirect(url_for("employees.list_employees"))
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error adding employee: {e}", exc_info=True)
+        flash(f"Error adding employee: {str(e)}", "danger")
         return redirect(url_for("employees.add_employee"))
-
-    encoding = face_recognition.face_encodings(img, face_locations)[0]
-    encoding_bytes = encoding.tobytes()
-
-    cursor.execute("""
-        UPDATE employees
-        SET photo_path=%s, face_embedding=%s
-        WHERE id=%s
-    """, (image_path, encoding_bytes, employee_id))
-
-    db.commit()
-
-    flash("Employee added successfully!", "success")
-    return redirect(url_for("employees.list_employees"))
 
 
 # ============================================================
@@ -288,6 +332,13 @@ def edit_employee(emp_id):
     encoding_bytes = None
 
     if photo_file and photo_file.filename.strip() != "":
+        # Validate file upload
+        from utils.validators import validate_image_upload
+        is_valid, error_msg = validate_image_upload(photo_file)
+        if not is_valid:
+            flash(f"Photo upload failed: {error_msg}", "danger")
+            return redirect(url_for("employees.view_employee", emp_id=emp_id))
+        
         update_photo = True
 
         folder_path = f"static/uploads/employees/{emp_id}/"
@@ -297,32 +348,73 @@ def edit_employee(emp_id):
         photo_path = os.path.join(folder_path, filename)
         photo_file.save(photo_path)
 
-        img = face_recognition.load_image_file(photo_path)
-        face_locations = face_recognition.face_locations(img)
+        try:
+            # Use InsightFace for consistent embeddings
+            img = cv2.imread(photo_path)
+            if img is None:
+                flash("Failed to read uploaded photo!", "danger")
+                return redirect(url_for("employees.edit_employee", emp_id=emp_id))
 
-        if not face_locations:
-            flash("No face detected in the new photo!", "danger")
+            rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            embedding = face_encoder.get_embedding(rgb)
+
+            if embedding is None:
+                flash("No face detected in the new photo!", "danger")
+                logger.warning(f"No face detected in updated photo for employee ID: {emp_id}")
+                return redirect(url_for("employees.edit_employee", emp_id=emp_id))
+
+            embedding_bytes = embedding.astype(np.float32).tobytes()
+            
+            # Update face_data table
+            cursor.execute("""
+                INSERT INTO face_data (emp_id, embedding, image_path, created_at)
+                VALUES (%s, %s, %s, NOW())
+                ON DUPLICATE KEY UPDATE
+                    embedding = VALUES(embedding),
+                    image_path = VALUES(image_path),
+                    created_at = NOW()
+            """, (emp_id, embedding_bytes, photo_path))
+        except Exception as e:
+            logger.error(f"Error processing photo for employee {emp_id}: {e}", exc_info=True)
+            flash(f"Error processing photo: {str(e)}", "danger")
             return redirect(url_for("employees.edit_employee", emp_id=emp_id))
 
-        encoding = face_recognition.face_encodings(img, face_locations)[0]
-        encoding_bytes = encoding.tobytes()
+    try:
+        base_update_query = """
+            UPDATE employees
+            SET full_name=%s, email=%s, phone=%s, gender=%s, job_title=%s,
+                department_id=%s, join_date=%s, status=%s
+        """
+        params = [full_name, email, phone, gender, job_title, department_id, join_date, status]
 
-    base_update_query = """
-        UPDATE employees
-        SET full_name=%s, email=%s, phone=%s, gender=%s, job_title=%s,
-            department_id=%s, join_date=%s, status=%s
-    """
-    params = [full_name, email, phone, gender, job_title, department_id, join_date, status]
+        if update_photo:
+            base_update_query += ", photo_path=%s"
+            params.append(photo_path)
 
-    if update_photo:
-        base_update_query += ", photo_path=%s, face_embedding=%s"
-        params += [photo_path, encoding_bytes]
+        base_update_query += " WHERE id=%s"
+        params.append(emp_id)
 
-    base_update_query += " WHERE id=%s"
-    params.append(emp_id)
+        cursor.execute(base_update_query, tuple(params))
+        db.commit()
 
-    cursor.execute(base_update_query, tuple(params))
-    db.commit()
+        # Invalidate cache if photo was updated
+        if update_photo:
+            invalidate_embeddings_cache()
 
-    flash("Employee updated successfully!", "success")
-    return redirect(url_for("employees.list_employees"))
+        # Audit log
+        log_audit(
+            user_id=session.get('user_id'),
+            action='EMPLOYEE_UPDATED',
+            module='employees',
+            details=f'Updated employee ID: {emp_id}',
+            ip_address=request.remote_addr
+        )
+
+        flash("Employee updated successfully!", "success")
+        logger.info(f"Employee updated: ID {emp_id}")
+        return redirect(url_for("employees.list_employees"))
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating employee {emp_id}: {e}", exc_info=True)
+        flash(f"Error updating employee: {str(e)}", "danger")
+        return redirect(url_for("employees.edit_employee", emp_id=emp_id))

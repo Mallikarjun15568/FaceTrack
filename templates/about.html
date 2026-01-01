@@ -4,36 +4,48 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>About — FaceTrack Pro</title>
-  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+  <link rel="icon" type="image/png" href="{{ url_for('favicon') }}">
 
-  <link href="/static/css/output.css" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/output.css">
+  <link rel="stylesheet" href="/static/css/professional.css">
+  <link rel="stylesheet" href="/static/css/premium.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 </head>
-<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+<body class="bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 text-gray-800">
 
-<!-- NAVBAR  -->
-<nav class="w-full bg-white dark:bg-gray-900 shadow-md py-4 px-6 flex justify-between items-center">
-  <div class="text-2xl font-bold text-blue-600">FaceTrack Pro</div>
-  <div class="flex space-x-6 text-gray-700 dark:text-gray-200">
-      <a href="/" class="hover:text-blue-600">Home</a>
-      <a href="/about" class="hover:text-blue-600 font-semibold">About</a>
-      <a href="/contact" class="hover:text-blue-600">Contact</a>
-      <a href="/login" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md transition">
-        Login
+<!-- Animated Background Blobs -->
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+  <div class="absolute top-0 right-0 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl animate-pulse" style="animation-duration: 4s;"></div>
+  <div class="absolute bottom-0 left-0 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl animate-pulse" style="animation-duration: 6s;"></div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="w-full backdrop-blur-xl bg-white/80 border-b border-white/20 shadow-lg py-4 px-6 flex justify-between items-center sticky top-0 z-50">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+      <i class="fas fa-fingerprint text-white text-xl"></i>
+    </div>
+    <div class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">FaceTrack Pro</div>
+  </div>
+  <div class="flex items-center gap-6">
+      <a href="/" class="text-gray-700 hover:text-blue-600 font-medium transition-colors">Home</a>
+      <a href="/about" class="text-blue-600 font-semibold">About</a>
+      <a href="/contact" class="text-gray-700 hover:text-blue-600 font-medium transition-colors">Contact</a>
+      <a href="/login" class="btn-premium btn-premium-primary">
+        <i class="fas fa-sign-in-alt mr-2"></i>Login
       </a>
   </div>
 </nav>
 
 
-<!-- ============================ -->
-<!--       ABOUT HERO SECTION     -->
-<!-- ============================ -->
-<section class="py-20">
+<!-- ABOUT HERO SECTION -->
+<section class="py-20 scroll-reveal" style="--delay: 0.1s">
   <div class="max-w-6xl mx-auto px-6 text-center">
-    <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white">
-      About <span class="text-blue-600">FaceTrack Pro</span>
+    <h1 class="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent animate-gradient">
+      About FaceTrack Pro
     </h1>
-    <p class="text-xl text-gray-600 dark:text-gray-300 mt-4 max-w-3xl mx-auto">
+    <p class="text-xl text-gray-600 mt-6 max-w-3xl mx-auto">
       A next-generation AI-powered attendance system designed to bring accuracy,
       security and automation to modern workplaces.
     </p>
@@ -41,43 +53,88 @@
 </section>
 
 
-<!-- ============================ -->
-<!--       ABOUT DESCRIPTION      -->
-<!-- ============================ -->
+<!-- ABOUT DESCRIPTION -->
 <section class="py-10">
-  <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+  <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
 
     <!-- Left text -->
-    <div class="space-y-5">
-      <h2 class="text-3xl font-bold text-gray-900 dark:text-white">What is FaceTrack Pro?</h2>
-      <p class="text-gray-600 dark:text-gray-300 text-lg">
+    <div class="space-y-6 scroll-reveal" style="--delay: 0.2s">
+      <h2 class="text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+        What is FaceTrack Pro?
+      </h2>
+      <p class="text-gray-700 text-lg leading-relaxed">
         FaceTrack Pro is an AI-powered facial recognition attendance system built
         using advanced deep learning and InsightFace technology. It eliminates
         the need for manual registers, RFID cards, or biometric touch sensors.
       </p>
 
-      <p class="text-gray-600 dark:text-gray-300 text-lg">
+      <p class="text-gray-700 text-lg leading-relaxed">
         Our system captures faces in real-time, matches them with high accuracy,
         and automatically logs attendance with timestamps, snapshots, reports,
         and analytics — all in a user-friendly dashboard.
       </p>
+
+      <div class="flex gap-4 pt-4">
+        <div class="premium-card p-4 flex-1 text-center hover:scale-105 transition-transform">
+          <div class="text-3xl font-bold text-blue-600">99%+</div>
+          <div class="text-sm text-gray-600 mt-1">Accuracy</div>
+        </div>
+        <div class="premium-card p-4 flex-1 text-center hover:scale-105 transition-transform">
+          <div class="text-3xl font-bold text-purple-600">24/7</div>
+          <div class="text-sm text-gray-600 mt-1">Support</div>
+        </div>
+        <div class="premium-card p-4 flex-1 text-center hover:scale-105 transition-transform">
+          <div class="text-3xl font-bold text-green-600">Fast</div>
+          <div class="text-sm text-gray-600 mt-1">Recognition</div>
+        </div>
+      </div>
     </div>
 
     <!-- Right image -->
-    <div class="flex justify-center">
-      <img src="/static/images/hero_illustration.png"
-           class="w-[420px] h-auto drop-shadow-xl rounded-xl"
-           alt="FaceTrack Illustration">
+    <div class="flex justify-center scroll-reveal" style="--delay: 0.3s">
+      <div class="premium-card p-8 hover:scale-105 transition-transform duration-300">
+        <div class="w-full aspect-square bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+          <i class="fas fa-user-shield text-white text-9xl opacity-80"></i>
+        </div>
+      </div>
     </div>
 
   </div>
 </section>
 
 
-<!-- ============================ -->
-<!--       MISSION / VISION       -->
-<!-- ============================ -->
-<section class="py-16 bg-gray-100 dark:bg-gray-800">
+<!-- MISSION / VISION -->
+<section class="py-16 mt-12">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      
+      <!-- Mission -->
+      <div class="premium-card p-8 scroll-reveal" style="--delay: 0.2s">
+        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-6 shadow-lg">
+          <i class="fas fa-bullseye text-white text-2xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-4">Our Mission</h3>
+        <p class="text-gray-600 leading-relaxed">
+          To revolutionize attendance management through cutting-edge AI technology,
+          making it contactless, accurate, and effortless for organizations worldwide.
+        </p>
+      </div>
+
+      <!-- Vision -->
+      <div class="premium-card p-8 scroll-reveal" style="--delay: 0.3s">
+        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-6 shadow-lg">
+          <i class="fas fa-eye text-white text-2xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-4">Our Vision</h3>
+        <p class="text-gray-600 leading-relaxed">
+          To become the global leader in AI-powered workforce management solutions,
+          setting new standards for security, reliability, and user experience.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
   <div class="max-w-6xl mx-auto px-6">
 
     <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 text-gray-900 dark:text-white">

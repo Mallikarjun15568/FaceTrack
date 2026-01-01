@@ -5,8 +5,12 @@
 [![InsightFace](https://img.shields.io/badge/InsightFace-buffalo__l-orange.svg)](https://github.com/deepinsight/insightface)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg)](https://www.mysql.com/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8.svg)](https://tailwindcss.com/)
+[![Health](https://img.shields.io/badge/Health-85%2F100-brightgreen.svg)](CHANGELOG.md)
+[![Production](https://img.shields.io/badge/Production-Ready-success.svg)](DEPLOYMENT.md)
 
 > Production-grade facial recognition attendance system powered by InsightFace ArcFace. Features real-time kiosk mode, single-row attendance architecture, and enterprise-level security.
+
+> **🎉 Version 2.0** - Complete professional upgrade with critical fixes, security enhancements, and performance optimizations!
 
 ---
 

@@ -9,6 +9,8 @@ from flask import url_for, request
 
 from insightface.app import FaceAnalysis
 from db_utils import fetchall, fetchone, execute
+from utils.face_encoder import face_encoder
+from utils.logger import logger
 
 from blueprints.settings.routes import load_settings
 
@@ -19,22 +21,11 @@ SAVE_SNAPSHOTS = str(_env_snap).lower() not in ("0", "false", "no", "off")
 
 
 # -------------------------------------------------------------
-# MODEL + EMBEDDING CACHES
+# EMBEDDING CACHE (With automatic expiry/refresh)
 # -------------------------------------------------------------
-recognizer = None
 embeddings_cache = None
-
-
-def get_recognizer():
-    global recognizer
-    if recognizer is not None:
-        return recognizer
-
-    model = FaceAnalysis(name="buffalo_l")
-    model.prepare(ctx_id=-1, det_size=(640, 640))
-
-    recognizer = model
-    return recognizer
+cache_timestamp = None
+CACHE_TTL = 300  # 5 minutes - refresh cache to detect new enrollments
 
 
 # -------------------------------------------------------------
@@ -82,9 +73,26 @@ def save_snapshot(img, app, filename):
 # -------------------------------------------------------------
 
 def load_embeddings():
-    global embeddings_cache
-    if embeddings_cache is not None:
-        return embeddings_cache
+    """Load face embeddings from database with automatic cache refresh.
+    
+    Cache expires after CACHE_TTL seconds to ensure new enrollments are recognized.
+    """
+    global embeddings_cache, cache_timestamp
+    import time
+    
+    now = time.time()
+    
+    # Check if cache is still valid
+    if embeddings_cache is not None and cache_timestamp is not None:
+        age = now - cache_timestamp
+        if age < CACHE_TTL:
+            logger.debug(f"Using cached embeddings (age: {age:.1f}s)")
+            return embeddings_cache
+        else:
+            logger.info(f"Cache expired ({age:.1f}s > {CACHE_TTL}s), reloading embeddings")
+    
+    # Cache miss or expired - reload from database
+    logger.info("Loading face embeddings from database...")
 
     rows = fetchall("""
         SELECT
@@ -126,15 +134,19 @@ def load_embeddings():
         })
 
     embeddings_cache = embeddings
+    cache_timestamp = now  # Update cache timestamp
+    logger.info(f"Loaded {len(embeddings)} face embeddings successfully")
+    
     return embeddings_cache
 
-
-def reload_embeddings(force=False):
-    """Force reload the cached embeddings from the database.
-
-    `force` is kept for backward compatibility. This function will
-    clear the in-memory cache and reload from the DB so kiosk
-    recognition uses a single source of truth.
+    
+    Clears cache timestamp to force immediate reload on next access.
+    Useful when new employee is enrolled or face data is updated.
+    """
+    global embeddings_cache, cache_timestamp
+    embeddings_cache = None
+    cache_timestamp = None
+    logger.info("Embedding cache cleared, will reload on next access")le source of truth.
     """
     global embeddings_cache
     embeddings_cache = None
@@ -214,8 +226,9 @@ def recognize_and_mark(frame_b64, app):
     try:
         now_str = datetime.now().strftime("%I:%M %p")
         pil_img, np_img = decode_frame(frame_b64)
-        rec = get_recognizer()
-        faces = rec.get(np_img)
+        
+        # Use centralized face_encoder
+        faces = face_encoder.app.get(np_img)
 
         # Thread-safe cooldown using session (per-client)
         last_unknown_str = session.get("kiosk_last_unknown")
@@ -324,10 +337,7 @@ def recognize_and_mark(frame_b64, app):
             "similarity": float(sim_score)
         }
     except Exception as e:
-        try:
-            print("recognize_and_mark ERROR:", e)
-        except Exception:
-            pass
+        logger.error(f"recognize_and_mark error: {e}", exc_info=True)
         # Ensure we always return a dictionary expected by the frontend
         return {
             "status": "WAIT",

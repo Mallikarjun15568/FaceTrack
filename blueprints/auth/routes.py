@@ -38,21 +38,25 @@ def login():
                 return redirect(url_for("auth.login"))
 
             # Fetch linked employee row (if any)
-            conn = get_connection()
-            cur = conn.cursor(dictionary=True)
+            db = get_db()
+            cur = db.cursor(dictionary=True)
             cur.execute("SELECT * FROM employees WHERE user_id=%s", (user["id"],))
             employee = cur.fetchone()
-            cur.close()
-            conn.close()
 
-            # Clear old session
+            # Clear old session and regenerate session ID (prevent session fixation)
+            old_session_data = dict(session)  # Preserve any needed data
             session.clear()
+            
+            # Set new session data
             session["logged_in"] = True
             session["user_id"] = user["id"]
             session["username"] = user["username"]
             session["role"] = user.get("role")
             session['employee_id'] = employee['id'] if employee else None
             session['full_name'] = employee['full_name'] if employee and employee.get('full_name') else user.get('username')
+            
+            # Force session ID regeneration
+            session.modified = True
 
             # Audit successful login
             try:
@@ -106,19 +110,41 @@ def signup():
         if password != confirm:
             flash("Passwords do not match", "error")
             return redirect(url_for("auth.signup"))
+        
+        # 2. Password strength validation
+        from utils.validators import validate_password, sanitize_email, sanitize_text, sanitize_username
+        
+        is_strong, msg = validate_password(password)
+        if not is_strong:
+            flash(msg, "error")
+            return redirect(url_for("auth.signup"))
+        
+        # 3. Sanitize inputs
+        clean_email = sanitize_email(email)
+        if not clean_email:
+            flash("Invalid email format", "error")
+            return redirect(url_for("auth.signup"))
+        
+        clean_username = sanitize_username(username)
+        if not clean_username:
+            flash("Username must be 3-50 characters (letters, numbers, underscore, hyphen only)", "error")
+            return redirect(url_for("auth.signup"))
+        
+        clean_name = sanitize_text(full_name, max_length=100)
+        if not clean_name:
+            flash("Full name is required", "error")
+            return redirect(url_for("auth.signup"))
 
         # Default role (no role from UI)
         role = "employee"
 
-        conn = get_connection()
-        cur = conn.cursor(dictionary=True)
+        db = get_db()
+        cur = db.cursor(dictionary=True)
 
         # 2. Username exists?
-        cur.execute("SELECT * FROM users WHERE username=%s", (username,))
+        cur.execute("SELECT * FROM users WHERE username=%s", (clean_username,))
         if cur.fetchone():
             flash("Username already taken", "error")
-            cur.close()
-            conn.close()
             return redirect(url_for("auth.signup"))
 
         # 3. Hash password
@@ -129,11 +155,11 @@ def signup():
         cur.execute("""
             INSERT INTO users (username, password, role, email)
             VALUES (%s, %s, %s, %s)
-        """, (username, hashed, role, email))
-        conn.commit()
+        """, (clean_username, hashed, role, clean_email))
+        db.commit()
 
         # 5. Get user ID
-        cur.execute("SELECT id FROM users WHERE username=%s", (username,))
+        cur.execute("SELECT id FROM users WHERE username=%s", (clean_username,))
         new_user_id = cur.fetchone()["id"]
 
         # 6. Create employee record (always)
@@ -141,11 +167,8 @@ def signup():
             INSERT INTO employees 
             (user_id, full_name, email, phone, gender, department_id, join_date)
             VALUES (%s, %s, %s, %s, %s, %s, CURDATE())
-        """, (new_user_id, full_name, email, phone, gender, 1))
-        conn.commit()
-
-        cur.close()
-        conn.close()
+        """, (new_user_id, clean_name, clean_email, phone, gender, 1))
+        db.commit()
 
         flash("Account created successfully! Please login.", "success")
         return redirect(url_for("auth.login"))
@@ -181,10 +204,27 @@ def logout():
 # FACE LOGIN (Clean redirect)
 # ============================================================
 @bp.route("/face_login", methods=["POST"])
-@limiter.limit("10 per hour")
 def face_login_api():
     """Face recognition login - matches face embedding to authenticate user"""
-    """Face recognition login - matches face embedding to authenticate user"""
+    # CSRF protection - validate token from header
+    from flask_wtf.csrf import validate_csrf
+    from wtforms import ValidationError
+    
+    csrf_token = request.headers.get('X-CSRFToken')
+    if not csrf_token:
+        return jsonify({"matched": False, "reason": "CSRF token missing"}), 403
+    
+    try:
+        validate_csrf(csrf_token)
+    except ValidationError:
+        # Audit CSRF failure
+        try:
+            from db_utils import log_audit
+            log_audit(None, 'FACE_LOGIN_CSRF_FAIL', 'auth', 'Invalid CSRF token', request.remote_addr)
+        except:
+            pass
+        return jsonify({"matched": False, "reason": "Invalid CSRF token"}), 403
+    
     data = request.get_json()
     if not data or "image" not in data:
         return jsonify({"matched": False, "reason": "No image received"})
@@ -199,12 +239,24 @@ def face_login_api():
 
     emb = face_encoder.get_embedding(frame_rgb)
     if emb is None:
+        # Audit failed attempt - no face
+        try:
+            from db_utils import log_audit
+            log_audit(None, 'FACE_LOGIN_FAILED', 'auth', 'No face detected', request.remote_addr)
+        except:
+            pass
         return jsonify({"matched": False, "reason": "No face detected"})
 
     face_encoder.load_all_embeddings()
     result = face_encoder.match(emb)
 
     if result is None:
+        # Audit failed attempt - no match
+        try:
+            from db_utils import log_audit
+            log_audit(None, 'FACE_LOGIN_FAILED', 'auth', 'Face not matched', request.remote_addr)
+        except:
+            pass
         return jsonify({"matched": False, "reason": "No match"})
 
     emp_id, distance = result
@@ -229,6 +281,15 @@ def face_login_api():
     session["emp_id"] = emp_id
     session["full_name"] = full_name
     session["role"] = role
+    # Mark the session as authenticated so dashboard checks pass
+    session["logged_in"] = True
+    
+    # Audit successful face login
+    try:
+        from db_utils import log_audit
+        log_audit(user_id, 'FACE_LOGIN_SUCCESS', 'auth', f'emp_id={emp_id} distance={distance:.4f}', request.remote_addr)
+    except:
+        pass
 
     # Clean unified redirect
     return jsonify({

@@ -1,11 +1,26 @@
 from flask import render_template, request, jsonify, current_app, session, redirect, url_for, flash
 from werkzeug.security import check_password_hash, generate_password_hash
+from markupsafe import escape
 from . import bp
 from .utils import recognize_and_mark, decode_frame
 from utils.liveness_detector import LivenessDetector
+from utils.extensions import limiter
 from db_utils import get_setting, set_setting
+from utils.logger import logger
 import time
 import random
+import re
+
+# Input sanitization helper
+def sanitize_pin(pin):
+    """Validate and sanitize PIN input - digits only"""
+    if not pin or not isinstance(pin, str):
+        return None
+    # Remove non-digits
+    clean = re.sub(r'[^0-9]', '', pin)
+    if len(clean) < 4 or len(clean) > 8:
+        return None
+    return clean
 
 
 # ---------------------------------------------------------
@@ -19,10 +34,21 @@ def enforce_kiosk_lock():
         return None
     
     if session.get("in_kiosk"):
-        # Allow only kiosk routes + exit endpoint + admin routes
-        allowed = ["/kiosk/", "/kiosk/recognize", "/kiosk/exit", "/kiosk/api/status", "/kiosk/admin/"]
-        if not any(request.path.startswith(route) for route in allowed):
-            return redirect(url_for("kiosk.kiosk_page"))
+        # Strict whitelist - only essential kiosk routes
+        allowed_exact = ["/kiosk/", "/kiosk/exit"]
+        allowed_prefixes = ["/kiosk/recognize", "/kiosk/api/", "/kiosk/liveness_check", "/kiosk/verify_pin"]
+        
+        # Check exact matches first
+        if request.path in allowed_exact:
+            return None
+        
+        # Check prefix matches
+        if any(request.path.startswith(prefix) for prefix in allowed_prefixes):
+            return None
+        
+        # Block everything else (including /kiosk/admin/* during lock)
+        logger.warning(f"Blocked kiosk navigation attempt to: {request.path}")
+        return redirect(url_for("kiosk.kiosk_page"))
 
 
 # --- Global liveness detector (single instance for the blueprint) ---
@@ -38,8 +64,9 @@ def kiosk_page():
     # Set kiosk lock when entering kiosk mode
     session["in_kiosk"] = True
     
-    # Skip liveness - direct recognition mode
-    session["lv_pass"] = True
+    # Reset liveness on page load - require fresh liveness check
+    session.pop("lv_pass", None)
+    liveness.reset()  # Clear liveness detector state
     
     return render_template("kiosk.html")
 
@@ -49,13 +76,8 @@ def kiosk_page():
 # ---------------------------------------------------------
 @bp.route("/liveness_check", methods=["POST"])
 def liveness_check():
-    """Simple face detection check - no liveness required"""
+    """Real liveness detection - prevents photo/video spoofing"""
     try:
-        from utils.face_encoder import face_encoder
-        import base64
-        import numpy as np
-        import cv2
-        
         data = request.get_json()
         frame_b64 = data.get("frame")
 
@@ -68,30 +90,31 @@ def liveness_check():
         if frame is None:
             return jsonify({"success": False, "message": "Invalid frame"}), 400
         
-        # Get face analysis from InsightFace
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        faces = face_encoder.app.get(rgb)
+        # ACTUAL LIVENESS DETECTION using LivenessDetector
+        is_live, confidence, message = liveness.check_liveness(frame)
         
-        # Simple face detection - if face found, pass immediately
-        if faces is None or len(faces) == 0:
+        if not is_live:
             return jsonify({
                 "success": False,
                 "lv_pass": False,
-                "message": "Position your face in the frame",
-                "progress": 0
+                "message": message,
+                "confidence": float(confidence),
+                "progress": int(confidence * 100)
             })
         
-        # Face detected - auto-pass liveness
+        # Liveness passed - set session flag
         session["lv_pass"] = True
         
         return jsonify({
             "success": True,
             "lv_pass": True,
-            "message": "Face detected ✓",
+            "message": "Liveness verified ✓",
+            "confidence": float(confidence),
             "progress": 100
         })
     
-    except Exception:
+    except Exception as e:
+        logger.error(f"Liveness check error: {e}", exc_info=True)
         return jsonify({"success": False, "message": "Server error"}), 500
 
 
@@ -99,6 +122,7 @@ def liveness_check():
 # BACKEND RECOGNITION API
 # ---------------------------------------------------------
 @bp.route("/recognize", methods=["POST"])
+@limiter.limit("30 per minute")  # Prevent DOS attacks
 def kiosk_recognize():
     """Face recognition + attendance marking (requires liveness pass)"""
     try:
@@ -135,11 +159,8 @@ def kiosk_recognize():
         # --- RECOGNITION (only when liveness passed) ---
         result = recognize_and_mark(frame_b64, current_app)
 
-        # Debug/log the raw backend output to diagnose silent failures
-        try:
-            print("DEBUG recognize_and_mark result:", result)
-        except Exception:
-            pass
+        # Log the result for debugging
+        logger.debug(f"Kiosk recognition result: {result.get('status') if result else 'None'}")
 
         # If no structured result returned, ask client to keep scanning
         if not result or not isinstance(result, dict):
@@ -155,12 +176,8 @@ def kiosk_recognize():
         return jsonify(result), 200
 
     except Exception as e:
-        # Defensive: never return 500 to kiosk frontend; print traceback and return 200 with error
-        try:
-            print("KIOSK RECOGNIZE ERROR:", e)
-            traceback.print_exc()
-        except Exception:
-            pass
+        # Defensive: log error but never return 500 to kiosk frontend
+        logger.error(f"Kiosk recognition error: {e}", exc_info=True)
         return jsonify({
             "status": "ERROR",
             "message": "Internal processing error"
@@ -179,9 +196,17 @@ def kiosk_exit():
 
     # POST: Verify PIN
     data = request.get_json()
-    pin = data.get("pin", "")
+    pin_raw = data.get("pin", "")
+    
+    # Sanitize PIN input (digits only)
+    pin = sanitize_pin(pin_raw)
+    if pin is None:
+        return jsonify({"success": False, "message": "Invalid PIN format"}), 400
 
-    # Brute-force protection
+    # Stricter brute-force protection
+    MAX_PIN_ATTEMPTS = 3
+    LOCKOUT_DURATION = 900  # 15 minutes
+    
     lockout_until = session.get("pin_lockout_until", 0)
     if time.time() < lockout_until:
         remaining = int(lockout_until - time.time())
@@ -196,22 +221,50 @@ def kiosk_exit():
     try:
         pin_valid = check_password_hash(pin_hash, pin)
     except Exception as e:
+        logger.error(f"PIN verification error: {e}", exc_info=True)
         return jsonify({"success": False, "message": "PIN verification error."}), 500
     
     if pin_valid:
         session.pop("in_kiosk", None)
         session["pin_attempts"] = 0
+        session.pop("pin_lockout_until", None)
+        
+        # Audit successful PIN verification
+        try:
+            from db_utils import log_audit
+            admin_id = session.get("user_id")
+            log_audit(admin_id, 'KIOSK_PIN_SUCCESS', 'kiosk', f'admin_id={admin_id} ip={request.remote_addr}', request.remote_addr)
+        except:
+            pass
+        
         return jsonify({"success": True, "redirect": "/dashboard"})
     else:
         attempts = session.get("pin_attempts", 0) + 1
         session["pin_attempts"] = attempts
+        
+        # Audit failed PIN attempt
+        try:
+            from db_utils import log_audit
+            attempts_left = MAX_PIN_ATTEMPTS - attempts
+            log_audit(None, 'KIOSK_PIN_FAILED', 'kiosk', f'attempts_left={attempts_left} ip={request.remote_addr}', request.remote_addr)
+        except:
+            pass
 
-        if attempts >= 5:
-            session["pin_lockout_until"] = time.time() + 300  # 5 min lockout
+        if attempts >= MAX_PIN_ATTEMPTS:
+            session["pin_lockout_until"] = time.time() + LOCKOUT_DURATION
             session["pin_attempts"] = 0
-            return jsonify({"success": False, "message": "Too many attempts. Locked for 5 minutes."}), 403
+            
+            # Audit lockout event
+            try:
+                from db_utils import log_audit
+                log_audit(None, 'KIOSK_PIN_LOCKOUT', 'kiosk', f'duration={LOCKOUT_DURATION}s ip={request.remote_addr}', request.remote_addr)
+            except:
+                pass
+            
+            logger.warning(f"Kiosk PIN lockout triggered from IP: {request.remote_addr}")
+            return jsonify({"success": False, "message": f"Too many attempts. Locked for {LOCKOUT_DURATION//60} minutes."}), 403
 
-        return jsonify({"success": False, "message": f"Incorrect PIN. {5 - attempts} attempts left."}), 401
+        return jsonify({"success": False, "message": f"Incorrect PIN. {MAX_PIN_ATTEMPTS - attempts} attempts left."}), 401
 
 
 # ---------------------------------------------------------
@@ -221,7 +274,12 @@ def kiosk_exit():
 def verify_pin():
     """Verify PIN without exiting kiosk mode (used by kiosk UI to unlock settings)."""
     data = request.get_json()
-    pin = data.get("pin", "")
+    pin_raw = data.get("pin", "")
+    
+    # Sanitize PIN input
+    pin = sanitize_pin(pin_raw)
+    if pin is None:
+        return jsonify({"success": False, "message": "Invalid PIN format"}), 400
 
     # Brute-force protection (reuse same session keys)
     lockout_until = session.get("pin_lockout_until", 0)
@@ -266,11 +324,12 @@ def set_kiosk_pin():
         return jsonify({"success": False, "message": "Admin access required."}), 403
 
     data = request.get_json()
-    new_pin = data.get("pin", "")
-
-    # Validation
-    if not new_pin.isdigit() or len(new_pin) < 4:
-        return jsonify({"success": False, "message": "PIN must be at least 4 digits."}), 400
+    new_pin_raw = data.get("pin", "")
+    
+    # Sanitize and validate PIN
+    new_pin = sanitize_pin(new_pin_raw)
+    if new_pin is None or len(new_pin) < 4:
+        return jsonify({"success": False, "message": "PIN must be 4-8 digits only."}), 400
 
     # Hash and store
     pin_hash = generate_password_hash(new_pin)
@@ -301,6 +360,14 @@ def force_unlock():
     # Admin-only check
     if session.get("role") != "admin":
         return jsonify({"success": False, "message": "Admin access required."}), 403
+    
+    # Audit force unlock action
+    try:
+        from db_utils import log_audit
+        admin_id = session.get("user_id")
+        log_audit(admin_id, 'KIOSK_FORCE_UNLOCK', 'kiosk', f'admin_id={admin_id} ip={request.remote_addr}', request.remote_addr)
+    except:
+        pass
     
     # Clear kiosk lock
     session.pop("in_kiosk", None)

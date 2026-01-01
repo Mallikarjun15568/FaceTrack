@@ -10,13 +10,9 @@ from blueprints.auth.utils import login_required
 
 from blueprints.kiosk import utils as kiosk_utils
 from utils.face_encoder import invalidate_embeddings_cache, face_encoder
-from insightface.app import FaceAnalysis
+from utils.logger import logger
 import numpy as np
 import cv2
-
-# Load model once
-model = FaceAnalysis(name="buffalo_l")
-model.prepare(ctx_id=0, det_size=(640, 640))
 
 
 # -----------------------------------------------------
@@ -129,7 +125,7 @@ def capture_face():
             }), 400
 
         # Quality OK - proceed to detect face and store embedding
-        faces = model.get(frame)
+        faces = face_encoder.app.get(frame)
         if len(faces) == 0:
             try:
                 os.remove(temp_path)

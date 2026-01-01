@@ -15,7 +15,7 @@
     <!-- CSV Export -->
     <button
         id="exportCsv"
-        class="btn-success flex items-center gap-2 px-6 py-3 shadow-md hover:shadow-lg rounded-xl"
+        class="btn-premium btn-premium-success"
     >
         <i class="fa-solid fa-file-csv"></i>
         Export CSV
@@ -24,7 +24,7 @@
     <!-- PDF Export -->
     <button
         id="exportPdf"
-        class="btn-danger flex items-center gap-2 px-6 py-3 shadow-md hover:shadow-lg rounded-xl"
+        class="btn-premium btn-premium-danger"
     >
         <i class="fa-solid fa-file-pdf"></i>
         Export PDF
@@ -37,7 +37,7 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 
     <!-- Present -->
-    <div class="scroll-reveal bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6 border border-green-100 group relative overflow-hidden shine-effect" style="transition-delay: 0.1s">
+    <div class="scroll-reveal premium-card p-6 group relative overflow-hidden" style="--delay: 0.1s">
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2 text-sm font-semibold text-gray-600">
                 Total Present
@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <label class="block text-sm font-semibold text-gray-700 mb-2">
                 <i class="fa-solid fa-calendar-days text-blue-500 mr-2"></i>From Date
             </label>
-            <input id="fromDate" type="date" class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm">
+            <input id="fromDate" type="date" class="input-premium w-full">
         </div>
 
         <!-- To Date -->
@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <label class="block text-sm font-semibold text-gray-700 mb-2">
                 <i class="fa-solid fa-calendar-check text-green-500 mr-2"></i>To Date
             </label>
-            <input id="toDate" type="date" class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm">
+            <input id="toDate" type="date" class="input-premium w-full">
         </div>
 
         <!-- Department -->
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <label class="block text-sm font-semibold text-gray-700 mb-2">
                 <i class="fa-solid fa-building text-purple-500 mr-2"></i>Department
             </label>
-            <select id="departmentFilter" class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm">
+            <select id="departmentFilter" class="input-premium w-full">
             </select>
         </div>
 
@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <label class="block text-sm font-semibold text-gray-700 mb-2">
                 <i class="fa-solid fa-user text-orange-500 mr-2"></i>Employee
             </label>
-            <select id="employeeFilter" class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm">
+            <select id="employeeFilter" class="input-premium w-full">
             </select>
         </div>
 
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- Buttons -->
     <div class="flex items-center gap-4 mt-8">
 
-        <button id="applyFilters" class="btn-primary px-6 py-3 shadow-md hover:shadow-lg rounded-xl">
+        <button id="applyFilters" class="btn-premium btn-premium-primary">
             <i class="fa-solid fa-filter mr-2"></i>Apply Filters
         </button>
 
