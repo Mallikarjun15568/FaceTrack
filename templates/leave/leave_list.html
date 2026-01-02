@@ -12,15 +12,22 @@
         <!-- Header -->
         <div class="flex justify-between items-center mb-8 scroll-reveal">
             <div>
-                <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Leave Management</h1>
-                <p class="text-gray-600 mt-2 font-medium">View and manage leave applications</p>
+                <h1 class="text-4xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Leave Management</h1>
+                <p class="text-gray-600 mt-2 font-medium flex items-center gap-2">
+                    <i class="fas fa-calendar-check text-indigo-600"></i>
+                    Manage time-off requests and team availability
+                </p>
             </div>
-            <a href="{{ url_for('leave.apply') }}" class="btn-premium btn-premium-primary">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Apply Leave
-            </a>
+            <div class="flex gap-3">
+                <button onclick="showCalendarView()" class="btn bg-white border-2 border-gray-300 text-gray-700 hover:border-indigo-600 hover:text-indigo-600 flex items-center gap-2">
+                    <i class="far fa-calendar-alt"></i>
+                    Calendar View
+                </button>
+                <a href="{{ url_for('leave.apply') }}" class="btn-premium btn-premium-primary flex items-center gap-2">
+                    <i class="fas fa-plus-circle"></i>
+                    Apply Leave
+                </a>
+            </div>
         </div>
 
         <!-- Leave Balance Cards -->
@@ -164,23 +171,78 @@
 </div>
 
 <!-- Reject Modal -->
-<div id="rejectModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 z-50">
-    <div class="relative top-20 mx-auto p-5 w-96 bg-white rounded-md shadow-lg">
-        <h3 class="text-lg font-medium mb-4">Reject Leave</h3>
+<div id="rejectModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" onclick="if(event.target === this) hideRejectModal()">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-times-circle text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900">Reject Leave</h3>
+        </div>
+        
         <form method="POST" id="rejectForm">
-            <textarea name="rejection_reason" rows="3" required
-                class="w-full border rounded-lg p-2 mb-4"
-                placeholder="Reason..."></textarea>
-            <div class="flex gap-3">
-                <button type="submit" class="flex-1 bg-red-600 text-white py-2 rounded-lg">
-                    Reject
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Rejection Reason</label>
+            <textarea name="rejection_reason" rows="4" required
+                class="w-full border-2 border-gray-300 rounded-xl p-4 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all"
+                placeholder="Please provide a detailed reason for rejection..."></textarea>
+            
+            <div class="flex gap-3 mt-6">
+                <button type="submit" class="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
+                    <i class="fas fa-ban mr-2"></i>
+                    Reject Leave
                 </button>
                 <button type="button" onclick="hideRejectModal()"
-                    class="flex-1 bg-gray-200 py-2 rounded-lg">
+                    class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all">
                     Cancel
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Calendar View Modal -->
+<div id="calendarModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target === this) hideCalendarView()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-auto">
+        <div class="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 p-6 rounded-t-2xl">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3 text-white">
+                    <i class="fas fa-calendar-alt text-3xl"></i>
+                    <div>
+                        <h3 class="text-2xl font-bold">Team Leave Calendar</h3>
+                        <p class="text-indigo-100 text-sm">View upcoming leaves and team availability</p>
+                    </div>
+                </div>
+                <button onclick="hideCalendarView()" class="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-all">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-8">
+            <div class="grid grid-cols-7 gap-4 mb-4">
+                <div class="text-center font-bold text-gray-700">Sun</div>
+                <div class="text-center font-bold text-gray-700">Mon</div>
+                <div class="text-center font-bold text-gray-700">Tue</div>
+                <div class="text-center font-bold text-gray-700">Wed</div>
+                <div class="text-center font-bold text-gray-700">Thu</div>
+                <div class="text-center font-bold text-gray-700">Fri</div>
+                <div class="text-center font-bold text-gray-700">Sat</div>
+            </div>
+            
+            <div id="calendarGrid" class="grid grid-cols-7 gap-4">
+                <!-- Calendar will be populated by JavaScript -->
+            </div>
+            
+            <div class="mt-8 border-t pt-6">
+                <h4 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-list text-indigo-600"></i>
+                    Upcoming Leaves
+                </h4>
+                <div id="upcomingLeaves" class="space-y-2">
+                    <!-- Upcoming leaves list -->
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -189,8 +251,58 @@ function showRejectModal(id) {
     document.getElementById('rejectForm').action = '/leave/reject/' + id;
     document.getElementById('rejectModal').classList.remove('hidden');
 }
+
 function hideRejectModal() {
     document.getElementById('rejectModal').classList.add('hidden');
+}
+
+function showCalendarView() {
+    document.getElementById('calendarModal').classList.remove('hidden');
+    loadCalendar();
+}
+
+function hideCalendarView() {
+    document.getElementById('calendarModal').classList.add('hidden');
+}
+
+function loadCalendar() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+    
+    // Empty cells before month starts
+    for (let i = 0; i < firstDay; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'h-24 rounded-lg bg-gray-50';
+        grid.appendChild(cell);
+    }
+    
+    // Days of month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement('div');
+        cell.className = 'h-24 rounded-lg border-2 border-gray-200 p-2 hover:border-indigo-400 transition-all cursor-pointer';
+        
+        if (day === today.getDate()) {
+            cell.className += ' border-indigo-600 bg-indigo-50';
+        }
+        
+        cell.innerHTML = `
+            <div class="font-bold text-gray-900">${day}</div>
+            <div class="text-xs text-gray-500 mt-1">No leaves</div>
+        `;
+        
+        grid.appendChild(cell);
+    }
+    
+    // Show upcoming leaves
+    const upcomingDiv = document.getElementById('upcomingLeaves');
+    upcomingDiv.innerHTML = '<p class="text-gray-500 text-sm italic">Calendar feature coming soon</p>';
 }
 </script>
 {% endblock %}
