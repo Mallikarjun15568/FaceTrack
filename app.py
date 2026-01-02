@@ -101,7 +101,8 @@ app.config['SENDER_EMAIL'] = os.getenv('SENDER_EMAIL')
 app.config['SENDER_PASSWORD'] = os.getenv('SENDER_PASSWORD')
 app.config['SENDER_NAME'] = os.getenv('SENDER_NAME', 'FaceTrack Pro')
 
-# init email service (loads SMTP config from app.config)
+# Initialize email service with app config
+email_service.init_app(app)
 
 
 # --------------------------

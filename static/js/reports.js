@@ -25,12 +25,15 @@ async function loadSummary() {
         .then(data => {
             if (data.status !== "ok") return;
 
-            document.getElementById("presentCount").textContent = data.summary.present;
-            document.getElementById("absentCount").textContent  = data.summary.absent;
-            document.getElementById("lateCount").textContent    = data.summary.late;
+            const presentCount = document.getElementById("presentCount");
+            const absentCount = document.getElementById("absentCount");
+            const lateCount = document.getElementById("lateCount");
+            const attendancePercent = document.getElementById("attendancePercent");
 
-            document.getElementById("attendancePercent").textContent =
-                data.summary.attendance_percent + "%";
+            if (presentCount) presentCount.textContent = data.summary.present;
+            if (absentCount) absentCount.textContent = data.summary.absent;
+            if (lateCount) lateCount.textContent = data.summary.late;
+            if (attendancePercent) attendancePercent.textContent = data.summary.attendance_percent + "%";
         })
         .catch(err => console.error("Summary load error:", err));
 }

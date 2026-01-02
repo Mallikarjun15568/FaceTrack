@@ -51,6 +51,13 @@ let startingCamera = false;
 let recognitionRunning = false;
 let selectedDeviceId = null;
 let sendingFrame = false;
+let currentFacingMode = 'user'; // 'user' = front, 'environment' = back
+
+// Expose to window for mobile flip script
+window.stream = stream;
+window.cameraRunning = cameraRunning;
+window.startingCamera = startingCamera;
+window.currentFacingMode = currentFacingMode;
 
 // Confetti fired flag to ensure confetti runs only once
 let confettiFired = false;
@@ -266,24 +273,55 @@ window.speak = function (msg) {
 // =======================
 async function loadCameras() {
     try {
+        // Request permission first to get device labels
+        let permissionGranted = false;
+        try {
+            const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            testStream.getTracks().forEach(track => track.stop());
+            permissionGranted = true;
+            console.log('📹 Camera permission granted');
+        } catch (permErr) {
+            console.warn('📹 Camera permission needed:', permErr);
+        }
+        
         const devices = await navigator.mediaDevices.enumerateDevices();
         if (!cameraSelect) return;
+        
+        const videoDevices = devices.filter(d => d.kind === "videoinput");
+        console.log(`📹 Found ${videoDevices.length} camera device(s)`);
         
         const currentValue = cameraSelect.value;
         cameraSelect.innerHTML = '<option value="">📹 Select Camera Device</option>';
         
-        devices.forEach((d, idx) => {
-            if (d.kind === "videoinput") {
-                const o = document.createElement("option");
-                o.value = d.deviceId;
-                o.textContent = d.label || `Camera ${idx + 1}`;
-                cameraSelect.appendChild(o);
+        videoDevices.forEach((d, idx) => {
+            const o = document.createElement("option");
+            o.value = d.deviceId;
+            // Better labeling with mobile-friendly names
+            let label = d.label;
+            if (!label || label === '') {
+                // Detect front/back on mobile
+                if (idx === 0) {
+                    label = `🤳 Front Camera`;
+                } else if (idx === 1) {
+                    label = `📸 Back Camera`;
+                } else {
+                    label = `📹 Camera ${idx + 1}`;
+                }
+            } else if (label.toLowerCase().includes('front')) {
+                label = `🤳 ${label}`;
+            } else if (label.toLowerCase().includes('back') || label.toLowerCase().includes('rear')) {
+                label = `📸 ${label}`;
             }
+            o.textContent = label;
+            cameraSelect.appendChild(o);
+            console.log(`  📹 ${label}`);
         });
         
-        if (currentValue) cameraSelect.value = currentValue;
+        if (currentValue && videoDevices.some(d => d.deviceId === currentValue)) {
+            cameraSelect.value = currentValue;
+        }
     } catch (err) {
-        console.error("Error loading cameras:", err);
+        console.error("❌ Error loading cameras:", err);
     }
 }
 
@@ -295,6 +333,13 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.style.transition = 'opacity 0.5s';
         document.body.style.opacity = '1';
     }, 100);
+    
+    // Show camera count after loading
+    setTimeout(() => {
+        if (cameraSelect && cameraSelect.options.length > 1) {
+            console.log(`✅ ${cameraSelect.options.length - 1} camera(s) available for selection`);
+        }
+    }, 1000);
 });
 
 navigator.mediaDevices.ondevicechange = async () => {
@@ -323,18 +368,39 @@ if (startBtn) {
 
             startingCamera = true;
 
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            // Mobile-friendly camera constraints
+            const constraints = {
+                video: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    facingMode: 'user' // Front camera for face recognition
+                },
+                audio: false
+            };
+            
+            console.log('📱 Requesting camera access (mobile-friendly)...');
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            window.stream = stream;
 
             video.muted = true;
-            video.playsInline = true;
+            video.playsInline = true; // Critical for iOS
+            video.setAttribute('playsinline', ''); // iOS Safari fix
+            video.setAttribute('webkit-playsinline', ''); // Old iOS fix
             video.srcObject = stream;
 
             try {
                 await video.play();
+                // Smooth fade-in animation
+                setTimeout(() => {
+                    video.style.opacity = '1';
+                }, 100);
             } catch (playErr) {
                 if (playErr.name === 'AbortError') {
                     await new Promise(r => setTimeout(r, 120));
                     await video.play();
+                    setTimeout(() => {
+                        video.style.opacity = '1';
+                    }, 100);
                 } else {
                     throw playErr;
                 }
@@ -342,9 +408,17 @@ if (startBtn) {
 
             startingCamera = false;
             cameraRunning = true;
+            window.cameraRunning = true;
+            window.startingCamera = false;
             
             startBtn.classList.add("hidden");
             if (stopBtn) stopBtn.classList.remove("hidden");
+            
+            // Show flip button on mobile
+            const flipBtn = document.getElementById("flipCameraBtn");
+            if (flipBtn && window.innerWidth < 1024) {
+                flipBtn.classList.remove("hidden");
+            }
             
             if (cameraSelect) {
                 if (!cameraSwitchAllowed) {
@@ -700,7 +774,8 @@ async function sendFrame() {
         });
         
         const data = await res.json();
-        console.log('Recognition response:', data);
+        console.log('🎯 Recognition response:', data);
+        console.log('🔍 Face detected:', data.face_detected, '| Recognized:', data.recognized, '| Similarity:', data.similarity);
         if (!data) return;
         
         // Update face detection UI with feedback
@@ -849,7 +924,16 @@ if (openSettingsBtn && pinModal) {
         pinInput.value = "";
         pinModal.classList.remove("hidden");
         pinModal.classList.add("flex");
-        setTimeout(() => pinInput.focus(), 50);
+        
+        // Smooth modal animation
+        const modalContent = document.getElementById("pinModalContent");
+        setTimeout(() => {
+            if (modalContent) {
+                modalContent.style.transform = "scale(1)";
+                modalContent.style.opacity = "1";
+            }
+            pinInput.focus();
+        }, 50);
     });
 }
 
@@ -867,8 +951,18 @@ if (exitKioskBtn && pinModal) {
 if (pinCancel && pinModal) {
     pinCancel.addEventListener("click", () => {
         pendingExit = false;
-        pinModal.classList.add("hidden");
-        pinModal.classList.remove("flex");
+        const modalContent = document.getElementById("pinModalContent");
+        
+        // Smooth close animation
+        if (modalContent) {
+            modalContent.style.transform = "scale(0.95)";
+            modalContent.style.opacity = "0";
+        }
+        
+        setTimeout(() => {
+            pinModal.classList.add("hidden");
+            pinModal.classList.remove("flex");
+        }, 300);
     });
 }
 
@@ -923,11 +1017,29 @@ if (pinVerify) {
             const data = await res.json().catch(() => ({}));
 
             if (res.ok && data.success) {
-                pinModal.classList.add("hidden");
-                pinModal.classList.remove("flex");
+                const modalContent = document.getElementById("pinModalContent");
+                if (modalContent) {
+                    modalContent.style.transform = "scale(0.95)";
+                    modalContent.style.opacity = "0";
+                }
+                
+                setTimeout(() => {
+                    pinModal.classList.add("hidden");
+                    pinModal.classList.remove("flex");
+                    settingsPanel.style.transform = 'translateX(0)';
+                    
+                    // Enable all controls
+                    const adminControls = settingsPanel.querySelectorAll('select, button');
+                    adminControls.forEach(ctrl => {
+                        ctrl.disabled = false;
+                        ctrl.style.opacity = '1';
+                        ctrl.style.cursor = 'pointer';
+                    });
+                }, 300);
+                
+                console.log('✅ Admin access granted');
                 // Populate admin camera list before showing settings
                 try { await loadAdminCameras(); } catch (e) { console.error(e); }
-                settingsPanel.classList.remove("translate-x-full");
             } else {
                 alert(data.message || "Invalid PIN");
                 pinInput.value = "";
@@ -937,9 +1049,39 @@ if (pinVerify) {
             console.error(err);
             alert("Network error. Try again.");
         } finally {
-            pinVerify.innerHTML = 'Verify';
+            pinVerify.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Verify';
             pinVerify.disabled = false;
         }
+    });
+}
+
+// Skip PIN button - view-only mode
+const skipPinBtn = document.getElementById("skipPin");
+if (skipPinBtn && pinModal && settingsPanel) {
+    skipPinBtn.addEventListener("click", () => {
+        console.log('👁️ Settings opened in view-only mode');
+        
+        const modalContent = document.getElementById("pinModalContent");
+        if (modalContent) {
+            modalContent.style.transform = "scale(0.95)";
+            modalContent.style.opacity = "0";
+        }
+        
+        setTimeout(() => {
+            pinModal.classList.add("hidden");
+            pinModal.classList.remove("flex");
+            settingsPanel.style.transform = 'translateX(0)';
+            
+            // Disable controls in view mode
+            const adminControls = settingsPanel.querySelectorAll('select, button');
+            adminControls.forEach(ctrl => {
+                if (ctrl.id !== 'closeSettingsBtn') {
+                    ctrl.disabled = true;
+                    ctrl.style.opacity = '0.6';
+                    ctrl.style.cursor = 'not-allowed';
+                }
+            });
+        }, 300);
     });
 }
 
@@ -953,7 +1095,8 @@ if (pinInput) {
 
 if (closeSettingsBtn && settingsPanel) {
     closeSettingsBtn.addEventListener("click", () => {
-        settingsPanel.classList.add("translate-x-full");
+        // Smooth slide out animation
+        settingsPanel.style.transform = 'translateX(100%)';
     });
 }
 
@@ -1003,17 +1146,28 @@ if (cameraStatusToggle) {
 async function loadAdminCameras() {
     try {
         if (!adminCameraSelect) return;
+        
+        // Request permission first for device labels
+        try {
+            const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            testStream.getTracks().forEach(track => track.stop());
+        } catch (e) {
+            console.warn('Admin camera permission needed');
+        }
+        
         const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(d => d.kind === 'videoinput');
+        
         adminCameraSelect.innerHTML = '';
-        devices.forEach((d, idx) => {
-            if (d.kind === 'videoinput') {
-                const o = document.createElement('option');
-                o.value = d.deviceId;
-                o.textContent = d.label || `Camera ${idx + 1}`;
-                adminCameraSelect.appendChild(o);
-            }
+        videoDevices.forEach((d, idx) => {
+            const o = document.createElement('option');
+            o.value = d.deviceId;
+            o.textContent = d.label || `Camera ${idx + 1} (${d.deviceId.substring(0, 8)}...)`;
+            adminCameraSelect.appendChild(o);
         });
+        
+        console.log(`📹 Admin: Loaded ${videoDevices.length} camera(s)`);
     } catch (err) {
-        console.error('Error loading admin cameras:', err);
+        console.error('❌ Error loading admin cameras:', err);
     }
 }

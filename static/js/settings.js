@@ -306,5 +306,64 @@ if (window.__settingsLoaded) {
         }
     };
 
+    // CHANGE PASSWORD
+    const changePasswordForm = document.getElementById("changePasswordForm");
+    const passwordStatus = document.getElementById("passwordStatus");
+
+    if (changePasswordForm) {
+        changePasswordForm.onsubmit = async (e) => {
+            e.preventDefault();
+
+            const oldPassword = document.getElementById("old_password").value;
+            const newPassword = document.getElementById("new_password").value;
+            const confirmPassword = document.getElementById("confirm_password").value;
+
+            if (newPassword !== confirmPassword) {
+                passwordStatus.textContent = "✗ Passwords do not match.";
+                passwordStatus.className = "text-sm mt-2 text-red-600";
+                passwordStatus.classList.remove("hidden");
+                setTimeout(() => passwordStatus.classList.add("hidden"), 3000);
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                passwordStatus.textContent = "✗ Password must be at least 8 characters.";
+                passwordStatus.className = "text-sm mt-2 text-red-600";
+                passwordStatus.classList.remove("hidden");
+                setTimeout(() => passwordStatus.classList.add("hidden"), 3000);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("old_password", oldPassword);
+            formData.append("new_password", newPassword);
+            formData.append("confirm_password", confirmPassword);
+
+            try {
+                const response = await fetch("/settings/change-password", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    passwordStatus.textContent = "✓ Password changed successfully!";
+                    passwordStatus.className = "text-sm mt-2 text-green-600";
+                    changePasswordForm.reset();
+                } else {
+                    passwordStatus.textContent = "✗ " + (data.error || "Failed to change password");
+                    passwordStatus.className = "text-sm mt-2 text-red-600";
+                }
+            } catch (error) {
+                passwordStatus.textContent = "✗ Network error. Try again.";
+                passwordStatus.className = "text-sm mt-2 text-red-600";
+            }
+
+            passwordStatus.classList.remove("hidden");
+            setTimeout(() => passwordStatus.classList.add("hidden"), 5000);
+        };
+    }
+
     });
 }

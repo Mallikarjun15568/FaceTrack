@@ -5,12 +5,11 @@
 [![InsightFace](https://img.shields.io/badge/InsightFace-buffalo__l-orange.svg)](https://github.com/deepinsight/insightface)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg)](https://www.mysql.com/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8.svg)](https://tailwindcss.com/)
-[![Health](https://img.shields.io/badge/Health-85%2F100-brightgreen.svg)](CHANGELOG.md)
 [![Production](https://img.shields.io/badge/Production-Ready-success.svg)](DEPLOYMENT.md)
 
-> Production-grade facial recognition attendance system powered by InsightFace ArcFace. Features real-time kiosk mode, single-row attendance architecture, and enterprise-level security.
+> Production-grade facial recognition attendance system powered by InsightFace ArcFace. Features real-time kiosk mode with mobile camera support, smooth animations, and enterprise-level security.
 
-> **🎉 Version 2.0** - Complete professional upgrade with critical fixes, security enhancements, and performance optimizations!
+> **🎉 Version 2.1** - Enhanced kiosk UI with smooth animations, mobile camera support, and improved user experience!
 
 ---
 
@@ -89,11 +88,14 @@
 - **Single-Row Per Day**: One record per employee per day (optimized)
 - **Auto Check-in**: First recognition marks check-in
 - **Auto Check-out**: Updates check-out on subsequent recognition
-- **Real-time Feedback**: Visual + audio confirmation
+- **Real-time Feedback**: Visual + audio confirmation with smooth animations
+- **Mobile Camera Support**: Front/back camera switching on mobile devices
+- **Smooth UI**: Bouncing modals, fade transitions, hover effects
+- **Flexible Settings**: Skip PIN for view-only access
 - **Recent Logs**: Live display of last 10 attendance entries
 - **Snapshot Storage**: Captures and stores attendance photos
 - **Fullscreen Mode**: Dedicated kiosk interface
-- **Auto-refresh**: WebSocket-based live updates
+- **Responsive Design**: Works on desktop, tablet, and mobile
 
 ### 📊 Attendance System
 - **Single-Row Architecture**: One record per employee/day

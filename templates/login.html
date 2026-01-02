@@ -64,10 +64,9 @@
             <input type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500">
             <span class="text-sm text-gray-600">Remember me</span>
           </label>
-          <a href="#"
-            onclick="alert('Please contact system administrator to reset password.'); return false;"
-            class="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-            Forgot password?
+          <a href="{{ url_for('auth.forgot_password') }}"
+            class="text-sm text-indigo-600 hover:text-indigo-700 font-medium transition">
+            <i class="fas fa-key mr-1"></i>Forgot password?
           </a>
         </div>
         

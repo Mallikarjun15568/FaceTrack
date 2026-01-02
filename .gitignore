@@ -85,9 +85,10 @@ ERD_FaceTrack.svg
 wireframes_index.md
 demo_data.sql
 
-# Documentation files (keep only README.md)
+# Documentation files (keep only README.md and DEPLOYMENT.md)
 *.md
 !README.md
+!DEPLOYMENT.md
 CHANGELOG.md
 COMPLETE_FIX_REPORT.md
 DEEP_ANALYSIS_REPORT.md
@@ -98,6 +99,9 @@ SUMMARY.md
 UI_TRANSFORMATION_SUMMARY.md
 UI_UX_ENHANCEMENTS.md
 WIREFRAMES.md
+MOBILE_CAMERA_TESTING.md
+VSCODE_PORT_FORWARDING.md
+PASSWORD_RESET_IMPLEMENTATION.md
 current_wireframe.md
 
 # runtime uploads

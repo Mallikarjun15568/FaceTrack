@@ -135,6 +135,13 @@ def add_employee():
     join_date = request.form.get("joining_date")
     status = request.form.get("status")
 
+    # Validate email format
+    from utils.validators import validate_email
+    is_valid_email, email_error = validate_email(email)
+    if not is_valid_email:
+        flash(f"Invalid email: {email_error}", "danger")
+        return redirect(url_for("employees.add_employee"))
+
     photo_file = request.files.get("photo")
 
     if not photo_file:
@@ -325,6 +332,13 @@ def edit_employee(emp_id):
     department_id = request.form.get("department_id")
     join_date = request.form.get("join_date")
     status = request.form.get("status")
+
+    # Validate email format
+    from utils.validators import validate_email
+    is_valid_email, email_error = validate_email(email)
+    if not is_valid_email:
+        flash(f"Invalid email: {email_error}", "danger")
+        return redirect(url_for("employees.edit_employee", emp_id=emp_id))
 
     photo_file = request.files.get("photo")
     update_photo = False

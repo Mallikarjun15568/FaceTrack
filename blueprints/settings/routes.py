@@ -502,3 +502,73 @@ def export_employees():
         as_attachment=True,
         download_name="employees.csv"
     )
+
+
+# ---------------------------------------------------------
+# CHANGE PASSWORD (Self-service for logged-in users)
+# ---------------------------------------------------------
+@bp.route("/change-password", methods=["POST"])
+@login_required
+def change_password():
+    """Allow any logged-in user to change their own password"""
+    
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+    
+    old_password = request.form.get("old_password")
+    new_password = request.form.get("new_password")
+    confirm_password = request.form.get("confirm_password")
+    
+    if not all([old_password, new_password, confirm_password]):
+        return jsonify({"success": False, "error": "All fields are required"}), 400
+    
+    if new_password != confirm_password:
+        return jsonify({"success": False, "error": "New passwords do not match"}), 400
+    
+    # Validate new password strength
+    from utils.validators import validate_password
+    is_strong, msg = validate_password(new_password)
+    if not is_strong:
+        return jsonify({"success": False, "error": msg}), 400
+    
+    # Verify old password
+    conn = get_connection()
+    cur = conn.cursor(dictionary=True)
+    cur.execute("SELECT password FROM users WHERE id = %s", (user_id,))
+    user = cur.fetchone()
+    
+    if not user:
+        cur.close()
+        conn.close()
+        return jsonify({"success": False, "error": "User not found"}), 404
+    
+    from blueprints.auth.utils import verify_password, hash_password
+    if not verify_password(user["password"], old_password):
+        cur.close()
+        conn.close()
+        
+        # Audit failed attempt
+        try:
+            from db_utils import log_audit
+            log_audit(user_id, 'PASSWORD_CHANGE_FAILED', 'settings', 'incorrect_old_password', request.remote_addr)
+        except:
+            pass
+        
+        return jsonify({"success": False, "error": "Current password is incorrect"}), 401
+    
+    # Update password
+    hashed = hash_password(new_password)
+    cur.execute("UPDATE users SET password = %s WHERE id = %s", (hashed, user_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    # Audit successful change
+    try:
+        from db_utils import log_audit
+        log_audit(user_id, 'PASSWORD_CHANGED', 'settings', 'self_service', request.remote_addr)
+    except:
+        pass
+    
+    return jsonify({"success": True, "message": "Password changed successfully"})

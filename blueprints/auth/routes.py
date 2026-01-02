@@ -298,3 +298,169 @@ def face_login_api():
         "distance": distance,
         "redirect_url": "/dashboard"
     })
+
+
+# ============================================================
+# FORGOT PASSWORD - Request Reset Link
+# ============================================================
+@bp.route("/forgot-password", methods=["GET", "POST"])
+@limiter.limit("3 per 15 minutes", methods=["POST"])
+def forgot_password():
+    """Send password reset email with secure token"""
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        
+        if not email:
+            flash("Please enter your email address", "error")
+            return redirect(url_for("auth.forgot_password"))
+        
+        # Validate email format
+        from utils.validators import validate_email
+        is_valid, error_msg = validate_email(email)
+        if not is_valid:
+            flash("Invalid email format", "error")
+            return redirect(url_for("auth.forgot_password"))
+        
+        db = get_db()
+        cur = db.cursor(dictionary=True)
+        
+        # Find user by email
+        cur.execute("""
+            SELECT u.id, u.username, e.full_name, u.email
+            FROM users u
+            LEFT JOIN employees e ON e.user_id = u.id
+            WHERE u.email = %s
+            LIMIT 1
+        """, (email,))
+        user = cur.fetchone()
+        
+        # Security: Always show success message (don't reveal if email exists)
+        flash("If this email is registered, you will receive a password reset link shortly.", "success")
+        
+        if not user:
+            # Log attempt for security monitoring
+            try:
+                log_audit(None, 'PASSWORD_RESET_INVALID_EMAIL', 'auth', f'email={email}', request.remote_addr)
+            except:
+                pass
+            return redirect(url_for("auth.login"))
+        
+        # Generate secure token
+        import secrets
+        token = secrets.token_urlsafe(32)
+        
+        # Token expires in 30 minutes
+        from datetime import datetime, timedelta
+        expires_at = datetime.now() + timedelta(minutes=30)
+        
+        # Store token in database
+        cur.execute("""
+            INSERT INTO password_reset_tokens (user_id, token, expires_at, ip_address)
+            VALUES (%s, %s, %s, %s)
+        """, (user['id'], token, expires_at, request.remote_addr))
+        db.commit()
+        
+        # Send email
+        from utils.email_service import email_service
+        employee_name = user.get('full_name') or user['username']
+        
+        try:
+            email_service.send_password_reset(email, employee_name, token, expiry_minutes=30)
+            log_audit(user['id'], 'PASSWORD_RESET_SENT', 'auth', f'email={email}', request.remote_addr)
+        except Exception as e:
+            from utils.logger import logger
+            logger.error(f"Failed to send password reset email: {e}")
+            # Don't reveal error to user for security
+        
+        return redirect(url_for("auth.login"))
+    
+    return render_template("forgot_password.html")
+
+
+# ============================================================
+# RESET PASSWORD - Set New Password with Token
+# ============================================================
+@bp.route("/reset-password", methods=["GET", "POST"])
+@limiter.limit("5 per 15 minutes", methods=["POST"])
+def reset_password():
+    """Reset password using token from email"""
+    token = request.args.get("token") or request.form.get("token")
+    
+    if not token:
+        flash("Invalid or missing reset token", "error")
+        return redirect(url_for("auth.login"))
+    
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    
+    # Verify token
+    from datetime import datetime
+    cur.execute("""
+        SELECT rt.*, u.username, u.email, e.full_name
+        FROM password_reset_tokens rt
+        JOIN users u ON rt.user_id = u.id
+        LEFT JOIN employees e ON e.user_id = u.id
+        WHERE rt.token = %s 
+          AND rt.used = 0 
+          AND rt.expires_at > %s
+        LIMIT 1
+    """, (token, datetime.now()))
+    
+    reset_data = cur.fetchone()
+    
+    if not reset_data:
+        flash("Invalid or expired reset token. Please request a new one.", "error")
+        return redirect(url_for("auth.forgot_password"))
+    
+    if request.method == "POST":
+        password = request.form.get("password")
+        confirm = request.form.get("confirm_password")
+        
+        if not password or not confirm:
+            flash("Both password fields are required", "error")
+            return render_template("reset_password.html", token=token)
+        
+        if password != confirm:
+            flash("Passwords do not match", "error")
+            return render_template("reset_password.html", token=token)
+        
+        # Validate password strength
+        from utils.validators import validate_password
+        is_strong, msg = validate_password(password)
+        if not is_strong:
+            flash(msg, "error")
+            return render_template("reset_password.html", token=token)
+        
+        # Hash new password
+        from .utils import hash_password
+        hashed = hash_password(password)
+        
+        # Update password
+        cur.execute("""
+            UPDATE users 
+            SET password = %s 
+            WHERE id = %s
+        """, (hashed, reset_data['user_id']))
+        
+        # Mark token as used
+        cur.execute("""
+            UPDATE password_reset_tokens 
+            SET used = 1 
+            WHERE id = %s
+        """, (reset_data['id'],))
+        
+        db.commit()
+        
+        # Audit log
+        try:
+            log_audit(reset_data['user_id'], 'PASSWORD_RESET_SUCCESS', 'auth', 
+                     f"username={reset_data['username']}", request.remote_addr)
+        except:
+            pass
+        
+        flash("Password reset successful! Please login with your new password.", "success")
+        return redirect(url_for("auth.login"))
+    
+    # GET request - show reset form
+    return render_template("reset_password.html", token=token, 
+                          username=reset_data.get('username'))

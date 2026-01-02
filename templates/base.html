@@ -187,32 +187,6 @@
 <script src="/static/js/modal.js"></script>
 <script src="/static/js/ui-enhancements.js"></script>
 
-<!-- Mobile Menu Script -->
-<script>
-  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-  const sidebar = document.getElementById('sidebar');
-  
-  if (mobileMenuBtn) {
-    mobileMenuBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('-translate-x-full');
-      
-      // Toggle icon
-      const icon = mobileMenuBtn.querySelector('i');
-      icon.classList.toggle('fa-bars');
-      icon.classList.toggle('fa-times');
-    });
-    
-    // Close on outside click
-    document.addEventListener('click', (e) => {
-      if (!sidebar.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
-        sidebar.classList.add('-translate-x-full');
-        mobileMenuBtn.querySelector('i').classList.remove('fa-times');
-        mobileMenuBtn.querySelector('i').classList.add('fa-bars');
-      }
-    });
-  }
-</script>
-
 <!-- Scroll Reveal Animation -->
 <script>
   // Intersection Observer for scroll animations

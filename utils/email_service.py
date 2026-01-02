@@ -183,60 +183,81 @@ class EmailService:
         html = self._html_template("Leave Request Rejected", body, "#ef4444")
         return self._send(to_email, "✕ Leave Request Rejected", html)
     
-    # -----------------------------
-    # Employee Management Emails
-    # -----------------------------
-    def send_welcome_email(self, to_email, employee_name, emp_id, temp_password):
-        """Send welcome email to new employee"""
-        body = f"""
-            <p style="margin-bottom:20px;">Dear <strong>{employee_name}</strong>,</p>
-            <div style="background:#dbeafe; border-left:4px solid #3b82f6; padding:20px; border-radius:8px; margin:20px 0;">
-                <p style="margin:0; color:#1e40af; font-weight:600; font-size:16px;">🎉 Welcome to FaceTrack Pro!</p>
-            </div>
-            <p>Your employee account has been successfully created. Please find your login credentials below:</p>
-            <table style="width:100%; border-collapse:collapse; margin:20px 0;">
-                <tr>
-                    <td style="padding:10px; background:#f9fafb; border:1px solid #e5e7eb; font-weight:600; width:40%;">Employee ID</td>
-                    <td style="padding:10px; background:#ffffff; border:1px solid #e5e7eb;">{emp_id}</td>
-                </tr>
-                <tr>
-                    <td style="padding:10px; background:#f9fafb; border:1px solid #e5e7eb; font-weight:600;">Temporary Password</td>
-                    <td style="padding:10px; background:#ffffff; border:1px solid #e5e7eb;"><code style="background:#fef3c7; padding:4px 8px; border-radius:4px; font-family:monospace;">{temp_password}</code></td>
-                </tr>
-            </table>
-            <div style="background:#fef3c7; border:1px solid #fbbf24; padding:15px; border-radius:8px; margin:20px 0;">
-                <p style="margin:0; color:#92400e; font-size:13px;">⚠️ <strong>Important:</strong> Please change your password after first login for security.</p>
-            </div>
-            <p style="margin-top:25px; color:#6b7280;">Best regards,<br><strong>HR Team</strong></p>
-        """
-        html = self._html_template("Welcome to FaceTrack Pro", body, "#3b82f6")
-        return self._send(to_email, "🎉 Welcome to FaceTrack Pro", html)
+    # ========================================================================
+    # DISABLED: Welcome Email (Commented out - not implemented in workflow)
+    # ========================================================================
+    # This feature was prepared but not integrated into the employee add workflow.
+    # Requires temporary password generation and user account creation logic.
+    # Keep: Leave approval/rejection emails remain the primary email notifications.
+    # ========================================================================
     
-    def send_attendance_alert(self, to_email, employee_name, date, status, message):
-        """Send attendance alert (late, absent, etc.)"""
-        color = "#ef4444" if status == "absent" else "#f59e0b"
-        icon = "❌" if status == "absent" else "⚠️"
-        
-        body = f"""
-            <p style="margin-bottom:20px;">Dear <strong>{employee_name}</strong>,</p>
-            <div style="background:#fee2e2; border-left:4px solid {color}; padding:20px; border-radius:8px; margin:20px 0;">
-                <p style="margin:0; color:#991b1b; font-weight:600; font-size:16px;">{icon} Attendance Alert</p>
-            </div>
-            <p><strong>Date:</strong> {date}</p>
-            <p><strong>Status:</strong> {status.upper()}</p>
-            <p style="margin-top:20px;">{message}</p>
-            <p style="margin-top:25px; color:#6b7280;">Please contact HR if this is incorrect.</p>
-            <p style="margin-top:15px; color:#6b7280;">Best regards,<br><strong>HR Team</strong></p>
-        """
-        html = self._html_template("Attendance Alert", body, color)
-        return self._send(to_email, f"{icon} Attendance Alert - {date}", html)
+    # def send_welcome_email(self, to_email, employee_name, emp_id, temp_password):
+    #     """Send welcome email to new employee"""
+    #     body = f"""
+    #         <p style="margin-bottom:20px;">Dear <strong>{employee_name}</strong>,</p>
+    #         <div style="background:#dbeafe; border-left:4px solid #3b82f6; padding:20px; border-radius:8px; margin:20px 0;">
+    #             <p style="margin:0; color:#1e40af; font-weight:600; font-size:16px;">🎉 Welcome to FaceTrack Pro!</p>
+    #         </div>
+    #         <p>Your employee account has been successfully created. Please find your login credentials below:</p>
+    #         <table style="width:100%; border-collapse:collapse; margin:20px 0;">
+    #             <tr>
+    #                 <td style="padding:10px; background:#f9fafb; border:1px solid #e5e7eb; font-weight:600; width:40%;">Employee ID</td>
+    #                 <td style="padding:10px; background:#ffffff; border:1px solid #e5e7eb;">{emp_id}</td>
+    #             </tr>
+    #             <tr>
+    #                 <td style="padding:10px; background:#f9fafb; border:1px solid #e5e7eb; font-weight:600;">Temporary Password</td>
+    #                 <td style="padding:10px; background:#ffffff; border:1px solid #e5e7eb;"><code style="background:#fef3c7; padding:4px 8px; border-radius:4px; font-family:monospace;">{temp_password}</code></td>
+    #             </tr>
+    #         </table>
+    #         <div style="background:#fef3c7; border:1px solid #fbbf24; padding:15px; border-radius:8px; margin:20px 0;">
+    #             <p style="margin:0; color:#92400e; font-size:13px;">⚠️ <strong>Important:</strong> Please change your password after first login for security.</p>
+    #         </div>
+    #         <p style="margin-top:25px; color:#6b7280;">Best regards,<br><strong>HR Team</strong></p>
+    #     """
+    #     html = self._html_template("Welcome to FaceTrack Pro", body, "#3b82f6")
+    #     return self._send(to_email, "🎉 Welcome to FaceTrack Pro", html)
+    
+    # ========================================================================
+    # DISABLED: Attendance Alert Email (Commented out - may irritate employees)
+    # ========================================================================
+    # This feature was intentionally disabled to avoid sending automated
+    # disciplinary emails to employees for late/absent attendance.
+    # Management prefers positive reinforcement over automated alerts.
+    # Keep: Leave approval/rejection and welcome emails remain active.
+    # ========================================================================
+    
+    # def send_attendance_alert(self, to_email, employee_name, date, status, message):
+    #     """Send attendance alert (late, absent, etc.)"""
+    #     color = "#ef4444" if status == "absent" else "#f59e0b"
+    #     icon = "❌" if status == "absent" else "⚠️"
+    #     
+    #     body = f"""
+    #         <p style="margin-bottom:20px;">Dear <strong>{employee_name}</strong>,</p>
+    #         <div style="background:#fee2e2; border-left:4px solid {color}; padding:20px; border-radius:8px; margin:20px 0;">
+    #             <p style="margin:0; color:#991b1b; font-weight:600; font-size:16px;">{icon} Attendance Alert</p>
+    #         </div>
+    #         <p><strong>Date:</strong> {date}</p>
+    #         <p><strong>Status:</strong> {status.upper()}</p>
+    #         <p style="margin-top:20px;">{message}</p>
+    #         <p style="margin-top:25px; color:#6b7280;">Please contact HR if this is incorrect.</p>
+    #         <p style="margin-top:15px; color:#6b7280;">Best regards,<br><strong>HR Team</strong></p>
+    #     """
+    #     html = self._html_template("Attendance Alert", body, color)
+    #     return self._send(to_email, f"{icon} Attendance Alert - {date}", html)
     
     # -----------------------------
     # System Notifications
     # -----------------------------
     def send_password_reset(self, to_email, employee_name, reset_token, expiry_minutes=30):
         """Send password reset link"""
-        reset_link = f"http://127.0.0.1:5000/auth/reset-password?token={reset_token}"
+        from flask import request
+        # Get base URL from request or use default
+        try:
+            base_url = request.url_root.rstrip('/')
+        except:
+            base_url = "http://127.0.0.1:5000"
+            
+        reset_link = f"{base_url}/auth/reset-password?token={reset_token}"
         
         body = f"""
             <p style="margin-bottom:20px;">Dear <strong>{employee_name}</strong>,</p>
