@@ -135,9 +135,13 @@ from blueprints.auth.routes import face_login_api
 csrf.exempt(face_login_api)
 
 # Kiosk: Exempt recognition endpoints (operates in fullscreen kiosk mode)
-from blueprints.kiosk.routes import kiosk_recognize, liveness_check
+from blueprints.kiosk.routes import kiosk_recognize, liveness_check, verify_pin, kiosk_exit, set_kiosk_pin, force_unlock
 csrf.exempt(kiosk_recognize)
 csrf.exempt(liveness_check)
+csrf.exempt(verify_pin)
+csrf.exempt(kiosk_exit)
+csrf.exempt(set_kiosk_pin)
+csrf.exempt(force_unlock)
 
 
 # --------------------------

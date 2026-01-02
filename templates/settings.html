@@ -6,269 +6,272 @@
 {% block breadcrumb %}Settings{% endblock %}
 {% block content %}
 
-<div class="max-w-5xl mx-auto space-y-8">
+<div class="max-w-5xl mx-auto">
 
-    <!-- HEADER -->
-    <div class="scroll-reveal">
-        <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">System Settings</h1>
-        <p class="text-gray-600 text-sm mt-2 font-medium">
-            Configure AI recognition, attendance rules, system behavior, and company details.
+  <!-- HEADER -->
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">System Settings</h1>
+    <p class="text-sm text-gray-500 mt-1">
+      Configure AI recognition, attendance rules, system behavior, and company details.
+    </p>
+  </div>
+
+  <!-- SECTION 1: RECOGNITION SETTINGS -->
+  <div class="card mb-8">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+        <i class="fas fa-brain text-indigo-600 text-lg"></i>
+      </div>
+      <h2 class="text-lg font-bold text-gray-900">Recognition Settings</h2>
+    </div>
+
+    <div class="space-y-6">
+
+      <!-- Threshold -->
+      <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+        <label for="recognition_threshold" class="block font-medium text-gray-700 mb-3">
+          <i class="fas fa-sliders-h text-indigo-600 mr-2"></i>
+          Recognition Threshold: 
+          <span id="th-val" class="text-indigo-600 font-bold">{{ settings.recognition_threshold }}</span>
+        </label>
+        <input id="recognition_threshold"
+               type="range" min="0.30" max="0.80" step="0.01"
+               value="{{ settings.recognition_threshold }}"
+               class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+        <div class="flex justify-between text-xs text-gray-600 mt-2">
+          <span>Lower (0.30)</span>
+          <span>Higher (0.80)</span>
+        </div>
+      </div>
+
+      <!-- Duplicate Interval -->
+      <div>
+        <label for="duplicate_interval" class="block font-medium text-gray-700 mb-2">
+          <i class="fas fa-clock text-indigo-600 mr-2"></i>
+          Duplicate Attendance Interval (minutes)
+        </label>
+        <input id="duplicate_interval" type="number"
+               value="{{ settings.duplicate_interval }}"
+               class="input w-full" />
+      </div>
+
+      <!-- Snapshot Mode -->
+      <div class="flex items-center justify-between bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div>
+          <label for="snapshot_mode" class="font-medium text-gray-700 flex items-center gap-2">
+            <i class="fas fa-camera text-indigo-600"></i>
+            Snapshot Mode
+          </label>
+          <p class="text-xs text-gray-500 mt-1">Save snapshots of recognized faces</p>
+        </div>
+        <input id="snapshot_mode" type="checkbox"
+               {% if settings.snapshot_mode == 'on' %}checked{% endif %}
+               class="h-6 w-6 rounded accent-indigo-600">
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- SECTION 2: ATTENDANCE RULES -->
+  <div class="card mb-8">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+        <i class="fas fa-check-circle text-green-600 text-lg"></i>
+      </div>
+      <h2 class="text-lg font-bold text-gray-900">Attendance Rules</h2>
+    </div>
+
+    <div class="space-y-6">
+
+      <div>
+        <label for="late_time" class="block font-medium text-gray-700 mb-2">
+          <i class="fas fa-clock text-indigo-600 mr-2"></i>
+          Late Time (HH:MM)
+        </label>
+        <input id="late_time" type="time"
+               value="{{ settings.late_time }}"
+               class="input w-full" />
+      </div>
+
+      <div>
+        <label for="min_confidence" class="block font-medium text-gray-700 mb-2">
+          <i class="fas fa-percentage text-indigo-600 mr-2"></i>
+          Minimum Confidence (%)
+        </label>
+        <input id="min_confidence" type="number"
+               value="{{ settings.min_confidence }}"
+               class="input w-full" />
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- SECTION 3: SYSTEM PREFERENCES -->
+  <div class="card mb-8">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+        <i class="fas fa-cog text-purple-600 text-lg"></i>
+      </div>
+      <h2 class="text-lg font-bold text-gray-900">System Preferences</h2>
+    </div>
+
+    <div class="space-y-6">
+
+      <div>
+        <label for="company_name" class="block font-medium text-gray-700 mb-2">
+          <i class="fas fa-building text-indigo-600 mr-2"></i>
+          Company Name
+        </label>
+        <input id="company_name" type="text"
+               value="{{ settings.company_name }}"
+               class="input w-full" />
+      </div>
+
+      <div>
+        <label for="company_logo" class="block font-medium text-gray-700 mb-3">
+          <i class="fas fa-image text-indigo-600 mr-2"></i>
+          Company Logo
+        </label>
+
+        <div class="flex items-center gap-6 bg-gray-50 rounded-lg p-6 border border-gray-200">
+          <img id="logo_preview"
+               src="{{ settings.company_logo }}"
+               class="h-20 w-auto object-contain border-2 border-gray-300 rounded-lg bg-white p-2">
+
+          <form id="logoForm" enctype="multipart/form-data" class="flex-1">
+            <input id="company_logo" name="company_logo" type="file" accept="image/*" class="mb-3" />
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="button" id="uploadLogoBtn" class="btn btn-primary">
+              <i class="fas fa-upload"></i>Upload Logo
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div>
+        <label for="camera_index" class="block font-medium text-gray-700 mb-2">
+          <i class="fas fa-video text-indigo-600 mr-2"></i>
+          Camera Device Index
+        </label>
+        <input id="camera_index"
+               type="number"
+               value="{{ settings.camera_index }}"
+               class="input w-full" />
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SECTION 4: SECURITY SETTINGS -->
+  <div class="card mb-8">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
+        <i class="fas fa-shield-alt text-red-600 text-lg"></i>
+      </div>
+      <h2 class="text-lg font-bold text-gray-900">Security Settings</h2>
+    </div>
+
+    <div class="space-y-6">
+
+      <div>
+        <label for="session_timeout" class="block font-medium text-gray-700 mb-2">
+          <i class="fas fa-clock text-indigo-600 mr-2"></i>
+          Session Timeout (minutes)
+        </label>
+        <select id="session_timeout" class="input w-full">
+          <option value="15" {% if settings.session_timeout == '15' %}selected{% endif %}>15</option>
+          <option value="30" {% if settings.session_timeout == '30' %}selected{% endif %}>30</option>
+          <option value="60" {% if settings.session_timeout == '60' %}selected{% endif %}>60</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="login_alert" class="block font-medium text-gray-700 mb-2">
+          <i class="fas fa-bell text-indigo-600 mr-2"></i>
+          Login Alert
+        </label>
+        <input id="login_alert"
+               value="{{ settings.login_alert }}"
+               class="input w-full"
+               placeholder="off or email" />
+      </div>
+
+      <!-- Kiosk PIN -->
+      <div class="bg-red-50 rounded-lg p-6 border border-red-200">
+        <label for="kiosk_pin" class="block font-medium text-gray-700 mb-3">
+          <i class="fas fa-lock text-red-600 mr-2"></i>
+          Kiosk Exit PIN
+        </label>
+        <form id="kioskPinForm" class="flex gap-3">
+          <input 
+            id="kiosk_pin" 
+            type="password" 
+            placeholder="Enter 4+ digit PIN"
+            class="input flex-1"
+            autocomplete="new-password"
+          />
+          <button 
+            type="button"
+            id="setPinBtn"
+            class="btn btn-primary"
+          >
+            <i class="fas fa-key"></i>Set PIN
+          </button>
+        </form>
+        <p class="text-xs text-gray-600 mt-2">
+          <i class="fas fa-info-circle text-red-600 mr-1"></i>
+          Used to exit kiosk mode. Must be numeric, 4+ digits.
         </p>
+        <div id="pinStatus" class="text-sm mt-2 hidden"></div>
+      </div>
+
+      <!-- Remote Unlock -->
+      <div class="bg-orange-50 rounded-lg p-6 border border-orange-200">
+        <label class="block font-medium text-gray-700 mb-3">
+          <i class="fas fa-wifi text-orange-600 mr-2"></i>
+          Remote Kiosk Control
+        </label>
+        <button 
+          id="remoteUnlockBtn"
+          class="btn btn-warning"
+        >
+          <i class="fas fa-unlock"></i>
+          Force Unlock Kiosk
+        </button>
+        <p class="text-xs text-gray-600 mt-2">
+          <i class="fas fa-info-circle text-orange-600 mr-1"></i>
+          Remotely unlock kiosk without PIN. Use only in emergencies.
+        </p>
+        <div id="unlockStatus" class="text-sm mt-2 hidden"></div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- SECTION 5: DATA & BACKUP -->
+  <div class="card">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+        <i class="fas fa-database text-blue-600 text-lg"></i>
+      </div>
+      <h2 class="text-lg font-bold text-gray-900">Data & Backup</h2>
     </div>
 
-    <!-- SECTION 1: RECOGNITION SETTINGS -->
-    <div class="scroll-reveal premium-card p-8" style="--delay: 0.1s">
-        <div class="flex items-center gap-3 mb-6">
-            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
-                <i class="fas fa-brain text-white text-xl"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800">Recognition Settings</h2>
-        </div>
+    <div class="flex gap-3">
+      <button id="exportAttendance" class="btn btn-secondary">
+        <i class="fas fa-file-csv"></i>
+        Export Attendance (CSV)
+      </button>
 
-        <div class="space-y-6">
-
-            <!-- Threshold -->
-            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-                <label for="recognition_threshold" class="block font-semibold text-gray-700 mb-3">
-                    <i class="fas fa-sliders-h text-blue-500 mr-2"></i>
-                    Recognition Threshold: 
-                    <span id="th-val" class="text-blue-600 font-bold text-lg">{{ settings.recognition_threshold }}</span>
-                </label>
-                <input id="recognition_threshold"
-                       type="range" min="0.30" max="0.80" step="0.01"
-                       value="{{ settings.recognition_threshold }}"
-                       class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600" />
-                <div class="flex justify-between text-xs text-gray-600 mt-2">
-                    <span>Lower (0.30)</span>
-                    <span>Higher</span>
-                </div>
-            </div>
-
-            <!-- Duplicate Interval -->
-            <div>
-                <label for="duplicate_interval" class="block font-semibold text-gray-700 mb-2">
-                    <i class="fas fa-clock text-purple-500 mr-2"></i>
-                    Duplicate Attendance Interval (minutes)
-                </label>
-                <input id="duplicate_interval" type="number"
-                       value="{{ settings.duplicate_interval }}"
-                       class="input-premium w-full" />
-            </div>
-
-            <!-- Snapshot Mode -->
-            <div class="flex items-center justify-between bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <div>
-                    <label for="snapshot_mode" class="font-semibold text-gray-700 flex items-center gap-2">
-                        <i class="fas fa-camera text-green-500"></i>
-                        Snapshot Mode
-                    </label>
-                    <p class="text-xs text-gray-500 mt-1">Save snapshots of recognized faces</p>
-                </div>
-                <input id="snapshot_mode" type="checkbox"
-                       {% if settings.snapshot_mode == 'on' %}checked{% endif %}
-                       class="h-6 w-6 rounded accent-blue-600">
-            </div>
-
-        </div>
+      <button id="exportEmployees" class="btn btn-secondary">
+        <i class="fas fa-users"></i>
+        Export Employees (CSV)
+      </button>
     </div>
-
-
-    <!-- SECTION 2: ATTENDANCE RULES -->
-    <div class="scroll-reveal premium-card p-8" style="--delay: 0.2s">
-        <div class="flex items-center gap-3 mb-6">
-            <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md">
-                <i class="fas fa-check-circle text-white text-xl"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800">Attendance Rules</h2>
-        </div>
-
-        <div class="space-y-6">
-
-            <div>
-                <label for="late_time" class="block font-semibold text-gray-700 mb-2">
-                    <i class="fas fa-clock text-orange-500 mr-2"></i>
-                    Late Time (HH:MM)
-                </label>
-                <input id="late_time" type="time"
-                       value="{{ settings.late_time }}"
-                       class="input-premium w-full" />
-            </div>
-
-            <div>
-                <label for="min_confidence" class="block font-semibold text-gray-700 mb-2">
-                    <i class="fas fa-percentage text-blue-500 mr-2"></i>
-                    Minimum Confidence (%)
-                </label>
-                <input id="min_confidence" type="number"
-                       value="{{ settings.min_confidence }}"
-                       class="input-premium w-full" />
-            </div>
-
-        </div>
-    </div>
-
-
-    <!-- SECTION 3: SYSTEM PREFERENCES -->
-    <div class="scroll-reveal premium-card p-8" style="--delay: 0.3s">
-        <div class="flex items-center gap-3 mb-6">
-            <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center shadow-md">
-                <i class="fas fa-cog text-white text-xl"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800">System Preferences</h2>
-        </div>
-
-        <div class="space-y-6">
-
-            <div>
-                <label for="company_name" class="block font-semibold text-gray-700 mb-2">
-                    <i class="fas fa-building text-blue-500 mr-2"></i>
-                    Company Name
-                </label>
-                <input id="company_name" type="text"
-                       value="{{ settings.company_name }}"
-                       class="input-premium w-full" />
-            </div>
-
-            <div>
-                <label for="company_logo" class="block font-semibold text-gray-700 mb-3">
-                    <i class="fas fa-image text-purple-500 mr-2"></i>
-                    Company Logo
-                </label>
-
-                <div class="flex items-center gap-6 bg-gray-50 rounded-xl p-6 border border-gray-200">
-                    <img id="logo_preview"
-                         src="{{ settings.company_logo }}"
-                         class="h-20 w-auto object-contain border-2 border-gray-300 rounded-xl bg-white p-2 shadow-md">
-
-                    <form id="logoForm" enctype="multipart/form-data" class="flex-1">
-                            <input id="company_logo" name="company_logo" type="file" accept="image/*" class="mb-3" />
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="button" id="uploadLogoBtn"
-                                class="btn-premium btn-premium-primary">
-                            <i class="fas fa-upload mr-2"></i>Upload Logo
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <div>
-                <label for="camera_index" class="block font-medium mb-1">Camera Device Index</label>
-                <input id="camera_index"
-                       type="number"
-                       value="{{ settings.camera_index }}"
-                       class="w-full p-2 border rounded" />
-            </div>
-
-        </div>
-    </div>
-
-
-    <!-- SECTION 4: SECURITY SETTINGS -->
-    <div class="bg-white p-5 rounded-xl shadow mb-6">
-        <h2 class="text-xl font-semibold mb-4">Security Settings</h2>
-
-        <div class="space-y-4">
-
-            <div>
-                <label for="session_timeout" class="block font-medium mb-1">Session Timeout (minutes)</label>
-                <select id="session_timeout"
-                        class="w-full p-2 border rounded">
-                    <option value="15" {% if settings.session_timeout == '15' %}selected{% endif %}>15</option>
-                    <option value="30" {% if settings.session_timeout == '30' %}selected{% endif %}>30</option>
-                    <option value="60" {% if settings.session_timeout == '60' %}selected{% endif %}>60</option>
-                </select>
-            </div>
-
-            <div>
-                <label for="login_alert" class="block font-medium mb-1">Login Alert</label>
-                <input id="login_alert"
-                       value="{{ settings.login_alert }}"
-                       class="input-premium w-full"
-                       placeholder="off or email" />
-            </div>
-
-            <!-- Kiosk PIN -->
-            <div class="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-6 border border-orange-200">
-                <label for="kiosk_pin" class="block font-semibold text-gray-700 mb-3">
-                    <i class="fas fa-lock text-red-500 mr-2"></i>
-                    Kiosk Exit PIN
-                </label>
-                <form id="kioskPinForm" class="flex gap-3">
-                    <input 
-                        id="kiosk_pin" 
-                        type="password" 
-                        placeholder="Enter 4+ digit PIN"
-                        class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-orange-500/50 focus:border-orange-400 outline-none transition-all shadow-sm"
-                        autocomplete="new-password"
-                    />
-                    <button 
-                        type="button"
-                        id="setPinBtn"
-                        class="btn-warning px-6 py-3 rounded-xl shadow-md hover:shadow-lg"
-                    >
-                        <i class="fas fa-key mr-2"></i>Set PIN
-                    </button>
-                </form>
-                <p class="text-xs text-gray-600 mt-2 flex items-center gap-2">
-                    <i class="fas fa-info-circle text-orange-500"></i>
-                    Used to exit kiosk mode. Must be numeric, 4+ digits.
-                </p>
-                <div id="pinStatus" class="text-sm mt-2 hidden"></div>
-            </div>
-
-
-            <!-- Remote Unlock -->
-            <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-200 scroll-reveal" style="transition-delay: 0.3s;">
-                <label class="block font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 text-white shadow-lg mr-2">
-                        <i class="fas fa-wifi"></i>
-                    </span>
-                    Remote Kiosk Control
-                </label>
-                <button 
-                    id="remoteUnlockBtn"
-                    class="btn-warning px-6 py-3 rounded-xl shadow-md hover:shadow-lg flex items-center gap-2"
-                >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
-                    </svg>
-                    Force Unlock Kiosk
-                </button>
-                <p class="text-xs text-gray-600 mt-2 flex items-center gap-2">
-                    <i class="fas fa-info-circle text-purple-500"></i>
-                    Remotely unlock kiosk without PIN. Use only in emergencies.
-                </p>
-                <div id="unlockStatus" class="text-sm mt-2 hidden"></div>
-            </div>
-
-        </div>
-    </div>
-
-
-    <!-- SECTION 5: DATA & BACKUP -->
-    <div class="bg-gradient-to-r from-green-50 to-blue-50 p-8 rounded-2xl shadow-lg border border-green-200 mb-6 scroll-reveal" style="transition-delay: 0.4s;">
-        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-400 text-white shadow-lg">
-                <i class="fas fa-database"></i>
-            </span>
-            Data & Backup
-        </h2>
-
-        <div class="flex gap-4">
-            <button id="exportAttendance" class="btn-success px-6 py-3 rounded-xl shadow-md hover:shadow-lg flex items-center gap-2">
-                <i class="fas fa-file-csv"></i>
-                Export Attendance (CSV)
-            </button>
-
-            <button id="exportEmployees" class="btn-success px-6 py-3 rounded-xl shadow-md hover:shadow-lg flex items-center gap-2">
-                <i class="fas fa-users"></i>
-                Export Employees (CSV)
-            </button>
-        </div>
-    </div>
-
-
-    <!-- Inline action buttons removed. Sticky actions are injected by JS (check for #stickyActions). -->
+  </div>
 
 </div>
 

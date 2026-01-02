@@ -139,14 +139,21 @@ def load_embeddings():
     
     return embeddings_cache
 
-    
+
+def clear_embedding_cache():
+    """
     Clears cache timestamp to force immediate reload on next access.
     Useful when new employee is enrolled or face data is updated.
     """
     global embeddings_cache, cache_timestamp
     embeddings_cache = None
     cache_timestamp = None
-    logger.info("Embedding cache cleared, will reload on next access")le source of truth.
+    logger.info("Embedding cache cleared, will reload on next access")
+
+
+def reload_embeddings():
+    """
+    Forces immediate reload of embeddings from database.
     """
     global embeddings_cache
     embeddings_cache = None
@@ -265,7 +272,6 @@ def recognize_and_mark(frame_b64, app):
         embedding = face.normed_embedding.astype("float32")
         
         # Use centralized face_encoder.match() for consistency
-        from utils.face_encoder import face_encoder
         threshold = float(app.config.get("EMBED_THRESHOLD", 0.75))
         result = face_encoder.match(embedding, threshold=threshold)
 

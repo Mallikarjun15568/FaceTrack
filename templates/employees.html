@@ -2,36 +2,38 @@
 {% block page_title %}Employees{% endblock %}
 {% block content %}
 
-<div class="space-y-8">
+<div class="max-w-7xl mx-auto">
 
   <!-- HEADER -->
-  <div class="scroll-reveal flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+  <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-8">
     <div>
-      <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Employees</h1>
-      <p class="text-sm text-gray-600 mt-2 font-medium">Manage employee records — search, filter, sort, and actions.</p>
+      <h1 class="text-2xl font-bold text-gray-900">Employees</h1>
+      <p class="text-sm text-gray-500 mt-1">Manage employee records and access</p>
     </div>
 
-    <div class="flex items-center gap-4 w-full lg:w-auto">
+    <div class="flex items-center gap-3 w-full lg:w-auto">
       <!-- SEARCH -->
-      <div class="flex items-center gap-3 card px-4 py-3 hover:shadow-lg transition-shadow">
+      <div class="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-3 py-2 flex-1 lg:w-80">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
-        <input id="globalSearch" type="text" placeholder="Search name, email, phone..."
-               class="form-input px-2 py-1 w-72 outline-none bg-transparent text-gray-700 border-0 focus:ring-0" />
-        <button id="clearSearch" class="px-2 py-1 text-sm text-gray-400 hover:text-gray-700 transition-colors font-bold">✕</button>
+        <input id="globalSearch" type="text" placeholder="Search employees..."
+               class="flex-1 outline-none text-sm bg-transparent" />
+        <button id="clearSearch" class="text-gray-400 hover:text-gray-700">
+          <i class="fas fa-times text-sm"></i>
+        </button>
       </div>
 
-      <a href="/employees/add" class="btn-premium btn-premium-primary">
+      <a href="/employees/add" class="btn btn-primary whitespace-nowrap">
         <i class="fas fa-plus"></i>Add Employee
       </a>
     </div>
   </div>
 
   <!-- FILTERS -->
-  <div class="scroll-reveal card p-6 flex flex-col md:flex-row gap-6 items-center justify-between" style="--delay: 0.2s">
+  <div class="card mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
 
-    <div class="flex gap-4 items-center flex-wrap">
+    <div class="flex gap-3 items-center flex-wrap">
 
       <select id="filterDept" class="input-premium text-sm">
         <option value="">All Departments</option>
@@ -56,30 +58,30 @@
         <option value="name_desc"  {% if sort=='name_desc' %}selected{% endif %}>Name Z–A</option>
       </select>
 
-      <button id="applyFilters" class="btn-premium btn-premium-primary">
-        <i class="fas fa-filter mr-2"></i>Apply
+      <button id="applyFilters" class="btn btn-primary">
+        <i class="fas fa-filter"></i>Apply
       </button>
-      <button id="resetFilters" class="px-5 py-3 rounded-xl border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold transition-all shadow-sm hover:shadow-md">
-        <i class="fas fa-redo mr-2"></i>Reset
+      <button id="resetFilters" class="btn btn-secondary">
+        <i class="fas fa-redo"></i>Reset
       </button>
 
     </div>
 
     <div class="flex items-center gap-4">
-      <div class="text-sm font-medium text-gray-700">Selected: <span id="selectedCount" class="font-bold text-blue-600 text-lg">0</span></div>
-      <button id="bulkDeleteBtn" class="btn-premium btn-premium-danger" disabled>
-        <i class="fas fa-trash mr-2"></i>Delete Selected
+      <div class="text-sm font-medium text-gray-700">Selected: <span id="selectedCount" class="font-bold text-indigo-600">0</span></div>
+      <button id="bulkDeleteBtn" class="btn btn-danger" disabled>
+        <i class="fas fa-trash"></i>Delete Selected
       </button>
     </div>
 
   </div>
 
   <!-- TABLE -->
-  <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 overflow-x-auto hover:shadow-xl transition-shadow" style="transition-delay: 0.3s">
-    <table class="table-modern">
+  <div class="card overflow-x-auto">
+    <table class="table w-full">
       <thead>
-        <tr class="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-          <th class="rounded-tl-xl"><input id="selectAll" type="checkbox" class="rounded"></th>
+        <tr>
+          <th class="rounded-tl-lg"><input id="selectAll" type="checkbox" class="rounded"></th>
           <th>Photo</th>
           <th>Name</th>
           <th>Email</th>
@@ -87,7 +89,7 @@
           <th>Phone</th>
           <th>Join Date</th>
           <th>Enrollment</th>
-          <th>Actions</th>
+          <th class="rounded-tr-lg">Actions</th>
         </tr>
       </thead>
 
@@ -105,10 +107,10 @@
               {% set emp_photo_path = '/' ~ emp_photo_path %}
             {% endif %}
             <img src="{{ emp_photo_path if emp_photo_path else url_for('static', filename='default_user.png') }}"
-                 class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
+                 class="w-12 h-12 rounded-lg object-cover border-2 border-gray-200">
           </td>
 
-          <td class="font-semibold text-gray-800">{{ emp.full_name }}</td>
+          <td class="font-semibold text-gray-900">{{ emp.full_name }}</td>
           <td class="text-gray-600">{{ emp.email }}</td>
           <td class="text-gray-700">{{ emp.department or '-' }}</td>
           <td class="text-gray-600">{{ emp.phone or '-' }}</td>
@@ -118,12 +120,12 @@
             {% if emp.enrolled %}
               <span class="badge badge-success">✓ Enrolled</span>
             {% else %}
-              <span class="badge bg-gray-100 text-gray-600">Not Enrolled</span>
+              <span class="badge badge-secondary">Not Enrolled</span>
             {% endif %}
           </td>
 
           <td class="flex gap-2">
-            <a href="/employees/view/{{ emp.id }}" class="text-blue-600 hover:text-blue-700 font-medium">View</a>
+            <a href="/employees/view/{{ emp.id }}" class="text-indigo-600 hover:text-indigo-700 font-medium">View</a>
             <a href="/employees/edit/{{ emp.id }}" class="text-green-600 hover:text-green-700 font-medium">Edit</a>
             <button onclick="deleteSingle({{ emp.id }})" class="text-red-600 hover:text-red-700 font-medium">Delete</button>
           </td>
@@ -135,21 +137,21 @@
   </div>
 
   <!-- PAGINATION -->
-  <div class="flex items-center justify-between card-modern p-4 animate-fadeIn">
-    <div class="text-sm text-gray-600 font-medium">
-      Showing <span class="text-blue-600 font-bold">{{ start + 1 }}</span> – <span class="text-blue-600 font-bold">{{ (end if end < total else total) }}</span> of <span class="text-blue-600 font-bold">{{ total }}</span> employees
+  <div class="flex items-center justify-between card">
+    <div class="text-sm text-gray-600">
+      Showing <span class="text-indigo-600 font-bold">{{ start + 1 }}</span> – <span class="text-indigo-600 font-bold">{{ (end if end < total else total) }}</span> of <span class="text-indigo-600 font-bold">{{ total }}</span> employees
     </div>
 
     <div class="flex items-center gap-2">
 
       {% if page > 1 %}
-        <a href="?page={{ page - 1 }}&{{ querystring }}" class="btn-secondary">← Prev</a>
+        <a href="?page={{ page - 1 }}&{{ querystring }}" class="btn btn-secondary">← Prev</a>
       {% endif %}
 
-      <div class="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl font-bold">{{ page }}</div>
+      <div class="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg font-bold">{{ page }}</div>
 
       {% if end < total %}
-        <a href="?page={{ page + 1 }}&{{ querystring }}" class="btn-secondary">Next →</a>
+        <a href="?page={{ page + 1 }}&{{ querystring }}" class="btn btn-secondary">Next →</a>
       {% endif %}
 
     </div>

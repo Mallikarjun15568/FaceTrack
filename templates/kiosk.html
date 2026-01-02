@@ -1,69 +1,60 @@
 {% extends "base_kiosk.html" %}
-{% block title %}FaceTrack Pro | Kiosk{% endblock %}
+{% block title %}Kiosk Mode - FaceTrack{% endblock %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
 
 {% block content %}
 
-<!-- Animated Background Gradient -->
-<div class="fixed inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 -z-10">
-  <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM0Yjk0ZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2YzAtMS4xLS45LTItMi0ycy0yIC45LTIgMiAuOSAyIDIgMiAyLS45IDItMnptLTIgNmMtMS4xIDAtMiAuOS0yIDJzLjkgMiAyIDIgMi0uOSAyLTItLjktMi0yLTJ6bS04IDBjLTEuMSAwLTIgLjktMiAycy45IDIgMiAyIDItLjkgMi0yLS45LTItMi0yem0tOC04Yy0xLjEgMC0yIC45LTIgMnMuOSAyIDIgMiAyLS45IDItMi0uOS0yLTItMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-5"></div>
-</div>
-
-<!-- TOP BAR with Glassmorphism -->
-<div class="h-16 px-6 flex items-center justify-between backdrop-blur-xl bg-white/80 border-b border-white/20 shadow-lg relative z-10">
+<!-- TOP BAR -->
+<div class="h-16 px-6 flex items-center justify-between bg-white border-b border-gray-200 shadow-sm">
   <div class="flex items-center gap-3">
-    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg animate-pulse-slow">
-      <span class="text-white text-xl">⚡</span>
+    <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center">
+      <i class="fas fa-fingerprint text-white text-lg"></i>
     </div>
     <div>
-      <h1 class="text-gray-800 font-bold text-lg">FaceTrack Pro</h1>
-      <p class="text-xs text-gray-500 font-medium">Kiosk Mode</p>
+      <h1 class="text-gray-900 font-bold text-lg">FaceTrack</h1>
+      <p class="text-xs text-gray-500">Kiosk Mode</p>
     </div>
   </div>
 
   <div class="flex items-center gap-4">
-    <!-- Animated Clock -->
-    <div id="currentTime" class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-sm shadow-lg animate-fade-in"></div>
+    <div id="currentTime" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-900 font-semibold text-sm"></div>
     
-    <button id="openSettingsBtn" class="w-10 h-10 rounded-xl bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-lg group">
-      <i class="fas fa-cog text-gray-600 group-hover:text-blue-600 group-hover:rotate-90 transition-all duration-300"></i>
+    <button id="openSettingsBtn" class="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+      <i class="fas fa-cog text-gray-600"></i>
     </button>
   </div>
 </div>
 
-<!-- MAIN WRAPPER -->
-<div class="h-[calc(100vh-64px)] p-6 overflow-auto">
-  <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+<!-- MAIN CONTENT -->
+<div class="h-[calc(100vh-64px)] p-6 overflow-auto bg-gray-50">
+  <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-    <!-- LEFT CARD: CAMERA with Advanced Animations -->
-    <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl p-6 flex flex-col h-fit border border-white/20 animate-slide-in-left">
-      <div class="flex items-center gap-3 mb-4">
-        <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse-fast"></div>
-        <h2 class="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Camera Feed</h2>
+    <!-- LEFT: CAMERA -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-2 h-2 rounded-full bg-green-500"></div>
+        <h2 class="text-lg font-semibold text-gray-900">Camera Feed</h2>
       </div>
-      <p class="text-sm text-gray-600 text-center mb-4">
-        📸 Align your face inside the scan ring
+      <p class="text-sm text-gray-500 text-center mb-4">
+        Position your face in the camera view
       </p>
 
-      <!-- Camera Box with Glow Effect -->
-      <div class="relative aspect-video rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 overflow-hidden shadow-2xl border-4 border-blue-500/20 hover:border-blue-500/40 transition-all duration-500">
+      <!-- Camera Container -->
+      <div class="relative aspect-video rounded-lg bg-gray-900 overflow-hidden border border-gray-300">
         <video id="kioskVideo" muted playsinline class="w-full h-full object-cover"></video>
 
-        <!-- Animated Scan Ring with Rotating Border -->
+        <!-- Scan Overlay -->
         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <!-- Outer Glow Ring -->
-          <div class="absolute w-64 h-64 rounded-full bg-blue-500/10 blur-2xl animate-pulse"></div>
-          
-          <!-- Main Scan Ring -->
-          <div id="scanRing" class="relative w-56 h-56 rounded-full border-4 border-gray-500 flex items-center justify-center transition-all duration-500 shadow-2xl">
-            <!-- Rotating Gradient Border Effect -->
-            <div class="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 animate-spin-slow" id="scanBorderEffect"></div>
-            
-            <div class="text-center z-10 relative">
-              <i class="fas fa-video-slash text-5xl text-gray-400 mb-3 animate-bounce-slow"></i>
-              <p id="scanStatusText" class="text-white font-bold text-base drop-shadow-2xl tracking-wide">
-                CAMERA IS OFF
+          <div id="scanRing" class="relative w-48 h-48 rounded-full border-4 border-gray-500 flex items-center justify-center transition-all duration-500">
+            <div class="text-center">
+              <i class="fas fa-video-slash text-4xl text-gray-400 mb-2"></i>
+              <p id="scanStatusText" class="text-white font-semibold text-sm">
+                CAMERA OFF
               </p>
-              <p id="scanSubText" class="text-gray-300 text-xs mt-2 drop-shadow-lg">
+              <p id="scanSubText" class="text-gray-300 text-xs mt-1">
                 Start camera to begin
               </p>
             </div>
@@ -71,98 +62,97 @@
         </div>
 
         <!-- Corner Indicators -->
-        <div class="absolute top-4 left-4 w-6 h-6 border-l-2 border-t-2 border-blue-500/50 rounded-tl-lg animate-pulse"></div>
-        <div class="absolute top-4 right-4 w-6 h-6 border-r-2 border-t-2 border-blue-500/50 rounded-tr-lg animate-pulse"></div>
-        <div class="absolute bottom-4 left-4 w-6 h-6 border-l-2 border-b-2 border-blue-500/50 rounded-bl-lg animate-pulse"></div>
-        <div class="absolute bottom-4 right-4 w-6 h-6 border-r-2 border-b-2 border-blue-500/50 rounded-br-lg animate-pulse"></div>
+        <div class="absolute top-4 left-4 w-5 h-5 border-l-2 border-t-2 border-gray-400/50 rounded-tl"></div>
+        <div class="absolute top-4 right-4 w-5 h-5 border-r-2 border-t-2 border-gray-400/50 rounded-tr"></div>
+        <div class="absolute bottom-4 left-4 w-5 h-5 border-l-2 border-b-2 border-gray-400/50 rounded-bl"></div>
+        <div class="absolute bottom-4 right-4 w-5 h-5 border-r-2 border-b-2 border-gray-400/50 rounded-br"></div>
       </div>
 
-      <!-- Controls with Hover Effects -->
+      <!-- Controls -->
       <div class="mt-6 space-y-4">
-        <!-- Camera select removed from main UI (kiosk mode uses default camera) -->
-
         <div class="flex gap-3">
           <button id="startCameraBtn"
-                  class="flex-1 h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 hover:shadow-2xl group">
-            <i class="fas fa-play text-sm group-hover:scale-125 transition-transform"></i>
+                  class="flex-1 btn btn-primary h-12">
+            <i class="fas fa-play"></i>
             Start Camera
           </button>
           
           <button id="stopCameraBtn"
-                  class="hidden flex-1 h-12 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 hover:shadow-2xl group">
-            <i class="fas fa-stop text-sm group-hover:scale-125 transition-transform"></i>
+                  class="hidden flex-1 btn btn-danger h-12">
+            <i class="fas fa-stop"></i>
             Stop Camera
           </button>
         </div>
 
-        <!-- Animated Status Indicator -->
         <div id="cameraStatusBlock"
-             class="flex items-center justify-center gap-3 text-sm font-medium bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-3 border border-gray-200 transition-all duration-300 hover:shadow-lg">
+             class="flex items-center justify-center gap-2 text-sm font-medium bg-gray-100 rounded-lg p-3 border border-gray-200">
           <span id="statusDot" class="w-3 h-3 rounded-full bg-red-500 shadow-lg animate-pulse-fast"></span>
           <span id="cameraStatus" class="text-gray-700">Camera Off</span>
         </div>
       </div>
     </div>
 
-    <!-- RIGHT CARD: STATUS with Dynamic Cards -->
-    <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl p-6 flex flex-col h-fit border border-white/20 animate-slide-in-right">
-      <div class="flex items-center gap-3 mb-4">
-        <div class="w-3 h-3 rounded-full bg-purple-500 animate-pulse-fast"></div>
-        <h2 class="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Attendance Status</h2>
+    <!-- RIGHT: STATUS -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-2 h-2 rounded-full bg-purple-500"></div>
+        <h2 class="text-lg font-semibold text-gray-900">Attendance Status</h2>
       </div>
-      <p class="text-sm text-gray-600 mb-4">🎯 Real-time recognition system</p>
+      <p class="text-sm text-gray-500 mb-4">Real-time recognition system</p>
 
-      <!-- Waiting Card with Shimmer Effect -->
-       <div id="waiting-block"
-         class="relative overflow-hidden border border-blue-200/70 rounded-2xl p-5 flex items-center gap-4 mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 transition-all duration-500 hover:shadow-xl hover:scale-[1.02]">
-        <div class="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-3xl shadow-lg animate-pulse-slow">
-          ⏳
-        </div>
-        <div class="flex-1 z-10">
-          <p class="font-bold text-gray-800 text-lg">Ready for identification</p>
-          <p class="text-sm text-gray-500 mt-1 font-normal">Please look directly at the camera</p>
-        </div>
-      </div>
-
-      <!-- Unknown Face Card with Shake Animation -->
-      <div id="unknown-card" class="hidden mb-4 border-2 border-red-200 rounded-2xl p-5 flex items-center gap-4 bg-gradient-to-r from-red-50 to-rose-50 transition-all duration-500 animate-shake">
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-3xl shadow-lg">
-          ❌
-        </div>
-        <div class="flex-1">
-          <p class="font-bold text-gray-800 text-lg">Face Not Recognized</p>
-          <p class="text-sm text-gray-600 mt-1">Please try again or contact admin</p>
+      <!-- Waiting Card -->
+      <div id="waiting-block" class="card mb-4 bg-blue-50 border-blue-200">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-indigo-600 flex items-center justify-center text-2xl text-white">
+            <i class="fas fa-hourglass-half"></i>
+          </div>
+          <div class="flex-1">
+            <p class="font-semibold text-gray-900">Ready for identification</p>
+            <p class="text-sm text-gray-500 mt-1">Please look directly at the camera</p>
+          </div>
         </div>
       </div>
 
-      <!-- Employee Card with Success Animation -->
-      <div id="employee-card" class="hidden mb-4 border-2 border-green-200 rounded-2xl p-5 flex items-center gap-4 bg-gradient-to-r from-green-50 to-emerald-50 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] animate-scale-in">
-        <img id="emp-photo" src="{{ url_for('static', filename='default_user.png') }}"
-             class="w-16 h-16 rounded-2xl object-cover border-4 border-green-400 shadow-xl">
-        <div class="flex-1">
-          <p id="emp-name" class="font-bold text-gray-900 text-lg">Employee Name</p>
-          <p id="emp-dept" class="text-sm text-gray-600 mt-1">Department</p>
+      <!-- Unknown Face Card -->
+      <div id="unknown-card" class="hidden card mb-4 bg-red-50 border-red-200">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-red-600 flex items-center justify-center text-2xl text-white">
+            <i class="fas fa-times"></i>
+          </div>
+          <div class="flex-1">
+            <p class="font-semibold text-gray-900">Face Not Recognized</p>
+            <p class="text-sm text-gray-600 mt-1">Please try again or contact admin</p>
+          </div>
         </div>
-        <span id="emp-status"
-              class="px-4 py-2 text-sm font-bold rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg animate-pulse-slow">
-          CHECKED IN
-        </span>
       </div>
 
-      <!-- Placeholder with Breathing Animation -->
-      <p id="resultsPlaceholder"
-         class="text-sm text-gray-400 italic text-center py-6 animate-pulse">
-        🔍 Recognition results will appear here
+      <!-- Employee Card -->
+      <div id="employee-card" class="hidden card mb-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 shadow-lg">
+        <div class="flex items-center gap-4">
+          <img id="emp-photo" src="{{ url_for('static', filename='default_user.png') }}"
+               class="w-16 h-16 rounded-xl object-cover border-3 border-green-400 shadow-md">
+          <div class="flex-1">
+            <p id="emp-name" class="font-bold text-lg text-gray-900">Employee Name</p>
+            <p id="emp-dept" class="text-sm text-gray-600 mt-1 font-medium">Department</p>
+          </div>
+          <span id="emp-status" class="px-4 py-2 rounded-lg font-bold text-sm shadow-md">
+            CHECKED IN
+          </span>
+        </div>
+      </div>
+
+      <!-- Placeholder -->
+      <p id="resultsPlaceholder" class="text-sm text-gray-400 text-center py-4">
+        Recognition results will appear here
       </p>
 
-      <!-- Recent Logs with Slide-in Animation -->
-      <div class="mt-6 border-t-2 border-gray-200 pt-6">
-        <div class="flex items-center gap-2 mb-4">
-          <i class="fas fa-history text-purple-600"></i>
-          <h3 class="text-base font-bold text-gray-800">Recent Activity</h3>
+      <!-- Recent Logs -->
+      <div class="mt-4">
+        <div class="flex items-center gap-2 mb-3 pb-3 border-b-2 border-gray-200">
+          <i class="fas fa-history text-indigo-600 text-lg"></i>
+          <h3 class="text-lg font-bold text-gray-900">Recent Activity</h3>
         </div>
-        <div id="logs-list" class="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+        <div id="logs-list" class="space-y-3 max-h-80 overflow-y-auto">
           <!-- Log entries will be added here dynamically -->
         </div>
       </div>
@@ -171,181 +161,137 @@
   </div>
 </div>
 
-<!-- PIN MODAL with Backdrop Blur -->
-<div id="pinModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 animate-fade-in">
-  <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-8 animate-scale-in border-4 border-blue-500/20">
-    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-3xl mx-auto mb-4 shadow-xl">
-      🔒
-    </div>
-    <h3 class="text-2xl font-bold text-center mb-2 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Enter Admin PIN</h3>
-    <p class="text-sm text-gray-500 text-center mb-6">Access kiosk settings</p>
-
-    <form id="pinForm" autocomplete="off" onsubmit="pinVerify.click(); return false;">
-      <input id="pinInput"
-             name="pin"
-             type="password"
-             maxlength="6"
-             aria-label="Admin PIN"
-             autocomplete="off"
-             class="w-full h-14 border-2 border-gray-300 rounded-xl text-center text-2xl font-bold mb-6 focus:ring-4 focus:ring-blue-200 focus:border-blue-500 focus:outline-none transition-all duration-300"
-             placeholder="••••••">
-
-      <div class="flex gap-3">
-        <button id="pinCancel"
-                type="button"
-                class="flex-1 h-12 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold transition-all duration-300 hover:scale-105">
-          Cancel
-        </button>
-        <button id="pinVerify"
-                type="button"
-                class="flex-1 h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold transition-all duration-300 hover:scale-105 hover:shadow-xl">
-          Verify
-        </button>
+<!-- PIN MODAL -->
+<div id="pinModal" class="fixed inset-0 bg-black/70 backdrop-blur-md hidden items-center justify-center z-50">
+  <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+    <!-- Header -->
+    <div class="bg-indigo-600 p-6 text-center">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm mb-3">
+        <i class="fas fa-lock text-white text-2xl"></i>
       </div>
-    </form>
+      <h3 class="text-2xl font-bold text-white mb-1">Admin Verification</h3>
+      <p class="text-indigo-100 text-sm">Enter your secure PIN</p>
+    </div>
+
+    <!-- Body -->
+    <div class="p-8">
+      <form id="pinForm" autocomplete="off" onsubmit="pinVerify.click(); return false;">
+        <input id="pinInput"
+               name="pin"
+               type="password"
+               maxlength="6"
+               aria-label="Admin PIN"
+               autocomplete="off"
+               class="w-full px-4 py-4 text-center text-2xl font-bold tracking-widest border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none transition-all mb-6 bg-gray-50"
+               placeholder="••••••">
+
+        <div class="flex gap-4">
+          <button id="pinCancel"
+                  type="button"
+                  class="flex-1 px-6 py-4 bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 font-bold rounded-xl transition-all hover:shadow-md">
+            <i class="fas fa-times mr-2"></i>Cancel
+          </button>
+          <button id="pinVerify"
+                  type="button"
+                  class="flex-1 px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all">
+            <i class="fas fa-check-circle mr-2"></i>Verify
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
-<!-- SETTINGS PANEL with Smooth Slide -->
+<!-- SETTINGS PANEL -->
 <div id="settingsPanel"
-  class="fixed inset-y-0 right-0 w-96 bg-white/95 backdrop-blur-xl border-l-2 border-gray-200 shadow-2xl translate-x-full transition-transform duration-500 z-50 flex flex-col">
+  class="fixed inset-y-0 right-0 w-96 bg-white border-l border-gray-200 shadow-lg translate-x-full transition-transform duration-300 z-50 flex flex-col">
 
-  <div class="p-6 border-b-2 border-gray-200 bg-gradient-to-r from-blue-500 to-indigo-600">
-    <h3 class="text-2xl font-bold text-white mb-1">Kiosk Settings</h3>
-    <p class="text-sm text-blue-100">Administrator controls</p>
+  <div class="p-6 border-b border-gray-200 bg-gray-50">
+    <h3 class="text-xl font-bold text-gray-900 mb-1">Kiosk Settings</h3>
+    <p class="text-sm text-gray-500">Administrator controls</p>
   </div>
 
-  <div class="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
-    <!-- Admin-only camera selection (hidden from main UI) -->
-    <div class="border-2 border-gray-200 rounded-xl p-4">
-      <label class="block text-sm font-bold text-gray-700 mb-2">Camera Device</label>
-      <select id="adminCameraSelect" class="w-full h-11 rounded-lg border border-gray-300 px-3"></select>
+  <div class="p-6 space-y-4 overflow-y-auto flex-1">
+    <!-- Camera Selection -->
+    <div class="card">
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        <i class="fas fa-video text-indigo-600 mr-2"></i>
+        Camera Device
+      </label>
+      <select id="adminCameraSelect" class="input w-full"></select>
     </div>
+    
     <!-- Voice Toggle -->
-    <div id="voiceToggle" class="flex items-center justify-between border-2 border-gray-200 rounded-xl p-5 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group">
-      <div class="flex items-center gap-3">
-        <i class="fas fa-volume-up text-blue-600 text-xl group-hover:scale-125 transition-transform"></i>
-        <span class="font-bold text-gray-700">Enable Voice</span>
-      </div>
-      <div class="toggle-switch w-14 h-7 bg-green-500 rounded-full flex items-center px-1 transition-all duration-300 shadow-lg">
-        <div class="toggle-knob w-6 h-6 bg-white rounded-full translate-x-7 transition-transform duration-300 shadow-md"></div>
+    <div id="voiceToggle" class="card cursor-pointer hover:bg-gray-50 transition-colors">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <i class="fas fa-volume-up text-indigo-600 text-lg"></i>
+          <span class="font-semibold text-gray-700">Enable Voice</span>
+        </div>
+        <div class="toggle-switch w-12 h-6 bg-green-500 rounded-full flex items-center px-1 transition-colors">
+          <div class="toggle-knob w-5 h-5 bg-white rounded-full translate-x-6 transition-transform shadow-sm"></div>
+        </div>
       </div>
     </div>
 
-    <!-- Show Camera Status Toggle -->
-    <div id="cameraStatusToggle" class="flex items-center justify-between border-2 border-gray-200 rounded-xl p-5 cursor-pointer hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group">
-      <div class="flex items-center gap-3">
-        <i class="fas fa-info-circle text-purple-600 text-xl group-hover:scale-125 transition-transform"></i>
-        <span class="font-bold text-gray-700">Show Camera Status</span>
-      </div>
-      <div class="toggle-switch w-14 h-7 bg-green-500 rounded-full flex items-center px-1 transition-all duration-300 shadow-lg">
-        <div class="toggle-knob w-6 h-6 bg-white rounded-full translate-x-7 transition-transform duration-300 shadow-md"></div>
+    <!-- Camera Status Toggle -->
+    <div id="cameraStatusToggle" class="card cursor-pointer hover:bg-gray-50 transition-colors">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <i class="fas fa-info-circle text-indigo-600 text-lg"></i>
+          <span class="font-semibold text-gray-700">Show Camera Status</span>
+        </div>
+        <div class="toggle-switch w-12 h-6 bg-green-500 rounded-full flex items-center px-1 transition-colors">
+          <div class="toggle-knob w-5 h-5 bg-white rounded-full translate-x-6 transition-transform shadow-sm"></div>
+        </div>
       </div>
     </div>
 
     <!-- Camera Switch Toggle -->
-    <div id="cameraSwitchToggle" class="flex items-center justify-between border-2 border-gray-200 rounded-xl p-5 cursor-pointer hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group">
-      <div class="flex items-center gap-3">
-        <i class="fas fa-exchange-alt text-green-600 text-xl group-hover:scale-125 transition-transform"></i>
-        <span class="font-bold text-gray-700">Allow Camera Switch</span>
-      </div>
-      <div class="toggle-switch w-14 h-7 bg-green-500 rounded-full flex items-center px-1 transition-all duration-300 shadow-lg">
-        <div class="toggle-knob w-6 h-6 bg-white rounded-full translate-x-7 transition-transform duration-300 shadow-md"></div>
+    <div id="cameraSwitchToggle" class="card cursor-pointer hover:bg-gray-50 transition-colors">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <i class="fas fa-exchange-alt text-indigo-600 text-lg"></i>
+          <span class="font-semibold text-gray-700">Allow Camera Switch</span>
+        </div>
+        <div class="toggle-switch w-12 h-6 bg-green-500 rounded-full flex items-center px-1 transition-colors">
+          <div class="toggle-knob w-5 h-5 bg-white rounded-full translate-x-6 transition-transform shadow-sm"></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="p-6 border-t-2 border-gray-200 bg-white">
-    <button id="exitKioskBtn"
-            class="w-full h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold mb-3 transition-all duration-300 hover:scale-105 hover:shadow-xl">
+  <div class="p-6 border-t border-gray-200 space-y-3">
+    <button id="exitKioskBtn" class="w-full btn btn-danger">
+      <i class="fas fa-sign-out-alt"></i>
       Exit Kiosk
     </button>
 
-    <button id="closeSettingsBtn"
-            class="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold transition-all duration-300 hover:scale-105 hover:shadow-xl">
+    <button id="closeSettingsBtn" class="w-full btn btn-secondary">
+      <i class="fas fa-times"></i>
       Close Settings
     </button>
   </div>
 </div>
 
 <style>
-@keyframes shimmer {
-  100% { transform: translateX(100%); }
+/* Minimal animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-  20%, 40%, 60%, 80% { transform: translateX(5px); }
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
 }
 
-@keyframes pulse-slow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+/* Toggle switch styling */
+.toggle-switch.off {
+  background-color: #d1d5db;
 }
 
-@keyframes pulse-fast {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.95); }
-}
-
-@keyframes bounce-slow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-@keyframes scale-in {
-  0% { transform: scale(0.9); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes fade-in {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-@keyframes slide-in-left {
-  0% { transform: translateX(-50px); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes slide-in-right {
-  0% { transform: translateX(50px); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes spin-slow {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.animate-shimmer { animation: shimmer 2s infinite; }
-.animate-shake { animation: shake 0.5s; }
-.animate-pulse-slow { animation: pulse-slow 3s ease-in-out infinite; }
-.animate-pulse-fast { animation: pulse-fast 1s ease-in-out infinite; }
-.animate-bounce-slow { animation: bounce-slow 2s ease-in-out infinite; }
-.animate-scale-in { animation: scale-in 0.5s ease-out; }
-.animate-fade-in { animation: fade-in 0.3s ease-out; }
-.animate-slide-in-left { animation: slide-in-left 0.6s ease-out; }
-.animate-slide-in-right { animation: slide-in-right 0.6s ease-out; }
-.animate-spin-slow { animation: spin-slow 3s linear infinite; }
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #3b82f6, #6366f1);
-  border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #2563eb, #4f46e5);
+.toggle-switch.off .toggle-knob {
+  transform: translateX(0);
 }
 </style>
 
@@ -353,4 +299,27 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/kiosk.js') }}"></script>
+<script>
+// Kiosk mode: Intercept back button and show PIN modal
+let backButtonPressed = false;
+
+history.pushState(null, '', location.href);
+window.addEventListener('popstate', function(e) {
+  // Prevent actual navigation
+  history.pushState(null, '', location.href);
+  
+  // Show PIN modal for exit
+  backButtonPressed = true;
+  const pinModal = document.getElementById('pinModal');
+  const pinInput = document.getElementById('pinInput');
+  
+  if (pinModal && pinInput) {
+    window.pendingExit = true; // Set flag for exit (used by kiosk.js)
+    pinInput.value = '';
+    pinModal.classList.remove('hidden');
+    pinModal.classList.add('flex');
+    setTimeout(() => pinInput.focus(), 100);
+  }
+});
+</script>
 {% endblock %}

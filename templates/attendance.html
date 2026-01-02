@@ -11,8 +11,8 @@
     <!-- HEADER -->
     <div class="scroll-reveal flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div>
-            <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Attendance Records</h1>
-            <p class="text-sm text-gray-600 mt-2 font-medium">View and manage employee check-in/check-out logs</p>
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Attendance Records</h1>
+            <p class="text-sm text-gray-600 mt-3 font-medium">View and manage employee check-in/check-out logs</p>
         </div>
 
         {% if session.role in ['admin', 'hr'] %}
@@ -25,8 +25,11 @@
     </div>
 
     <!-- FILTER BAR -->
-    <div class="scroll-reveal premium-card p-6" style="--delay: 0.2s">
-        <h3 class="font-bold text-xl text-gray-800 mb-6">Filter Attendance</h3>
+    <div class="scroll-reveal premium-card p-8" style="--delay: 0.2s">
+        <h3 class="font-bold text-xl text-gray-900 mb-6 flex items-center gap-2">
+            <i class="fas fa-filter text-indigo-600"></i>
+            Filter Attendance
+        </h3>
         
         <div class="flex flex-wrap items-end gap-6">
 
@@ -65,8 +68,8 @@
         <table class="table-modern" id="attendanceTable">
 
             <thead>
-                <tr class="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                    <th class="rounded-tl-xl">Photo</th>
+                <tr class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white">
+                    <th class="rounded-tl-xl py-4">Photo</th>
                     <th>Username</th>
                     <th>Snapshot</th>
                     <th>Check-In</th>

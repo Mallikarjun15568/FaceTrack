@@ -412,12 +412,19 @@ if (stopBtn) {
 // UI UPDATE with Animations
 // =======================
 function updateUI(data) {
+    console.log('Updating UI with:', data);
     if (waitingBlock) waitingBlock.classList.add("hidden");
     if (unknownCard) unknownCard.classList.add("hidden");
+    if (resultsPlaceholder) resultsPlaceholder.classList.add("hidden");
     
     if (employeeCard) {
         employeeCard.classList.remove("hidden");
         employeeCard.classList.add("animate-scale-in");
+        
+        // Force display to ensure visibility
+        setTimeout(() => {
+            employeeCard.style.display = 'block';
+        }, 10);
     }
 
     if (empName) empName.textContent = data.name || "Unknown";
@@ -526,6 +533,7 @@ async function sendFrame() {
         });
         
         const data = await res.json();
+        console.log('Recognition response:', data);
         if (!data) return;
 
         // --- UI mapping for liveness WAIT messages ---

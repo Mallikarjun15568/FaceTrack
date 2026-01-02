@@ -1,178 +1,121 @@
 {% extends "base.html" %}
-{% block page_title %}Admin Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 {% block content %}
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="max-w-7xl mx-auto">
 
-  <!-- Left column: summary + quick actions -->
-  <div class="space-y-8 lg:col-span-2">
-
-    <!-- Top summary cards with enhanced stat-card design -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div class="stat-card scroll-reveal" style="--delay: 0.1s">
-        <div class="flex items-center justify-between mb-4">
-          <div class="text-sm font-semibold text-gray-600">Total Employees</div>
-          <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-          </div>
-        </div>
-        <div class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent" data-count="{{ total_employees }}">0</div>
-        <div class="mt-2 text-xs text-gray-500 font-medium">All time registered</div>
-      </div>
-
-      <div class="stat-card scroll-reveal" style="--delay: 0.2s">
-        <div class="flex items-center justify-between mb-4">
-          <div class="text-sm font-semibold text-gray-600">Departments</div>
-          <div class="bg-gradient-to-br from-green-500 to-emerald-600 p-3 rounded-xl shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div>
-        </div>
-        <div class="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent" data-count="{{ total_departments }}">0</div>
-        <div class="mt-2 text-xs text-gray-500 font-medium">Active units</div>
-      </div>
-
-      <div class="stat-card scroll-reveal" style="--delay: 0.3s">
-        <div class="flex items-center justify-between mb-4">
-          <div class="text-sm font-semibold text-gray-600">Present Today</div>
-          <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-3 rounded-xl shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
-        <div class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent" data-count="{{ today_present }}">0</div>
-        <div class="mt-2 text-xs text-gray-500 font-medium">Checked in today</div>
-      </div>
-
-      <div class="stat-card scroll-reveal" style="--delay: 0.4s">
-        <div class="flex items-center justify-between mb-4">
-          <div class="text-sm font-semibold text-gray-600">Recognition Events</div>
-          <div class="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-xl shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-          </div>
-        </div>
-        <div class="text-4xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent" data-count="{{ recognition_today }}">0</div>
-        <div class="mt-2 text-xs text-gray-500 font-medium">Scans today</div>
-      </div>
-    </div>
-
-    <!-- Charts row with enhanced card styling -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="card scroll-reveal" style="--delay: 0.5s">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="font-bold text-xl text-gray-800">Weekly Attendance</h3>
-          <span class="badge-premium badge-premium-primary">Last 7 days</span>
-        </div>
-        <canvas id="weeklyAttendanceChart" height="140"></canvas>
-      </div>
-
-      <div class="card scroll-reveal" style="--delay: 0.6s">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="font-bold text-xl text-gray-800">Department Breakdown</h3>
-          <span class="badge-premium badge-premium-success">Employees per dept</span>
-        </div>
-        <canvas id="departmentChart" height="140"></canvas>
-      </div>
-    </div>
-
-    <!-- Recent attendance table with enhanced styling -->
-    <div class="premium-card p-8 scroll-reveal" style="--delay: 0.7s">
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="font-bold text-xl text-gray-800">Recent Attendance</h3>
-        <a href="/attendance" class="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1">
-          See all
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    
+    <div class="stat-card">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-sm font-medium text-gray-600">Total Employees</div>
+        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
-        </a>
+        </div>
       </div>
+      <div class="text-3xl font-bold text-gray-900" data-count="{{ total_employees }}">0</div>
+      <div class="mt-2 text-xs text-gray-500">All registered</div>
+    </div>
 
-      <div class="overflow-x-auto">
-        <table class="table-premium">
-          <thead>
-            <tr>
-              <th>Employee</th>
-              <th>Date</th>
-              <th>Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in recent_attendance %}
-            <tr>
-              <td class="font-medium text-gray-800">{{ r.full_name }}</td>
-              <td class="text-gray-600">{{ r.date }}</td>
-              <td class="text-gray-600">{{ r.time }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+    <div class="stat-card">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-sm font-medium text-gray-600">Departments</div>
+        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        </div>
       </div>
+      <div class="text-3xl font-bold text-gray-900" data-count="{{ total_departments }}">0</div>
+      <div class="mt-2 text-xs text-gray-500">Active units</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-sm font-medium text-gray-600">Present Today</div>
+        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+      </div>
+      <div class="text-3xl font-bold text-gray-900" data-count="{{ today_present }}">0</div>
+      <div class="mt-2 text-xs text-gray-500">Checked in</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-sm font-medium text-gray-600">Recognitions</div>
+        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+        </div>
+      </div>
+      <div class="text-3xl font-bold text-gray-900" data-count="{{ recognition_today }}">0</div>
+      <div class="mt-2 text-xs text-gray-500">Scans today</div>
     </div>
 
   </div>
 
-  <!-- Right column -->
-  <aside class="space-y-8">
-
-    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 hover:shadow-xl transition-shadow" style="transition-delay: 0.8s">
-      <h3 class="font-bold text-xl text-gray-800 mb-6">Quick Actions</h3>
-      <div class="grid grid-cols-1 gap-4">
-        <a href="/employees" class="btn-primary text-center py-4 rounded-xl shadow-md hover:shadow-lg transition-all">
-          <i class="fas fa-users mr-2"></i>Manage Employees
-        </a>
-        <a href="/enroll" class="btn-success text-center py-4 rounded-xl shadow-md hover:shadow-lg transition-all">
-          <i class="fas fa-camera mr-2"></i>Enroll Face
-        </a>
-        <a href="/reports" class="btn-warning text-center py-4 rounded-xl shadow-md hover:shadow-lg transition-all">
-          <i class="fas fa-chart-line mr-2"></i>Reports
-        </a>
+  <!-- Charts Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    
+    <div class="card">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="font-semibold text-lg text-gray-900">Weekly Attendance</h3>
+        <span class="badge badge-info">Last 7 days</span>
       </div>
+      <canvas id="weeklyAttendanceChart" height="200"></canvas>
     </div>
 
-    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 hover:shadow-xl transition-shadow" style="transition-delay: 0.9s">
-      <h3 class="font-bold text-xl text-gray-800 mb-6">Recent Recognitions</h3>
-      <ul class="space-y-3 text-sm">
-        {% for r in recent_recognitions %}
-          <li class="flex items-center justify-between p-3 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all border border-transparent hover:border-blue-200">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                {{ r.full_name[0] }}
-              </div>
-              <span class="font-semibold text-gray-800">{{ r.full_name }}</span>
-            </div>
-            <span class="text-xs text-gray-500 font-medium">{{ r.timestamp }}</span>
-          </li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <div class="scroll-reveal bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-2xl shadow-md border border-blue-200" style="transition-delay: 1s">
-      <h4 class="font-bold text-gray-700 mb-4 flex items-center gap-2">
-        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-          <i class="fas fa-server text-white text-xs"></i>
-        </div>
-        System Status
-      </h4>
-      <div class="space-y-2 text-sm">
-        <div class="flex justify-between items-center">
-          <span class="text-gray-600">Database</span>
-          <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">● Online</span>
-        </div>
-        <div class="flex justify-between items-center">
-          <span class="text-gray-600">Recognition</span>
-          <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">● Active</span>
-        </div>
+    <div class="card">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="font-semibold text-lg text-gray-900">Department Breakdown</h3>
+        <span class="badge badge-success">By employees</span>
       </div>
+      <canvas id="departmentChart" height="200"></canvas>
     </div>
 
-  </aside>
+  </div>
+
+  <!-- Recent Attendance Table -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-semibold text-lg text-gray-900">Recent Attendance</h3>
+      <a href="/attendance" class="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+        View all
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </a>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Date</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in recent_attendance %}
+          <tr>
+            <td class="font-medium text-gray-900">{{ r.full_name }}</td>
+            <td class="text-gray-600">{{ r.date }}</td>
+            <td class="text-gray-600">{{ r.time }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 
 </div>
 
