@@ -20,10 +20,10 @@
   </div>
 
   <div class="flex items-center gap-4">
-    <div id="currentTime" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-900 font-semibold text-sm"></div>
+    <div id="currentTime" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-900 font-semibold text-sm" role="timer" aria-live="polite"></div>
     
-    <button id="openSettingsBtn" class="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
-      <i class="fas fa-cog text-gray-600"></i>
+    <button id="openSettingsBtn" class="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors" aria-label="Open kiosk settings">
+      <i class="fas fa-cog text-gray-600" aria-hidden="true"></i>
     </button>
   </div>
 </div>
@@ -33,9 +33,9 @@
   <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
 
     <!-- LEFT: CAMERA -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6" aria-label="Face recognition camera">
       <div class="flex items-center gap-2 mb-4">
-        <div class="w-2 h-2 rounded-full bg-green-500"></div>
+        <div class="w-2 h-2 rounded-full bg-green-500" role="status" aria-label="Camera active"></div>
         <h2 class="text-lg font-semibold text-gray-900">Camera Feed</h2>
       </div>
       <p class="text-sm text-gray-500 text-center mb-4">
@@ -44,7 +44,47 @@
 
       <!-- Camera Container -->
       <div class="relative aspect-video rounded-lg bg-gray-900 overflow-hidden border border-gray-300">
-        <video id="kioskVideo" muted playsinline class="w-full h-full object-cover"></video>
+        <video id="kioskVideo" muted playsinline class="w-full h-full object-cover" aria-label="Live camera feed for face recognition"></video>
+
+        <!-- Face Detection Frame -->
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div id="faceDetectionFrame" class="hidden">
+            <div class="face-guide-oval">
+              <!-- Corner Markers -->
+              <div class="corner-marker top-left"></div>
+              <div class="corner-marker top-right"></div>
+              <div class="corner-marker bottom-left"></div>
+              <div class="corner-marker bottom-right"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-time Status Indicators -->
+        <div class="absolute top-4 left-4 right-4 pointer-events-none">
+          <!-- Distance Meter -->
+          <div id="distanceMeter" class="hidden mb-2 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-2 inline-block">
+            <div class="flex items-center gap-2">
+              <i id="distanceIcon" class="fas fa-arrows-alt-v text-yellow-400"></i>
+              <span id="distanceText" class="text-white text-sm font-medium">Position your face</span>
+            </div>
+          </div>
+          
+          <!-- Lighting Indicator -->
+          <div id="lightingMeter" class="hidden mb-2 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-2 inline-block ml-2">
+            <div class="flex items-center gap-2">
+              <i id="lightingIcon" class="fas fa-sun text-yellow-400"></i>
+              <span id="lightingText" class="text-white text-sm font-medium">Checking light...</span>
+            </div>
+          </div>
+          
+          <!-- Confidence Score -->
+          <div id="confidenceScore" class="hidden absolute top-0 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-2">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-tachometer-alt text-indigo-400"></i>
+              <span class="text-white text-sm font-medium">Quality: <span id="confidenceValue">0%</span></span>
+            </div>
+          </div>
+        </div>
 
         <!-- Scan Overlay -->
         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -58,6 +98,13 @@
                 Start camera to begin
               </p>
             </div>
+          </div>
+        </div>
+
+        <!-- Guidance Text -->
+        <div class="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
+          <div id="guidanceText" class="bg-black/70 backdrop-blur-sm inline-block px-6 py-3 rounded-full">
+            <p class="text-white text-base font-medium">Position your face in the frame</p>
           </div>
         </div>
 
@@ -275,6 +322,85 @@
 </div>
 
 <style>
+/* Face Detection Frame */
+.face-guide-oval {
+  position: relative;
+  width: 280px;
+  height: 360px;
+  border: 3px solid rgba(99, 102, 241, 0.6);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2), 0 0 30px rgba(99, 102, 241, 0.3);
+  animation: face-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.face-guide-oval.detected {
+  border-color: rgba(34, 197, 94, 0.8);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.3), 0 0 40px rgba(34, 197, 94, 0.5);
+  animation: face-pulse-success 1.5s ease-in-out infinite;
+}
+
+.corner-marker {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 3px solid #6366f1;
+  transition: all 0.3s;
+}
+
+.face-guide-oval.detected .corner-marker {
+  border-color: #22c55e;
+}
+
+.corner-marker.top-left {
+  top: -3px;
+  left: 20px;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 8px 0 0 0;
+}
+
+.corner-marker.top-right {
+  top: -3px;
+  right: 20px;
+  border-left: none;
+  border-bottom: none;
+  border-radius: 0 8px 0 0;
+}
+
+.corner-marker.bottom-left {
+  bottom: -3px;
+  left: 20px;
+  border-right: none;
+  border-top: none;
+  border-radius: 0 0 0 8px;
+}
+
+.corner-marker.bottom-right {
+  bottom: -3px;
+  right: 20px;
+  border-left: none;
+  border-top: none;
+  border-radius: 0 0 8px 0;
+}
+
+@keyframes face-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2), 0 0 30px rgba(99, 102, 241, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0.1), 0 0 50px rgba(99, 102, 241, 0.4);
+  }
+}
+
+@keyframes face-pulse-success {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.3), 0 0 40px rgba(34, 197, 94, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.2), 0 0 60px rgba(34, 197, 94, 0.6);
+  }
+}
+
 /* Minimal animations */
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -292,6 +418,15 @@
 
 .toggle-switch.off .toggle-knob {
   transform: translateX(0);
+}
+
+/* Loading Spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 </style>
 

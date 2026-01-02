@@ -27,6 +27,18 @@ const unknownCard = document.getElementById("unknown-card");
 const resultsPlaceholder = document.getElementById("resultsPlaceholder");
 const logsList = document.getElementById("logs-list");
 
+// Face detection UI elements
+const faceDetectionFrame = document.getElementById("faceDetectionFrame");
+const distanceMeter = document.getElementById("distanceMeter");
+const distanceIcon = document.getElementById("distanceIcon");
+const distanceText = document.getElementById("distanceText");
+const lightingMeter = document.getElementById("lightingMeter");
+const lightingIcon = document.getElementById("lightingIcon");
+const lightingText = document.getElementById("lightingText");
+const confidenceScore = document.getElementById("confidenceScore");
+const confidenceValue = document.getElementById("confidenceValue");
+const guidanceText = document.getElementById("guidanceText");
+
 // Centralized scan message setter — single source of truth for scanSubText
 function setScanMessage(text) {
     if (scanSubText) scanSubText.textContent = text;
@@ -509,6 +521,144 @@ function addLog(name, status, time, photo) {
 }
 
 // =======================
+// FACE DETECTION FEEDBACK
+// =======================
+
+// Calculate distance from camera based on face box size
+function calculateDistance(faceBox) {
+    if (!faceBox || !faceBox.width || !faceBox.height) return "unknown";
+    
+    const faceSize = (faceBox.width + faceBox.height) / 2;
+    const videoWidth = video.videoWidth || 640;
+    const relativeFaceSize = faceSize / videoWidth;
+    
+    // Thresholds: < 0.15 = too far, 0.15-0.4 = perfect, > 0.4 = too close
+    if (relativeFaceSize < 0.15) return "far";
+    if (relativeFaceSize > 0.4) return "close";
+    return "perfect";
+}
+
+// Analyze lighting quality from image data
+function analyzeLighting(canvas) {
+    if (!canvas) return "unknown";
+    
+    const ctx = canvas.getContext("2d");
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    
+    let totalBrightness = 0;
+    const sampleSize = Math.min(10000, data.length / 4); // Sample pixels
+    
+    for (let i = 0; i < sampleSize * 4; i += 4) {
+        const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
+        totalBrightness += brightness;
+    }
+    
+    const avgBrightness = totalBrightness / sampleSize;
+    
+    // Thresholds: < 60 = dark, 60-200 = good, > 200 = bright
+    if (avgBrightness < 60) return "dark";
+    if (avgBrightness > 200) return "bright";
+    return "good";
+}
+
+// Update face detection UI with real-time feedback
+function updateFaceDetection(detected, faceBox, confidence, canvas) {
+    if (!faceDetectionFrame) return;
+    
+    if (detected && faceBox) {
+        // Show detection frame
+        faceDetectionFrame.classList.remove("hidden");
+        const ovalGuide = faceDetectionFrame.querySelector(".face-guide-oval");
+        if (ovalGuide) ovalGuide.classList.add("detected");
+        
+        // Calculate and show distance
+        const distance = calculateDistance(faceBox);
+        if (distanceMeter) {
+            distanceMeter.classList.remove("hidden");
+            let distanceColor = "text-gray-400";
+            let distanceMsg = "Unknown distance";
+            
+            if (distance === "far") {
+                distanceColor = "text-yellow-400";
+                distanceMsg = "Move closer";
+                distanceIcon.innerHTML = "↓";
+            } else if (distance === "close") {
+                distanceColor = "text-yellow-400";
+                distanceMsg = "Move back";
+                distanceIcon.innerHTML = "↑";
+            } else if (distance === "perfect") {
+                distanceColor = "text-green-400";
+                distanceMsg = "Perfect distance";
+                distanceIcon.innerHTML = "✓";
+            }
+            
+            distanceMeter.className = `absolute top-24 left-8 ${distanceColor} text-sm font-medium bg-black/50 px-3 py-2 rounded-lg backdrop-blur-sm`;
+            if (distanceText) distanceText.textContent = distanceMsg;
+        }
+        
+        // Calculate and show lighting
+        const lighting = analyzeLighting(canvas);
+        if (lightingMeter) {
+            lightingMeter.classList.remove("hidden");
+            let lightingColor = "text-gray-400";
+            let lightingMsg = "Unknown lighting";
+            
+            if (lighting === "dark") {
+                lightingColor = "text-yellow-400";
+                lightingMsg = "Too dark";
+                lightingIcon.innerHTML = "🌙";
+            } else if (lighting === "bright") {
+                lightingColor = "text-yellow-400";
+                lightingMsg = "Too bright";
+                lightingIcon.innerHTML = "☀️";
+            } else if (lighting === "good") {
+                lightingColor = "text-green-400";
+                lightingMsg = "Good lighting";
+                lightingIcon.innerHTML = "✓";
+            }
+            
+            lightingMeter.className = `absolute top-24 right-8 ${lightingColor} text-sm font-medium bg-black/50 px-3 py-2 rounded-lg backdrop-blur-sm`;
+            if (lightingText) lightingText.textContent = lightingMsg;
+        }
+        
+        // Show confidence score
+        if (confidenceScore && confidence) {
+            confidenceScore.classList.remove("hidden");
+            const scorePercent = Math.round(confidence * 100);
+            let scoreColor = "text-gray-400";
+            
+            if (scorePercent >= 75) scoreColor = "text-green-400";
+            else if (scorePercent >= 50) scoreColor = "text-yellow-400";
+            else scoreColor = "text-red-400";
+            
+            confidenceScore.className = `absolute bottom-24 left-1/2 transform -translate-x-1/2 ${scoreColor} text-lg font-bold bg-black/50 px-4 py-2 rounded-lg backdrop-blur-sm`;
+            if (confidenceValue) confidenceValue.textContent = `${scorePercent}%`;
+        }
+        
+        // Update guidance text
+        if (guidanceText) {
+            let guidance = "Hold still...";
+            if (distance === "far") guidance = "Please move closer to camera";
+            else if (distance === "close") guidance = "Please move back";
+            else if (lighting === "dark") guidance = "Adjust lighting - too dark";
+            else if (lighting === "bright") guidance = "Adjust lighting - too bright";
+            else if (distance === "perfect" && lighting === "good") guidance = "Perfect! Processing...";
+            
+            guidanceText.textContent = guidance;
+        }
+        
+    } else {
+        // Hide detection UI when no face
+        if (faceDetectionFrame) faceDetectionFrame.classList.add("hidden");
+        if (distanceMeter) distanceMeter.classList.add("hidden");
+        if (lightingMeter) lightingMeter.classList.add("hidden");
+        if (confidenceScore) confidenceScore.classList.add("hidden");
+        if (guidanceText) guidanceText.textContent = "Position your face in the frame";
+    }
+}
+
+// =======================
 // RECOGNITION LOOP
 // =======================
 const POLLING_DELAY_MS = 1200;
@@ -535,6 +685,18 @@ async function sendFrame() {
         const data = await res.json();
         console.log('Recognition response:', data);
         if (!data) return;
+        
+        // Update face detection UI with feedback
+        if (data.face_detected) {
+            updateFaceDetection(
+                true, 
+                data.face_box || null, 
+                data.similarity || 0,
+                canvas
+            );
+        } else {
+            updateFaceDetection(false, null, 0, null);
+        }
 
         // --- UI mapping for liveness WAIT messages ---
         if (data.status === "WAIT") {
@@ -545,6 +707,7 @@ async function sendFrame() {
             if (msg.includes("no face")) {
                 setScanIdle();
                 setScanMessage("Please face the camera");
+                updateFaceDetection(false, null, 0, null);
             }
             else if (msg.includes("multiple")) {
                 setScanIdle();

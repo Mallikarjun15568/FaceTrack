@@ -682,3 +682,207 @@ a:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 4px;
 }
+
+/* ==================================================
+   MOBILE RESPONSIVE ENHANCEMENTS
+   ================================================== */
+
+/* Mobile-first breakpoints */
+@media (max-width: 640px) {
+  /* Adjust font sizes for mobile */
+  body {
+    font-size: 14px;
+  }
+  
+  h1 {
+    font-size: 1.5rem;
+  }
+  
+  h2 {
+    font-size: 1.25rem;
+  }
+  
+  /* Card padding adjustments */
+  .card,
+  .stat-card {
+    padding: 1rem;
+  }
+  
+  /* Table responsiveness */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  table {
+    min-width: 600px;
+  }
+  
+  /* Button touch targets */
+  button,
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Form inputs */
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* Prevents iOS zoom */
+  }
+  
+  /* Grid adjustments */
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Spacing adjustments */
+  .px-6 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Tablet adjustments */
+  #main-content {
+    padding: 1rem;
+  }
+  
+  /* Card grids */
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Hide some non-essential columns in tables */
+  .hide-mobile {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  /* Tablet landscape / small desktop */
+  .sidebar-toggle {
+    display: block;
+  }
+  
+  #sidebar {
+    position: fixed;
+    z-index: 40;
+    height: 100vh;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Increase interactive element sizes */
+  .nav-link {
+    padding: 0.875rem;
+  }
+  
+  button,
+  .btn {
+    padding: 0.75rem 1.5rem;
+  }
+  
+  /* Remove hover effects */
+  .card:hover {
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+/* Landscape phone adjustments */
+@media (max-width: 896px) and (orientation: landscape) {
+  #sidebar {
+    width: 200px;
+  }
+  
+  .nav-link span {
+    font-size: 0.875rem;
+  }
+}
+
+/* ==================================================
+   ACCESSIBILITY ENHANCEMENTS
+   ================================================== */
+
+/* Skip to main content link */
+.skip-to-main {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--primary);
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+}
+
+.skip-to-main:focus {
+  top: 0;
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .card,
+  .stat-card {
+    border-width: 2px;
+  }
+  
+  button,
+  .btn {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Focus visible for keyboard navigation */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* Keyboard navigation indicator */
+body:not(.user-is-tabbing) button:focus,
+body:not(.user-is-tabbing) a:focus,
+body:not(.user-is-tabbing) input:focus {
+  outline: none;
+}
+
+/* Dark mode support (future enhancement) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --gray-50: #111827;
+    --gray-900: #f9fafb;
+  }
+}

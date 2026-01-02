@@ -257,6 +257,7 @@ def recognize_and_mark(frame_b64, app):
             return {
                 "status": "unknown",
                 "recognized": False,
+                "face_detected": False,
                 "name": "Unknown",
                 "dept": "",
                 "photoUrl": url_for("static", filename="default_user.png"),
@@ -270,6 +271,15 @@ def recognize_and_mark(frame_b64, app):
         )
 
         embedding = face.normed_embedding.astype("float32")
+        
+        # Extract face box for UI feedback
+        bbox = face.bbox
+        face_box = {
+            "x": float(bbox[0]),
+            "y": float(bbox[1]),
+            "width": float(bbox[2] - bbox[0]),
+            "height": float(bbox[3] - bbox[1])
+        }
         
         # Use centralized face_encoder.match() for consistency
         threshold = float(app.config.get("EMBED_THRESHOLD", 0.75))
@@ -295,6 +305,8 @@ def recognize_and_mark(frame_b64, app):
             return {
                 "status": "unknown",
                 "recognized": False,
+                "face_detected": True,
+                "face_box": face_box,
                 "name": "Unknown",
                 "dept": "",
                 "photoUrl": url_for("static", filename="default_user.png"),
@@ -335,6 +347,8 @@ def recognize_and_mark(frame_b64, app):
         return {
             "status": status,
             "recognized": True,
+            "face_detected": True,
+            "face_box": face_box,
             "name": name,
             "dept": dept,
             "photoUrl": photo_url,

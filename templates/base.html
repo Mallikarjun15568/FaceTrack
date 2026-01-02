@@ -236,26 +236,32 @@
       observer.observe(el);
     });
   });
+</script>
 
-  // Toast notification system
-  window.showToast = function(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type} flex items-center gap-3`;
+<!-- Toast & Loading Systems -->
+<script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+<script src="{{ url_for('static', filename='js/loading.js') }}"></script>
+
+<script>
+  // Mobile menu toggle
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const sidebar = document.getElementById('sidebar');
+  
+  if (mobileMenuBtn && sidebar) {
+    mobileMenuBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('-translate-x-full');
+      const isOpen = !sidebar.classList.contains('-translate-x-full');
+      mobileMenuBtn.querySelector('i').className = isOpen ? 'fas fa-times text-lg' : 'fas fa-bars text-lg';
+    });
     
-    const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
-    toast.innerHTML = `
-      <span class="text-2xl">${icon}</span>
-      <span class="font-medium">${message}</span>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(400px)';
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
-  };
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth < 1024 && !sidebar.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+        sidebar.classList.add('-translate-x-full');
+        mobileMenuBtn.querySelector('i').className = 'fas fa-bars text-lg';
+      }
+    });
+  }
 </script>
 
 {% block scripts %}{% endblock %}

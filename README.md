@@ -14,8 +14,39 @@
 
 ---
 
+## � Screenshots
+
+### Dashboard
+![Dashboard View](docs/screenshots/dashboard.png)
+*Admin dashboard with real-time attendance statistics and analytics*
+
+### Kiosk Mode - Face Recognition
+![Kiosk Mode](docs/screenshots/kiosk.png)
+*Real-time face detection with guidance overlay, distance meter, and confidence scoring*
+
+### Employee Management
+![Employee List](docs/screenshots/employees.png)
+*Complete employee directory with face enrollment status and management tools*
+
+### Attendance Records
+![Attendance View](docs/screenshots/attendance.png)
+*Comprehensive attendance tracking with filters and export capabilities*
+
+### Reports & Analytics
+![Reports](docs/screenshots/reports.png)
+*Department-wise analytics with monthly trends and custom date ranges*
+
+### Settings Panel
+![Settings](docs/screenshots/settings.png)
+*System configuration for thresholds, working hours, and kiosk preferences*
+
+> **Note**: Screenshots showcase the professional UI with consistent indigo theme, real-time feedback systems, and enterprise-grade design.
+
+---
+
 ## 📋 Table of Contents
 
+- [Screenshots](#-screenshots)
 - [Features](#-features)
 - [Technology Stack](#-technology-stack)
 - [Installation](#-installation)
