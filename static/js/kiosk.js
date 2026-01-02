@@ -425,20 +425,22 @@ if (stopBtn) {
 // =======================
 function updateUI(data) {
     console.log('Updating UI with:', data);
-    if (waitingBlock) waitingBlock.classList.add("hidden");
-    if (unknownCard) unknownCard.classList.add("hidden");
-    if (resultsPlaceholder) resultsPlaceholder.classList.add("hidden");
     
-    if (employeeCard) {
-        employeeCard.classList.remove("hidden");
-        employeeCard.classList.add("animate-scale-in");
-        
-        // Force display to ensure visibility
-        setTimeout(() => {
-            employeeCard.style.display = 'block';
-        }, 10);
+    // Hide all status cards first
+    if (waitingBlock) {
+        waitingBlock.classList.add("hidden");
+        waitingBlock.style.display = 'none';
     }
-
+    if (unknownCard) {
+        unknownCard.classList.add("hidden");
+        unknownCard.style.display = 'none';
+    }
+    if (resultsPlaceholder) {
+        resultsPlaceholder.classList.add("hidden");
+        resultsPlaceholder.style.display = 'none';
+    }
+    
+    // Update employee data BEFORE showing card
     if (empName) empName.textContent = data.name || "Unknown";
     if (empDept) empDept.textContent = data.dept || "";
     if (empPhoto) {
@@ -461,6 +463,21 @@ function updateUI(data) {
         } else {
             empStatus.textContent = data.status || "";
         }
+    }
+    
+    // NOW show the employee card with multiple methods
+    if (employeeCard) {
+        employeeCard.classList.remove("hidden");
+        employeeCard.style.display = 'block';
+        employeeCard.style.visibility = 'visible';
+        employeeCard.style.opacity = '1';
+        employeeCard.classList.add("animate-scale-in");
+        
+        console.log('Employee card should be visible now', {
+            display: employeeCard.style.display,
+            classList: employeeCard.classList.toString(),
+            visibility: employeeCard.style.visibility
+        });
     }
 
     if (data.status === "check-in") {
