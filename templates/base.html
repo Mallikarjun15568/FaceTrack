@@ -104,15 +104,13 @@
           </a>
         </li>
 
-        <!-- Admin & HR only -->
-        {% if session.role in ['admin', 'hr'] %}
+        <!-- Reports - All roles can view their own reports -->
         <li>
           <a href="/reports" class="nav-link {% if 'reports' in request.endpoint %}active{% endif %}">
             <i data-feather="bar-chart-2"></i>
             <span class="text-sm font-medium">Reports</span>
           </a>
         </li>
-        {% endif %}
 
         <!-- Admin only -->
         {% if session.role == 'admin' %}

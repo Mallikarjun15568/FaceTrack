@@ -7,9 +7,36 @@
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8.svg)](https://tailwindcss.com/)
 [![Production](https://img.shields.io/badge/Production-Ready-success.svg)](DEPLOYMENT.md)
 
-> Production-grade facial recognition attendance system powered by InsightFace ArcFace. Features real-time kiosk mode with mobile camera support, smooth animations, and enterprise-level security.
+> Production-grade facial recognition attendance system powered by InsightFace ArcFace. Features real-time kiosk mode with mobile camera support, smooth animations, liveness detection, and enterprise-level security.
 
-> **🎉 Version 2.1** - Enhanced kiosk UI with smooth animations, mobile camera support, and improved user experience!
+> **🎉 Version 2.2** - Ultra-fast face login (instant match), enhanced UI with animations, enriched content pages, and 5x faster liveness detection!
+
+---
+
+## 📱 Latest Updates (v2.2)
+
+### ⚡ Performance Enhancements
+- **Instant Face Login**: Single match triggers immediate login (REQUIRED_MATCHES = 1)
+- **5x Faster Liveness**: Reduced from 150 to 30 frames for rapid anti-spoofing
+- **Optimized Detection**: 30% confidence ratio, 5-frame intervals for speed
+
+### 🎨 UI/UX Improvements
+- **Home Page Animations**: Fade-in effects, hover lifts, floating icons, scale-in stats
+- **Enhanced About Page**: Technology stack showcase, Why Choose section with 6 feature cards
+- **Smooth Transitions**: Button hover effects, gradient animations, pulse effects
+- **Professional Design**: Clean system interface replacing marketing-style homepage
+
+### 📦 New Features
+- **Help Page**: Comprehensive FAQ with 6 sections (enrollment, kiosk, reports, security, troubleshooting, settings)
+- **Green Face Box**: Canvas-based detection box on kiosk with corner markers (z-40 layering)
+- **Live Detection Feedback**: Distance meter, lighting meter, confidence score (hidden for clean UI)
+- **Unified Navigation**: Consistent navbar across all public pages
+
+### 🐛 Bug Fixes
+- Fixed duplicate content sections across multiple pages
+- Removed empty spacing issues on about page
+- Fixed face box visibility on kiosk mode
+- Resolved text visibility on about page
 
 ---
 

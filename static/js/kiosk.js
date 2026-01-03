@@ -5,6 +5,7 @@
 
 // -------- DOM ELEMENTS --------
 const video = document.getElementById("kioskVideo");
+const kioskFaceCanvas = document.getElementById("kioskFaceCanvas");
 const startBtn = document.getElementById("startCameraBtn");
 const stopBtn = document.getElementById("stopCameraBtn");
 const cameraSelect = document.getElementById("cameraSelect");
@@ -28,7 +29,6 @@ const resultsPlaceholder = document.getElementById("resultsPlaceholder");
 const logsList = document.getElementById("logs-list");
 
 // Face detection UI elements
-const faceDetectionFrame = document.getElementById("faceDetectionFrame");
 const distanceMeter = document.getElementById("distanceMeter");
 const distanceIcon = document.getElementById("distanceIcon");
 const distanceText = document.getElementById("distanceText");
@@ -327,6 +327,18 @@ async function loadCameras() {
 
 document.addEventListener("DOMContentLoaded", () => {
     loadCameras();
+    
+    // Hide all status indicators on load
+    if (distanceMeter) {
+        distanceMeter.classList.add("hidden");
+        distanceMeter.style.display = "none";
+    }
+    if (lightingMeter) {
+        lightingMeter.classList.add("hidden");
+        lightingMeter.style.display = "none";
+    }
+    if (guidanceText) guidanceText.style.display = "none";
+    
     // Add initial page load animation
     document.body.style.opacity = '0';
     setTimeout(() => {
@@ -411,6 +423,14 @@ if (startBtn) {
             window.cameraRunning = true;
             window.startingCamera = false;
             
+            // Initialize canvas for face box
+            if (kioskFaceCanvas) {
+                const rect = video.getBoundingClientRect();
+                kioskFaceCanvas.width = rect.width;
+                kioskFaceCanvas.height = rect.height;
+                console.log('✅ Canvas initialized:', kioskFaceCanvas.width, 'x', kioskFaceCanvas.height);
+            }
+            
             startBtn.classList.add("hidden");
             if (stopBtn) stopBtn.classList.remove("hidden");
             
@@ -465,6 +485,19 @@ if (stopBtn) {
         stream = null;
 
         cameraRunning = false;
+        
+        // Clear all detection UI
+        drawKioskFaceBox(false);
+        if (distanceMeter) {
+            distanceMeter.classList.add("hidden");
+            distanceMeter.style.display = "none";
+        }
+        if (lightingMeter) {
+            lightingMeter.classList.add("hidden");
+            lightingMeter.style.display = "none";
+        }
+        if (guidanceText) guidanceText.style.display = "none";
+        
         stopBtn.classList.add("hidden");
         if (startBtn) {
             startBtn.classList.remove("hidden");
@@ -655,104 +688,181 @@ function analyzeLighting(canvas) {
 
 // Update face detection UI with real-time feedback
 function updateFaceDetection(detected, faceBox, confidence, canvas) {
-    if (!faceDetectionFrame) return;
+    // Oval frame removed - only canvas box and indicators remain
     
     if (detected && faceBox) {
-        // Show detection frame
-        faceDetectionFrame.classList.remove("hidden");
-        const ovalGuide = faceDetectionFrame.querySelector(".face-guide-oval");
-        if (ovalGuide) ovalGuide.classList.add("detected");
+        // Draw face box on canvas
+        drawKioskFaceBox(true);
         
-        // Calculate and show distance
+        // Calculate and show distance - clean compact panel
         const distance = calculateDistance(faceBox);
-        if (distanceMeter) {
+        if (distanceMeter && distanceText && cameraRunning) {
             distanceMeter.classList.remove("hidden");
-            let distanceColor = "text-gray-400";
-            let distanceMsg = "Unknown distance";
+            distanceMeter.style.display = "inline-block";
             
             if (distance === "far") {
-                distanceColor = "text-yellow-400";
-                distanceMsg = "Move closer";
-                distanceIcon.innerHTML = "↓";
+                distanceText.textContent = "↓ Move Closer";
+                distanceText.className = "text-orange-600 font-medium";
             } else if (distance === "close") {
-                distanceColor = "text-yellow-400";
-                distanceMsg = "Move back";
-                distanceIcon.innerHTML = "↑";
+                distanceText.textContent = "↑ Move Back";
+                distanceText.className = "text-orange-600 font-medium";
             } else if (distance === "perfect") {
-                distanceColor = "text-green-400";
-                distanceMsg = "Perfect distance";
-                distanceIcon.innerHTML = "✓";
+                distanceText.textContent = "✓ Distance OK";
+                distanceText.className = "text-green-600 font-medium";
             }
-            
-            distanceMeter.className = `absolute top-24 left-8 ${distanceColor} text-sm font-medium bg-black/50 px-3 py-2 rounded-lg backdrop-blur-sm`;
-            if (distanceText) distanceText.textContent = distanceMsg;
         }
         
-        // Calculate and show lighting
+        // Calculate and show lighting - clean compact panel
         const lighting = analyzeLighting(canvas);
-        if (lightingMeter) {
+        if (lightingMeter && lightingText && cameraRunning) {
             lightingMeter.classList.remove("hidden");
-            let lightingColor = "text-gray-400";
-            let lightingMsg = "Unknown lighting";
+            lightingMeter.style.display = "inline-block";
             
             if (lighting === "dark") {
-                lightingColor = "text-yellow-400";
-                lightingMsg = "Too dark";
-                lightingIcon.innerHTML = "🌙";
+                lightingText.textContent = "🌙 Too Dark";
+                lightingText.className = "text-orange-600 font-medium";
             } else if (lighting === "bright") {
-                lightingColor = "text-yellow-400";
-                lightingMsg = "Too bright";
-                lightingIcon.innerHTML = "☀️";
+                lightingText.textContent = "☀ Too Bright";
+                lightingText.className = "text-orange-600 font-medium";
             } else if (lighting === "good") {
-                lightingColor = "text-green-400";
-                lightingMsg = "Good lighting";
-                lightingIcon.innerHTML = "✓";
+                lightingText.textContent = "✓ Lighting OK";
+                lightingText.className = "text-green-600 font-medium";
+            }
+        }
+        
+        // Confidence score hidden to reduce clutter
+        
+        // Update guidance text - only for critical issues
+        if (guidanceText && cameraRunning) {
+            let guidance = "";
+            
+            // Only show if there's a problem
+            if (distance === "far") {
+                guidance = "📏 Move Closer";
+            } else if (distance === "close") {
+                guidance = "⚠️ Move Back";
+            } else if (lighting === "dark") {
+                guidance = "🌙 Too Dark";
+            } else if (lighting === "bright") {
+                guidance = "☀️ Too Bright";
+            } else if (distance === "perfect" && lighting === "good") {
+                guidance = "✨ Verifying...";
             }
             
-            lightingMeter.className = `absolute top-24 right-8 ${lightingColor} text-sm font-medium bg-black/50 px-3 py-2 rounded-lg backdrop-blur-sm`;
-            if (lightingText) lightingText.textContent = lightingMsg;
-        }
-        
-        // Show confidence score
-        if (confidenceScore && confidence) {
-            confidenceScore.classList.remove("hidden");
-            const scorePercent = Math.round(confidence * 100);
-            let scoreColor = "text-gray-400";
-            
-            if (scorePercent >= 75) scoreColor = "text-green-400";
-            else if (scorePercent >= 50) scoreColor = "text-yellow-400";
-            else scoreColor = "text-red-400";
-            
-            confidenceScore.className = `absolute bottom-24 left-1/2 transform -translate-x-1/2 ${scoreColor} text-lg font-bold bg-black/50 px-4 py-2 rounded-lg backdrop-blur-sm`;
-            if (confidenceValue) confidenceValue.textContent = `${scorePercent}%`;
-        }
-        
-        // Update guidance text
-        if (guidanceText) {
-            let guidance = "Hold still...";
-            if (distance === "far") guidance = "Please move closer to camera";
-            else if (distance === "close") guidance = "Please move back";
-            else if (lighting === "dark") guidance = "Adjust lighting - too dark";
-            else if (lighting === "bright") guidance = "Adjust lighting - too bright";
-            else if (distance === "perfect" && lighting === "good") guidance = "Perfect! Processing...";
-            
-            guidanceText.textContent = guidance;
+            if (guidance) {
+                guidanceText.textContent = guidance;
+                guidanceText.className = "text-white text-sm font-semibold drop-shadow-lg";
+                guidanceText.style.display = "block";
+                guidanceText.style.visibility = "visible";
+            } else {
+                guidanceText.style.display = "none";
+            }
         }
         
     } else {
+        // Clear face box
+        drawKioskFaceBox(false);
+        
         // Hide detection UI when no face
-        if (faceDetectionFrame) faceDetectionFrame.classList.add("hidden");
         if (distanceMeter) distanceMeter.classList.add("hidden");
         if (lightingMeter) lightingMeter.classList.add("hidden");
-        if (confidenceScore) confidenceScore.classList.add("hidden");
-        if (guidanceText) guidanceText.textContent = "Position your face in the frame";
+        if (guidanceText) {
+            guidanceText.textContent = "Position your face in the frame";
+            guidanceText.style.display = "block";
+            guidanceText.style.visibility = "visible";
+        }
+    }
+}
+
+/* Draw face detection box on kiosk canvas */
+function drawKioskFaceBox(hasFace) {
+    const canvas = kioskFaceCanvas;
+    const videoEl = video;
+    
+    if (!canvas || !videoEl) {
+        console.warn('❌ Canvas or video not found');
+        return;
+    }
+    
+    // Match canvas size to video display size
+    const rect = videoEl.getBoundingClientRect();
+    if (canvas.width !== rect.width || canvas.height !== rect.height) {
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+    }
+    
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (hasFace) {
+        console.log('🟢 Drawing green face box');
+        // Draw centered face box (approximation)
+        const boxSize = Math.min(canvas.width, canvas.height) * 0.6;
+        const x = (canvas.width - boxSize) / 2;
+        const y = (canvas.height - boxSize) / 2;
+        
+        // Draw rounded rectangle with pulsing effect
+        ctx.strokeStyle = "#10b981"; // green-500
+        ctx.lineWidth = 4;
+        ctx.shadowColor = "#10b981";
+        ctx.shadowBlur = 15;
+        
+        // Rounded corners
+        const radius = 20;
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + boxSize - radius, y);
+        ctx.arcTo(x + boxSize, y, x + boxSize, y + radius, radius);
+        ctx.lineTo(x + boxSize, y + boxSize - radius);
+        ctx.arcTo(x + boxSize, y + boxSize, x + boxSize - radius, y + boxSize, radius);
+        ctx.lineTo(x + radius, y + boxSize);
+        ctx.arcTo(x, y + boxSize, x, y + boxSize - radius, radius);
+        ctx.lineTo(x, y + radius);
+        ctx.arcTo(x, y, x + radius, y, radius);
+        ctx.closePath();
+        ctx.stroke();
+        
+        // Corner markers
+        const cornerSize = 25;
+        ctx.strokeStyle = "#10b981";
+        ctx.lineWidth = 5;
+        
+        // Top-left
+        ctx.beginPath();
+        ctx.moveTo(x + cornerSize, y);
+        ctx.lineTo(x, y);
+        ctx.lineTo(x, y + cornerSize);
+        ctx.stroke();
+        
+        // Top-right
+        ctx.beginPath();
+        ctx.moveTo(x + boxSize - cornerSize, y);
+        ctx.lineTo(x + boxSize, y);
+        ctx.lineTo(x + boxSize, y + cornerSize);
+        ctx.stroke();
+        
+        // Bottom-left
+        ctx.beginPath();
+        ctx.moveTo(x, y + boxSize - cornerSize);
+        ctx.lineTo(x, y + boxSize);
+        ctx.lineTo(x + cornerSize, y + boxSize);
+        ctx.stroke();
+        
+        // Bottom-right
+        ctx.beginPath();
+        ctx.moveTo(x + boxSize - cornerSize, y + boxSize);
+        ctx.lineTo(x + boxSize, y + boxSize);
+        ctx.lineTo(x + boxSize, y + boxSize - cornerSize);
+        ctx.stroke();
+    } else {
+        console.log('⚪ Clearing face box');
     }
 }
 
 // =======================
 // RECOGNITION LOOP
 // =======================
-const POLLING_DELAY_MS = 1200;
+const POLLING_DELAY_MS = 1500; // Slower for proper face detection - 1.5 seconds
 
 async function sendFrame() {
     if (!cameraRunning || sendingFrame || !video.videoWidth) return;
@@ -761,11 +871,15 @@ async function sendFrame() {
     try {
         if (Date.now() < hardCooldownUntil) return;
 
+        // Show scanning state immediately
+        setScanScanning();
+        setScanMessage("Analyzing face...");
+
         const canvas = document.createElement("canvas");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         canvas.getContext("2d").drawImage(video, 0, 0);
-        const frame = canvas.toDataURL("image/jpeg", 0.7);
+        const frame = canvas.toDataURL("image/jpeg", 0.75); // Better quality
 
         const res = await fetch("/kiosk/recognize", {
             method: "POST",
@@ -774,12 +888,25 @@ async function sendFrame() {
         });
         
         const data = await res.json();
-        console.log('🎯 Recognition response:', data);
-        console.log('🔍 Face detected:', data.face_detected, '| Recognized:', data.recognized, '| Similarity:', data.similarity);
+        console.log('🎯 Recognition response:', JSON.stringify(data));
+        console.log('🔍 Face detected:', data.face_detected, '| Recognized:', data.recognized, '| Similarity:', data.similarity, '| Status:', data.status);
         if (!data) return;
         
+        // Detect if face is present based on multiple indicators
+        const hasFace = data.face_detected === true || 
+                       data.recognized === true || 
+                       (data.face_box && Object.keys(data.face_box).length > 0) ||
+                       (data.status === "WAIT" && data.message && data.message.includes("Analyzing"));
+        
+        console.log('📦 Should draw box?', hasFace, '| Reason:', 
+                   data.face_detected ? 'face_detected' : 
+                   data.recognized ? 'recognized' : 
+                   data.face_box ? 'face_box' : 
+                   (data.message && data.message.includes("Analyzing")) ? 'analyzing' : 'none');
+        
         // Update face detection UI with feedback
-        if (data.face_detected) {
+        if (hasFace) {
+            drawKioskFaceBox(true);
             updateFaceDetection(
                 true, 
                 data.face_box || null, 
@@ -787,6 +914,7 @@ async function sendFrame() {
                 canvas
             );
         } else {
+            drawKioskFaceBox(false);
             updateFaceDetection(false, null, 0, null);
         }
 
@@ -834,9 +962,20 @@ async function sendFrame() {
             setScanMessage("Face not recognized. Please try again");
             setScanError();
             hardCooldownUntil = Date.now() + RECOGNITION_COOLDOWN_MS;
+            // Clear detection UI
+            drawKioskFaceBox(false);
+            if (distanceMeter) distanceMeter.classList.add("hidden");
+            if (lightingMeter) lightingMeter.classList.add("hidden");
+            if (guidanceText) guidanceText.style.display = "none";
             return;
         }
 
+        // Success - clear all detection UI
+        drawKioskFaceBox(false);
+        if (distanceMeter) distanceMeter.classList.add("hidden");
+        if (lightingMeter) lightingMeter.classList.add("hidden");
+        if (guidanceText) guidanceText.style.display = "none";
+        
         updateUI(data);
         hardCooldownUntil = Date.now() + RECOGNITION_COOLDOWN_MS;
 
@@ -858,6 +997,17 @@ async function startRecognitionLoop() {
 
 function stopRecognitionLoop() {
     recognitionRunning = false;
+    // Clear all detection UI when stopping
+    drawKioskFaceBox(false);
+    if (distanceMeter) {
+        distanceMeter.classList.add("hidden");
+        distanceMeter.style.display = "none";
+    }
+    if (lightingMeter) {
+        lightingMeter.classList.add("hidden");
+        lightingMeter.style.display = "none";
+    }
+    if (guidanceText) guidanceText.style.display = "none";
 }
 
 // =======================
@@ -940,11 +1090,22 @@ if (openSettingsBtn && pinModal) {
 // Wire admin exit button inside settings panel
 if (exitKioskBtn && pinModal) {
     exitKioskBtn.addEventListener("click", () => {
+        console.log('🔴 Exit Kiosk button clicked - showing PIN modal');
         pendingExit = true;
         pinInput.value = "";
         pinModal.classList.remove("hidden");
         pinModal.classList.add("flex");
-        setTimeout(() => pinInput.focus(), 50);
+        
+        // Animate modal
+        const modalContent = document.getElementById("pinModalContent");
+        if (modalContent) {
+            setTimeout(() => {
+                modalContent.style.transform = "scale(1)";
+                modalContent.style.opacity = "1";
+            }, 50);
+        }
+        
+        setTimeout(() => pinInput.focus(), 100);
     });
 }
 
@@ -978,27 +1139,79 @@ if (pinVerify) {
         }
 
         if (pendingExit) {
-            pinVerify.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            console.log('🔍 Exit Kiosk - Sending PIN to /kiosk/exit');
+            pinVerify.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
             pinVerify.disabled = true;
             try {
                 const res = await fetch('/kiosk/exit', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
                     body: JSON.stringify({ pin })
                 });
-                const data = await res.json().catch(() => ({}));
+                
+                console.log('🔍 Exit Response Status:', res.status);
+                const data = await res.json().catch(err => {
+                    console.error('Failed to parse response:', err);
+                    return {};
+                });
+                
+                console.log('🔍 Exit Response Data:', data);
+                
                 if (res.ok && data.success) {
-                    window.location.href = data.redirect || '/';
+                    console.log('✅ Exit successful, redirecting to:', data.redirect);
+                    
+                    // Professional exit notification
+                    const exitMsg = document.createElement('div');
+                    exitMsg.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] animate-fadeIn';
+                    exitMsg.innerHTML = `
+                        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md text-center transform animate-slideUp">
+                            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 mb-4 animate-bounce">
+                                <i class="fas fa-check text-white text-3xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2">Kiosk Mode Exited</h3>
+                            <p class="text-gray-600 mb-4">Redirecting to dashboard...</p>
+                            <div class="flex items-center justify-center gap-2">
+                                <div class="w-2 h-2 bg-indigo-600 rounded-full animate-pulse"></div>
+                                <div class="w-2 h-2 bg-indigo-600 rounded-full animate-pulse" style="animation-delay: 0.2s"></div>
+                                <div class="w-2 h-2 bg-indigo-600 rounded-full animate-pulse" style="animation-delay: 0.4s"></div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(exitMsg);
+                    
+                    setTimeout(() => {
+                        window.location.href = data.redirect || '/dashboard';
+                    }, 1500);
                 } else {
-                    alert(data.message || 'Invalid PIN');
+                    console.error('❌ Exit failed:', data.message);
+                    
+                    // Professional error notification
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'fixed top-4 right-4 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] animate-slideInRight';
+                    errorMsg.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-exclamation-circle text-2xl"></i>
+                            <div>
+                                <p class="font-bold text-sm">Exit Failed</p>
+                                <p class="text-xs opacity-90">${data.message || 'Invalid PIN. Please try again.'}</p>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(errorMsg);
+                    
+                    setTimeout(() => errorMsg.remove(), 4000);
+                    
                     pinInput.value = '';
                     pinInput.focus();
                 }
             } catch (err) {
-                console.error(err);
-                alert('Network error. Try again.');
+                console.error('❌ Network error during exit:', err);
+                alert('Network error. Please check your connection and try again.');
             } finally {
-                pinVerify.innerHTML = 'Verify';
+                pinVerify.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Verify';
                 pinVerify.disabled = false;
                 pendingExit = false;
             }

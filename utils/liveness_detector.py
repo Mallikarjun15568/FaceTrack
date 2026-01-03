@@ -29,13 +29,13 @@ class LivenessDetector:
         
         # --- 3. TIME-WINDOW VOTING VARIABLES ---
         self.frame_results = []  # Stores history of frame results
-        self.max_window_frames = 150  # Analyze up to 5 seconds of data
-        self.min_confidence_ratio = 0.4  # Relaxed: 40% of frames must pass to be "Live" (temporary)
+        self.max_window_frames = 30  # Fast: Analyze 30 frames (~1 second)
+        self.min_confidence_ratio = 0.3  # Relaxed: 30% of frames must pass
         
         # --- 4. PERFORMANCE OPTIMIZATION VARIABLES ---
         self.frame_count = 0
         self.cached_face_box = None
-        self.face_detect_interval = 10  # Detect face every 10 frames to save CPU
+        self.face_detect_interval = 5  # Detect face every 5 frames for faster response
         
         # Load Haar Cascades
         try:

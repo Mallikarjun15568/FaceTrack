@@ -191,6 +191,8 @@ def kiosk_recognize():
 @bp.route("/exit", methods=["GET", "POST"])
 def kiosk_exit():
     """Exit kiosk mode - requires PIN authentication to prevent unauthorized exit"""
+    logger.info(f"🔍 Kiosk exit request - Method: {request.method}, Session in_kiosk: {session.get('in_kiosk')}")
+    
     if request.method == "GET":
         # Redirect GET requests to the kiosk UI — we use the PIN modal there.
         return redirect(url_for("kiosk.kiosk_page"))
@@ -199,9 +201,12 @@ def kiosk_exit():
     data = request.get_json()
     pin_raw = data.get("pin", "")
     
+    logger.info(f"🔍 Exit PIN attempt - PIN length: {len(pin_raw) if pin_raw else 0}")
+    
     # Sanitize PIN input (digits only)
     pin = sanitize_pin(pin_raw)
     if pin is None:
+        logger.warning("❌ Invalid PIN format")
         return jsonify({"success": False, "message": "Invalid PIN format"}), 400
 
     # Stricter brute-force protection
@@ -221,11 +226,13 @@ def kiosk_exit():
     # Verify PIN
     try:
         pin_valid = check_password_hash(pin_hash, pin)
+        logger.info(f"🔍 PIN validation result: {pin_valid}")
     except Exception as e:
         logger.error(f"PIN verification error: {e}", exc_info=True)
         return jsonify({"success": False, "message": "PIN verification error."}), 500
     
     if pin_valid:
+        logger.info("✅ PIN valid - Exiting kiosk mode")
         session.pop("in_kiosk", None)
         session["pin_attempts"] = 0
         session.pop("pin_lockout_until", None)

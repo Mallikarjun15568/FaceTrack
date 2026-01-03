@@ -178,6 +178,25 @@ def signup():
 
 
 # ============================================================
+# CURRENT USER API (for employee self-data loading)
+# ============================================================
+@bp.route("/current-user")
+def current_user():
+    """API endpoint - returns current logged-in user details"""
+    if not session.get("logged_in"):
+        return jsonify({"status": "error", "message": "Not logged in"}), 401
+    
+    return jsonify({
+        "status": "ok",
+        "user_id": session.get("user_id"),
+        "username": session.get("username"),
+        "full_name": session.get("full_name"),
+        "role": session.get("role"),
+        "employee_id": session.get("employee_id")
+    })
+
+
+# ============================================================
 # AUTO ROLE (No longer used, kept for safety)
 # ============================================================
 @bp.route("/get-role/<username>")
@@ -212,7 +231,7 @@ def face_login_api():
     
     csrf_token = request.headers.get('X-CSRFToken')
     if not csrf_token:
-        return jsonify({"matched": False, "reason": "CSRF token missing"}), 403
+        return jsonify({"matched": False, "reason": "Security validation failed. Please refresh the page."}), 403
     
     try:
         validate_csrf(csrf_token)
@@ -223,7 +242,7 @@ def face_login_api():
             log_audit(None, 'FACE_LOGIN_CSRF_FAIL', 'auth', 'Invalid CSRF token', request.remote_addr)
         except:
             pass
-        return jsonify({"matched": False, "reason": "Invalid CSRF token"}), 403
+        return jsonify({"matched": False, "reason": "Security validation failed. Please refresh the page."}), 403
     
     data = request.get_json()
     if not data or "image" not in data:
@@ -245,7 +264,7 @@ def face_login_api():
             log_audit(None, 'FACE_LOGIN_FAILED', 'auth', 'No face detected', request.remote_addr)
         except:
             pass
-        return jsonify({"matched": False, "reason": "No face detected"})
+        return jsonify({"matched": False, "reason": "No face detected in frame"})
 
     face_encoder.load_all_embeddings()
     result = face_encoder.match(emb)
@@ -257,7 +276,11 @@ def face_login_api():
             log_audit(None, 'FACE_LOGIN_FAILED', 'auth', 'Face not matched', request.remote_addr)
         except:
             pass
-        return jsonify({"matched": False, "reason": "No match"})
+        return jsonify({
+            "matched": False, 
+            "reason": "Face not enrolled. Please enroll your face first.",
+            "not_enrolled": True
+        })
 
     emp_id, distance = result
 
@@ -272,17 +295,17 @@ def face_login_api():
     user = cur.fetchone()
 
     if not user:
-        return jsonify({"matched": False, "reason": "Linked user not found"})
+        return jsonify({"matched": False, "reason": "User account not found. Please contact admin."})
 
     user_id, role, full_name = user
 
     session.clear()
     session["user_id"] = user_id
-    session["emp_id"] = emp_id
+    session["employee_id"] = emp_id
     session["full_name"] = full_name
     session["role"] = role
-    # Mark the session as authenticated so dashboard checks pass
     session["logged_in"] = True
+    session.modified = True
     
     # Audit successful face login
     try:

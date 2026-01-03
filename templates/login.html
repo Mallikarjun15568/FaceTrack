@@ -126,27 +126,46 @@
       <div class="flex flex-col items-center gap-4">
 
         <div class="relative w-56 h-56">
-          <div class="w-full h-full rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+          <div class="relative w-full h-full rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-300">
             <video id="modalFaceCam"
                    autoplay playsinline muted
                    class="w-full h-full object-cover"></video>
+            <!-- FACE DETECTION CANVAS OVERLAY -->
+            <canvas id="faceCanvas" 
+                    class="absolute inset-0 w-full h-full pointer-events-none z-10"></canvas>
+          </div>
+
+          <!-- SCANNING ANIMATION -->
+          <div id="scanningOverlay" class="absolute inset-0 hidden items-center justify-center pointer-events-none z-20">
+            <div class="absolute inset-0 rounded-lg border-4 border-indigo-500 animate-pulse"></div>
+            <div class="absolute inset-4 rounded-lg border-2 border-indigo-400 opacity-60"></div>
+            <div class="absolute w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent animate-scan"></div>
+          </div>
+
+          <!-- PROCESSING OVERLAY -->
+          <div id="processingOverlay" class="absolute inset-0 hidden items-center justify-center bg-indigo-900/80 rounded-lg">
+            <div class="text-center">
+              <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mb-3"></div>
+              <p class="text-white text-sm font-semibold">Processing...</p>
+            </div>
           </div>
 
           <!-- SUCCESS OVERLAY -->
           <div id="faceSuccess"
-               class="absolute inset-0 hidden items-center justify-center">
-            <div class="w-full h-full rounded-lg bg-white/90 flex items-center justify-center">
-              <svg class="w-20 h-20 text-green-600"
+               class="absolute inset-0 hidden items-center justify-center bg-green-500/90 rounded-lg">
+            <div class="text-center">
+              <svg class="w-20 h-20 text-white mx-auto animate-bounce-once"
                    viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
                       d="M5 13l4 4L19 7"/>
               </svg>
+              <p class="text-white text-sm font-bold mt-2">Recognized!</p>
             </div>
           </div>
         </div>
 
-        <div id="modalStatus" class="text-sm text-gray-600 min-h-[22px] text-center">
-          Initializing camera…
+        <div id="modalStatus" class="text-sm font-medium text-gray-700 min-h-[22px] text-center">
+          <i class="fas fa-circle-notch fa-spin text-indigo-600 mr-2"></i>Initializing camera…
         </div>
 
       </div>

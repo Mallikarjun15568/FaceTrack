@@ -3,6 +3,22 @@ from flask import jsonify, request, render_template
 from flask import session
 from utils.db import get_db
 from blueprints.auth.utils import login_required
+from datetime import date, timedelta, datetime
+
+# ==================================================================================
+# ATTENDANCE BLUEPRINT - ALL QUERIES USE DATE(check_in_time)
+# ==================================================================================
+# IMPORTANT: All attendance APIs derive dates from DATE(check_in_time).
+# Legacy 'date' column in attendance table is IGNORED.
+# 
+# Calendar & Summary Logic:
+# - Generates ALL dates in month (not just attendance records)
+# - Checks leaves table for approved leaves
+# - Checks holidays table for company holidays
+# - Applies priority: leave > holiday > weekend > attendance > absent
+# 
+# This ensures comprehensive calendar views with automatic leave integration.
+# ==================================================================================
 
 # --------------------------------------------------
 # Normalize static paths
@@ -70,7 +86,7 @@ def api_attendance():
         SELECT 
             a.id,
             a.employee_id,
-            a.date,
+            DATE(a.check_in_time) AS date,
             a.check_in_time,
             a.check_out_time,
             a.working_hours,
@@ -81,7 +97,7 @@ def api_attendance():
                 SELECT image_path 
                 FROM recognition_logs
                 WHERE employee_id = a.employee_id
-                  AND DATE(timestamp) = a.date
+                  AND DATE(timestamp) = DATE(a.check_in_time)
                 ORDER BY id DESC
                 LIMIT 1
             ) AS snapshot,
@@ -90,12 +106,12 @@ def api_attendance():
                 FROM leaves l 
                 WHERE l.employee_id = a.employee_id 
                   AND l.status = 'approved'
-                  AND a.date BETWEEN l.start_date AND l.end_date
+                  AND DATE(a.check_in_time) BETWEEN l.start_date AND l.end_date
             ) AS is_on_leave,
             (
                 SELECT COUNT(*) 
                 FROM holidays h 
-                WHERE h.holiday_date = a.date
+                WHERE h.holiday_date = DATE(a.check_in_time)
             ) AS is_holiday
         FROM attendance a
         JOIN employees e ON e.id = a.employee_id
@@ -116,10 +132,10 @@ def api_attendance():
             params.append(user)
 
     if date:
-        base_query += " AND a.date = %s"
+        base_query += " AND DATE(a.check_in_time) = %s"
         params.append(date)
 
-    base_query += " ORDER BY a.date DESC, a.check_in_time ASC"
+    base_query += " ORDER BY DATE(a.check_in_time) DESC, a.check_in_time DESC"
 
     cur.execute(base_query, tuple(params))
     rows = cur.fetchall()
@@ -144,7 +160,10 @@ def api_attendance():
 
 
 # --------------------------------------------------
-# MONTHLY SUMMARY API
+# MONTHLY SUMMARY API (Employee-specific monthly stats)
+# Used by Reports page for employee analysis section
+# Counts present/leave/absent/holiday days for selected month
+# Uses DATE(check_in_time) with leaves & holidays integration
 # --------------------------------------------------
 @bp.route("/api/monthly-summary")
 @login_required
@@ -196,17 +215,33 @@ def api_monthly_summary():
     db = get_db()
     cur = db.cursor(dictionary=True)
     
-    # Calculate summary
+    # DEBUG: Log query parameters
+    print(f"🔍 Monthly Summary Query - employee_id: {employee_id}, year: {year}, month_num: {month_num}, employee_name: {employee_name}")
+    
+    # Calculate summary - FIXED to use DATE(check_in_time)
     cur.execute("""
         SELECT 
-            COUNT(DISTINCT CASE WHEN a.status IN ('present', 'late') THEN a.date END) AS present_days,
+            COUNT(DISTINCT CASE 
+                WHEN a.status IN ('present', 'late', 'check-in', 'check-out') 
+                AND NOT EXISTS (
+                    SELECT 1 FROM leaves l 
+                    WHERE l.employee_id = %s 
+                      AND l.status = 'approved' 
+                      AND DATE(a.check_in_time) BETWEEN l.start_date AND l.end_date
+                )
+                AND NOT EXISTS (
+                    SELECT 1 FROM holidays h 
+                    WHERE h.holiday_date = DATE(a.check_in_time)
+                )
+                THEN DATE(a.check_in_time) 
+            END) AS present_days,
             COUNT(DISTINCT CASE 
                 WHEN EXISTS (
                     SELECT 1 FROM leaves l 
                     WHERE l.employee_id = %s 
                       AND l.status = 'approved' 
-                      AND a.date BETWEEN l.start_date AND l.end_date
-                ) THEN a.date 
+                      AND DATE(a.check_in_time) BETWEEN l.start_date AND l.end_date
+                ) THEN DATE(a.check_in_time) 
             END) AS leave_days,
             COUNT(DISTINCT CASE 
                 WHEN a.status = 'absent' 
@@ -214,27 +249,31 @@ def api_monthly_summary():
                       SELECT 1 FROM leaves l 
                       WHERE l.employee_id = %s 
                         AND l.status = 'approved' 
-                        AND a.date BETWEEN l.start_date AND l.end_date
+                        AND DATE(a.check_in_time) BETWEEN l.start_date AND l.end_date
                   )
                   AND NOT EXISTS (
                       SELECT 1 FROM holidays h 
-                      WHERE h.holiday_date = a.date
+                      WHERE h.holiday_date = DATE(a.check_in_time)
                   )
-                THEN a.date 
+                THEN DATE(a.check_in_time) 
             END) AS absent_days,
             COALESCE(SUM(a.working_hours), 0) AS total_hours,
             COUNT(DISTINCT CASE 
                 WHEN EXISTS (
                     SELECT 1 FROM holidays h 
-                    WHERE h.holiday_date = a.date
-                ) THEN a.date 
+                    WHERE h.holiday_date = DATE(a.check_in_time)
+                ) THEN DATE(a.check_in_time) 
             END) AS holiday_days
         FROM attendance a
         WHERE a.employee_id = %s
-          AND DATE_FORMAT(a.date, '%%Y-%%m') = %s
-    """, (employee_id, employee_id, employee_id, month))
+          AND YEAR(a.check_in_time) = %s
+          AND MONTH(a.check_in_time) = %s
+    """, (employee_id, employee_id, employee_id, employee_id, year, month_num))
     
     summary = cur.fetchone()
+    
+    # DEBUG: Log results
+    print(f"🔍 Summary Results: {summary}")
     
     # Get employee details
     cur.execute("SELECT full_name, email FROM employees WHERE id = %s", (employee_id,))
@@ -255,12 +294,16 @@ def api_monthly_summary():
 
 
 # --------------------------------------------------
-# CALENDAR VIEW API
+# CALENDAR VIEW API (Employee monthly calendar with ALL dates)
+# Used by Reports page for visual attendance calendar
+# IMPORTANT: Generates ALL dates in month (not just attendance records)
+# Integrates approved leaves, company holidays, and weekends automatically
+# Priority: leave > holiday > weekend > attendance > absent
 # --------------------------------------------------
 @bp.route("/api/calendar")
 @login_required
 def api_calendar():
-    """Get calendar view of attendance for a month"""
+    """Get calendar view of attendance for a month with comprehensive date coverage"""
     from datetime import datetime
     
     year = request.args.get('year', type=int)
@@ -316,41 +359,96 @@ def api_calendar():
     # DEBUG: Log query parameters
     print(f"🔍 Calendar Query - employee_id: {employee_id}, month: {month}, year: {year}, month_num: {month_num}")
     
-    # Get all dates in month with status
+    # Get attendance records for the month
     cur.execute("""
         SELECT 
-            a.date,
+            DATE(a.check_in_time) AS date,
             a.check_in_time,
             a.check_out_time,
             a.working_hours,
-            a.status AS attendance_status,
-            CASE 
-                WHEN EXISTS (
-                    SELECT 1 FROM leaves l 
-                    WHERE l.employee_id = %s 
-                      AND l.status = 'approved' 
-                      AND a.date BETWEEN l.start_date AND l.end_date
-                ) THEN 'on_leave'
-                WHEN EXISTS (
-                    SELECT 1 FROM holidays h 
-                    WHERE h.holiday_date = a.date
-                ) THEN 'holiday'
-                WHEN DAYOFWEEK(a.date) IN (1, 7) THEN 'weekend'
-                ELSE a.status
-            END AS final_status,
-            (SELECT holiday_name FROM holidays WHERE holiday_date = a.date LIMIT 1) AS holiday_name
+            a.status AS attendance_status
         FROM attendance a
         WHERE a.employee_id = %s
-          AND DATE_FORMAT(a.date, '%%Y-%%m') = %s
-        ORDER BY a.date ASC
-    """, (employee_id, employee_id, month))
+          AND YEAR(a.check_in_time) = %s
+          AND MONTH(a.check_in_time) = %s
+    """, (employee_id, year, month_num))
     
-    calendar_data = cur.fetchall()
+    attendance_records = {row['date'].strftime('%Y-%m-%d'): row for row in cur.fetchall()}
+    
+    # Get approved leaves for this employee in this month
+    cur.execute("""
+        SELECT start_date, end_date, leave_type 
+        FROM leaves 
+        WHERE employee_id = %s 
+          AND status = 'approved'
+          AND (
+              (YEAR(start_date) = %s AND MONTH(start_date) = %s)
+              OR (YEAR(end_date) = %s AND MONTH(end_date) = %s)
+              OR (start_date <= %s AND end_date >= %s)
+          )
+    """, (employee_id, year, month_num, year, month_num, 
+          f"{year}-{month_num:02d}-01", f"{year}-{month_num:02d}-01"))
+    
+    leave_records = cur.fetchall()
+    leave_dates = set()
+    for leave in leave_records:
+        current_date = leave['start_date']
+        while current_date <= leave['end_date']:
+            if current_date.year == year and current_date.month == month_num:
+                leave_dates.add(current_date.strftime('%Y-%m-%d'))
+            current_date += timedelta(days=1)
+    
+    # Get holidays for this month
+    cur.execute("""
+        SELECT holiday_date, holiday_name 
+        FROM holidays 
+        WHERE YEAR(holiday_date) = %s AND MONTH(holiday_date) = %s
+    """, (year, month_num))
+    
+    holiday_records = {row['holiday_date'].strftime('%Y-%m-%d'): row['holiday_name'] for row in cur.fetchall()}
+    
+    # Generate all dates in the month
+    from datetime import date, timedelta
+    calendar_data = []
+    days_in_month = (date(year + (1 if month_num == 12 else 0), (month_num % 12) + 1, 1) - timedelta(days=1)).day
+    
+    for day in range(1, days_in_month + 1):
+        current_date = date(year, month_num, day)
+        date_str = current_date.strftime('%Y-%m-%d')
+        day_of_week = current_date.weekday()  # 0=Monday, 6=Sunday
+        
+        # Determine final status with priority: leave > holiday > weekend > attendance > absent
+        if date_str in leave_dates:
+            final_status = 'on_leave'
+            attendance_status = 'on_leave'
+        elif date_str in holiday_records:
+            final_status = 'holiday'
+            attendance_status = 'holiday'
+        elif day_of_week in [5, 6]:  # Saturday=5, Sunday=6
+            final_status = 'weekend'
+            attendance_status = 'weekend'
+        elif date_str in attendance_records:
+            att = attendance_records[date_str]
+            attendance_status = att['attendance_status']
+            final_status = attendance_status
+        else:
+            # No attendance record - mark as absent
+            final_status = 'absent'
+            attendance_status = 'absent'
+        
+        calendar_data.append({
+            'date': date_str,
+            'attendance_status': attendance_status,
+            'final_status': final_status,
+            'holiday_name': holiday_records.get(date_str, None),
+            'check_in_time': attendance_records[date_str]['check_in_time'] if date_str in attendance_records else None,
+            'check_out_time': attendance_records[date_str]['check_out_time'] if date_str in attendance_records else None,
+            'working_hours': float(attendance_records[date_str]['working_hours']) if date_str in attendance_records and attendance_records[date_str]['working_hours'] else None
+        })
     
     # DEBUG: Log results
-    print(f"🔍 Calendar Results - Found {len(calendar_data)} records")
-    if len(calendar_data) > 0:
-        print(f"🔍 First record: {calendar_data[0]}")
+    print(f"🔍 Calendar Results - Generated {len(calendar_data)} days")
+    print(f"🔍 Attendance records: {len(attendance_records)}, Leaves: {len(leave_dates)}, Holidays: {len(holiday_records)}")
     
     cur.close()
     

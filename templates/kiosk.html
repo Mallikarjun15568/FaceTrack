@@ -46,44 +46,13 @@
       <div class="relative aspect-video rounded-lg bg-gray-900 overflow-hidden border-2 border-gray-300 shadow-lg transition-all duration-500">
         <video id="kioskVideo" muted playsinline class="w-full h-full object-cover transition-opacity duration-700" aria-label="Live camera feed for face recognition" style="opacity: 0;"></video>
 
-        <!-- Face Detection Frame -->
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div id="faceDetectionFrame" class="hidden">
-            <div class="face-guide-oval">
-              <!-- Corner Markers -->
-              <div class="corner-marker top-left"></div>
-              <div class="corner-marker top-right"></div>
-              <div class="corner-marker bottom-left"></div>
-              <div class="corner-marker bottom-right"></div>
-            </div>
-          </div>
-        </div>
+        <!-- FACE DETECTION CANVAS OVERLAY - Green square box -->
+        <canvas id="kioskFaceCanvas" 
+                class="absolute inset-0 w-full h-full pointer-events-none z-40"></canvas>
 
-        <!-- Real-time Status Indicators with better visibility -->
-        <div class="absolute top-4 left-4 right-4 pointer-events-none z-10">
-          <!-- Distance Meter -->
-          <div id="distanceMeter" class="hidden mb-2 bg-black/70 backdrop-blur-md rounded-lg px-4 py-2 inline-block shadow-lg border border-white/20">
-            <div class="flex items-center gap-2">
-              <i id="distanceIcon" class="fas fa-arrows-alt-v text-yellow-300"></i>
-              <span id="distanceText" class="text-white text-sm font-semibold drop-shadow-lg">Position your face</span>
-            </div>
-          </div>
-          
-          <!-- Lighting Indicator -->
-          <div id="lightingMeter" class="hidden mb-2 bg-black/70 backdrop-blur-md rounded-lg px-4 py-2 inline-block ml-2 shadow-lg border border-white/20">
-            <div class="flex items-center gap-2">
-              <i id="lightingIcon" class="fas fa-sun text-yellow-300"></i>
-              <span id="lightingText" class="text-white text-sm font-semibold drop-shadow-lg">Checking light...</span>
-            </div>
-          </div>
-          
-          <!-- Confidence Score -->
-          <div id="confidenceScore" class="hidden absolute top-0 right-4 bg-black/70 backdrop-blur-md rounded-lg px-4 py-2 shadow-lg border border-white/20">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-tachometer-alt text-indigo-300"></i>
-              <span class="text-white text-sm font-semibold drop-shadow-lg">Quality: <span id="confidenceValue">0%</span></span>
-            </div>
-          </div>
+        <!-- Real-time Status - Moved outside camera view -->
+        <div class="absolute top-4 left-4 right-4 pointer-events-none z-20 hidden">
+          <!-- Placeholder - indicators moved outside -->
         </div>
 
         <!-- Scan Overlay -->
@@ -102,9 +71,9 @@
         </div>
 
         <!-- Guidance Text -->
-        <div class="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
-          <div id="guidanceText" class="bg-black/70 backdrop-blur-sm inline-block px-6 py-3 rounded-full">
-            <p class="text-white text-base font-medium">Position your face in the frame</p>
+        <div class="absolute bottom-4 left-0 right-0 text-center pointer-events-none z-30">
+          <div class="bg-black/80 backdrop-blur-sm inline-block px-6 py-3 rounded-full shadow-2xl border border-white/20">
+            <p id="guidanceText" class="text-white text-base font-bold drop-shadow-lg">Position your face in the frame</p>
           </div>
         </div>
 
@@ -113,6 +82,17 @@
         <div class="absolute top-4 right-4 w-5 h-5 border-r-2 border-t-2 border-gray-400/50 rounded-tr"></div>
         <div class="absolute bottom-4 left-4 w-5 h-5 border-l-2 border-b-2 border-gray-400/50 rounded-bl"></div>
         <div class="absolute bottom-4 right-4 w-5 h-5 border-r-2 border-b-2 border-gray-400/50 rounded-br"></div>
+      </div>
+
+      <!-- Status Indicators Panel - Clean, compact, below camera -->
+      <div class="mt-2 flex justify-center gap-2">
+        <div id="distanceMeter" class="hidden bg-gray-100 border border-gray-300 rounded px-2 py-1 text-xs">
+          <span id="distanceText" class="text-gray-700 font-medium"></span>
+        </div>
+        
+        <div id="lightingMeter" class="hidden bg-gray-100 border border-gray-300 rounded px-2 py-1 text-xs">
+          <span id="lightingText" class="text-gray-700 font-medium"></span>
+        </div>
       </div>
 
       <!-- Controls -->

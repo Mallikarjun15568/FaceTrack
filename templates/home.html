@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FaceTrack Pro — AI Attendance</title>
+  <title>FaceTrack Pro — Face Recognition Attendance System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/static/css/output.css">
   <link rel="stylesheet" href="/static/css/professional.css">
@@ -22,60 +22,131 @@
       background-clip: text;
     }
     
-    .hero-gradient {
-      background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 50%, #fef3f2 100%);
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     
-    .card-hover {
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .animate-fadeInUp {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+    
+    .animate-fadeIn {
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+    
+    .animate-slideInLeft {
+      animation: slideInLeft 0.6s ease-out forwards;
+    }
+    
+    .animate-slideInRight {
+      animation: slideInRight 0.6s ease-out forwards;
+    }
+    
+    .animate-scaleIn {
+      animation: scaleIn 0.5s ease-out forwards;
+    }
+    
+    .animate-float {
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+    .delay-500 { animation-delay: 0.5s; }
+    .delay-600 { animation-delay: 0.6s; }
+    
+    /* Hover effects */
+    .hover-lift {
       transition: all 0.3s ease;
     }
     
-    .card-hover:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     }
     
-    .floating {
-      animation: floating 3s ease-in-out infinite;
-    }
-    
-    @keyframes floating {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-20px); }
-    }
-    
-    .pulse-slow {
-      animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-    
-    .glow-effect {
-      box-shadow: 0 0 30px rgba(37, 99, 235, 0.3);
+    .hover-glow:hover {
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
     }
   </style>
 </head>
 
-<body class="bg-white text-gray-900 overflow-x-hidden">
+<body class="bg-gray-50 text-gray-900">
 
 <!-- ================= NAVBAR ================= -->
-<header class="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100">
-  <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+<header class="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
     
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+      <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
         <span class="text-white text-xl font-bold">F</span>
       </div>
-      <span class="text-2xl font-extrabold">
+      <span class="text-xl font-bold">
         <span class="gradient-text">FaceTrack</span>
         <span class="text-gray-800"> Pro</span>
       </span>
     </div>
 
-    <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
+    <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
       <a href="/" class="text-blue-600 pb-1 border-b-2 border-blue-600">Home</a>
-      <a href="#features" class="text-gray-600 hover:text-blue-600 transition">Features</a>
-      <a href="#how-it-works" class="text-gray-600 hover:text-blue-600 transition">How It Works</a>
+      <a href="/about" class="text-gray-600 hover:text-blue-600 transition">About</a>
+      <a href="/contact" class="text-gray-600 hover:text-blue-600 transition">Contact</a>
+      <a href="/help" class="text-gray-600 hover:text-blue-600 transition">Help</a>
       <a href="/auth/login" 
-         class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+         class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm">
         Login
       </a>
     </nav>
@@ -89,162 +160,140 @@
   </div>
 </header>
 
-<!-- ================= HERO ================= -->
-<section class="pt-32 pb-20 hero-gradient relative overflow-hidden">
-  <!-- Decorative Elements -->
-  <div class="absolute top-20 right-10 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl"></div>
-  <div class="absolute bottom-10 left-10 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl"></div>
-  
-  <div class="max-w-7xl mx-auto px-6 relative z-10">
-    <div class="grid md:grid-cols-2 gap-16 items-center">
+<!-- ================= HERO SECTION ================= -->
+<section class="pt-24 pb-16 bg-white">
+  <div class="max-w-7xl mx-auto px-6">
+    
+    <!-- Hero Content -->
+    <div class="text-center mb-12">
+      <div class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-full text-sm font-medium text-blue-700 mb-6 animate-fadeIn">
+        <i class="fas fa-shield-alt"></i>
+        Face Recognition Attendance System
+      </div>
+      
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight animate-fadeInUp delay-100">
+        FaceTrack Pro
+        <span class="block gradient-text mt-2">Automated Attendance Management</span>
+      </h1>
 
-      <!-- Left Content -->
-      <div>
-        <div class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-full text-sm font-medium text-blue-600 mb-6">
-          <span class="w-2 h-2 bg-blue-600 rounded-full pulse-slow"></span>
-          AI-Powered Attendance System
-        </div>
-        
-        <h1 class="text-5xl md:text-7xl font-extrabold leading-tight mb-6">
-          Smart Attendance
-          <span class="gradient-text block">Made Simple</span>
-        </h1>
+      <p class="text-lg md:text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed animate-fadeInUp delay-200">
+        AI-powered facial recognition system for accurate, secure, and contactless employee attendance tracking. 
+        Real-time monitoring with comprehensive analytics.
+      </p>
 
-        <p class="text-xl text-gray-600 mb-8 max-w-xl leading-relaxed">
-          Transform your workplace with cutting-edge facial recognition technology. 
-          Track attendance effortlessly and gain powerful workforce insights.
-        </p>
-
-        <div class="flex flex-wrap gap-4 mb-12">
-          <a href="/auth/login"
-             class="px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-lg hover:shadow-xl glow-effect">
-            Get Started Free
-          </a>
-          <a href="#features"
-             class="px-8 py-4 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition border-2 border-gray-200">
-            Learn More →
-          </a>
-        </div>
-
-        <!-- Stats -->
-        <div class="grid grid-cols-3 gap-8">
-          <div>
-            <div class="text-3xl font-bold text-gray-900">99.9%</div>
-            <div class="text-sm text-gray-600 mt-1">Accuracy</div>
-          </div>
-          <div>
-            <div class="text-3xl font-bold text-gray-900">&lt;1s</div>
-            <div class="text-sm text-gray-600 mt-1">Recognition</div>
-          </div>
-          <div>
-            <div class="text-3xl font-bold text-gray-900">24/7</div>
-            <div class="text-sm text-gray-600 mt-1">Monitoring</div>
-          </div>
-        </div>
+      <div class="flex flex-wrap gap-4 justify-center mb-12 animate-fadeInUp delay-300">
+        <a href="/auth/login"
+           class="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-md hover:shadow-lg hover-glow">
+          <i class="fas fa-sign-in-alt mr-2"></i>Access System
+        </a>
+        <a href="/about"
+           class="px-8 py-3 bg-white text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition border-2 border-gray-300">
+          <i class="fas fa-info-circle mr-2"></i>Learn More
+        </a>
       </div>
 
-      <!-- Right Image -->
-      <div class="relative floating">
-        <div class="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-3xl blur-2xl"></div>
-        <img src="/static/images/hero_dashboard.png"
-             alt="Dashboard Preview"
-             class="relative rounded-3xl shadow-2xl w-full border-8 border-white">
+      <!-- Quick Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+        <div class="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl border border-blue-100 hover-lift animate-scaleIn delay-400">
+          <div class="text-3xl font-bold text-blue-600 mb-1">99.9%</div>
+          <div class="text-sm text-gray-600">Recognition Accuracy</div>
+        </div>
+        <div class="bg-gradient-to-br from-green-50 to-white p-6 rounded-xl border border-green-100 hover-lift animate-scaleIn delay-500">
+          <div class="text-3xl font-bold text-green-600 mb-1">&lt;1s</div>
+          <div class="text-sm text-gray-600">Detection Speed</div>
+        </div>
+        <div class="bg-gradient-to-br from-purple-50 to-white p-6 rounded-xl border border-purple-100 hover-lift animate-scaleIn delay-600">
+          <div class="text-3xl font-bold text-purple-600 mb-1">24/7</div>
+          <div class="text-sm text-gray-600">System Uptime</div>
+        </div>
+        <div class="bg-gradient-to-br from-orange-50 to-white p-6 rounded-xl border border-orange-100 hover-lift animate-scaleIn delay-600">
+          <div class="text-3xl font-bold text-orange-600 mb-1">100%</div>
+          <div class="text-sm text-gray-600">Contactless</div>
+        </div>
       </div>
-
     </div>
+
   </div>
 </section>
 
-<!-- ================= FEATURES ================= -->
-<section class="py-24 bg-white" id="features">
+<!-- ================= FEATURES SECTION ================= -->
+<section class="py-16 bg-gray-50">
   <div class="max-w-7xl mx-auto px-6">
     
-    <div class="text-center mb-16">
-      <h2 class="text-4xl md:text-5xl font-extrabold mb-4">
-        Powerful Features for <span class="gradient-text">Modern Teams</span>
+    <div class="text-center mb-12">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 animate-fadeInUp">
+        Core Features
       </h2>
-      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-        Everything you need to manage attendance efficiently and securely
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto animate-fadeInUp delay-100">
+        Comprehensive attendance management with advanced AI capabilities
       </p>
     </div>
 
-    <div class="grid md:grid-cols-3 gap-8">
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-      <!-- Feature Card 1 -->
-      <div class="bg-gradient-to-br from-blue-50 to-white rounded-3xl p-8 card-hover border border-blue-100">
-        <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-6">
-          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-          </svg>
+      <!-- Feature 1 -->
+      <div class="bg-white rounded-xl p-6 border border-gray-200 hover-lift">
+        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 animate-float">
+          <i class="fas fa-user-check text-blue-600 text-xl"></i>
         </div>
-        <h3 class="font-bold text-xl mb-3">Lightning Fast Recognition</h3>
-        <p class="text-gray-600 leading-relaxed">
-          Instantly identify employees with 99.9% accuracy using advanced AI algorithms.
+        <h3 class="font-bold text-lg mb-2 text-gray-900">Face Recognition</h3>
+        <p class="text-gray-600 text-sm">
+          Advanced deep learning algorithms for instant employee identification with high accuracy.
         </p>
       </div>
 
-      <!-- Feature Card 2 -->
-      <div class="bg-gradient-to-br from-purple-50 to-white rounded-3xl p-8 card-hover border border-purple-100">
-        <div class="w-14 h-14 bg-purple-600 rounded-2xl flex items-center justify-center mb-6">
-          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
+      <!-- Feature 2 -->
+      <div class="bg-white rounded-xl p-6 border border-gray-200 hover-lift">
+        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4 animate-float" style="animation-delay: 0.2s">
+          <i class="fas fa-clock text-green-600 text-xl"></i>
         </div>
-        <h3 class="font-bold text-xl mb-3">Automated Attendance</h3>
-        <p class="text-gray-600 leading-relaxed">
-          Say goodbye to manual check-ins. Automatically record arrivals and departures.
+        <h3 class="font-bold text-lg mb-2 text-gray-900">Real-Time Tracking</h3>
+        <p class="text-gray-600 text-sm">
+          Automatic attendance logging with timestamps, location data, and live status updates.
         </p>
       </div>
 
-      <!-- Feature Card 3 -->
-      <div class="bg-gradient-to-br from-orange-50 to-white rounded-3xl p-8 card-hover border border-orange-100">
-        <div class="w-14 h-14 bg-orange-600 rounded-2xl flex items-center justify-center mb-6">
-          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-          </svg>
+      <!-- Feature 3 -->
+      <div class="bg-white rounded-xl p-6 border border-gray-200 hover-lift">
+        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 animate-float" style="animation-delay: 0.4s">
+          <i class="fas fa-chart-bar text-purple-600 text-xl"></i>
         </div>
-        <h3 class="font-bold text-xl mb-3">Smart Analytics</h3>
-        <p class="text-gray-600 leading-relaxed">
-          Generate detailed reports and gain insights into workforce patterns and trends.
+        <h3 class="font-bold text-lg mb-2 text-gray-900">Analytics Dashboard</h3>
+        <p class="text-gray-600 text-sm">
+          Comprehensive reports, attendance trends, and workforce analytics in real-time.
         </p>
       </div>
 
-      <!-- Feature Card 4 -->
-      <div class="bg-gradient-to-br from-green-50 to-white rounded-3xl p-8 card-hover border border-green-100">
-        <div class="w-14 h-14 bg-green-600 rounded-2xl flex items-center justify-center mb-6">
-          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-          </svg>
+      <!-- Feature 4 -->
+      <div class="bg-white rounded-xl p-6 border border-gray-200 hover-lift">
+        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4 animate-float" style="animation-delay: 0.6s">
+          <i class="fas fa-shield-alt text-orange-600 text-xl"></i>
         </div>
-        <h3 class="font-bold text-xl mb-3">Secure & Private</h3>
-        <p class="text-gray-600 leading-relaxed">
-          Enterprise-grade encryption ensures your data remains safe and confidential.
+        <h3 class="font-bold text-lg mb-2 text-gray-900">Secure & Private</h3>
+        <p class="text-gray-600 text-sm">
+          Encrypted facial data storage with anti-spoofing liveness detection technology.
         </p>
       </div>
 
-      <!-- Feature Card 5 -->
-      <div class="bg-gradient-to-br from-pink-50 to-white rounded-3xl p-8 card-hover border border-pink-100">
-        <div class="w-14 h-14 bg-pink-600 rounded-2xl flex items-center justify-center mb-6">
-          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
+      <!-- Feature 5 -->
+      <div class="bg-white rounded-xl p-6 border border-gray-200 hover-lift">
+        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4 animate-float" style="animation-delay: 0.8s">
+          <i class="fas fa-desktop text-red-600 text-xl"></i>
         </div>
-        <h3 class="font-bold text-xl mb-3">Real-Time Monitoring</h3>
-        <p class="text-gray-600 leading-relaxed">
-          Track attendance in real-time with instant notifications and alerts.
+        <h3 class="font-bold text-lg mb-2 text-gray-900">Kiosk Mode</h3>
+        <p class="text-gray-600 text-sm">
+          Dedicated kiosk interface for employee self-service attendance marking.
         </p>
       </div>
 
-      <!-- Feature Card 6 -->
-      <div class="bg-gradient-to-br from-indigo-50 to-white rounded-3xl p-8 card-hover border border-indigo-100">
-        <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mb-6">
-          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-          </svg>
+      <!-- Feature 6 -->
+      <div class="bg-white rounded-xl p-6 border border-gray-200 hover-lift">
+        <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4 animate-float" style="animation-delay: 1s">
+          <i class="fas fa-file-export text-indigo-600 text-xl"></i>
         </div>
-        <h3 class="font-bold text-xl mb-3">Multi-Device Support</h3>
-        <p class="text-gray-600 leading-relaxed">
-          Works seamlessly across desktop, mobile, and kiosk devices.
+        <h3 class="font-bold text-lg mb-2 text-gray-900">Export Reports</h3>
+        <p class="text-gray-600 text-sm">
+          Download attendance data in multiple formats (CSV, PDF, Excel) for payroll integration.
         </p>
       </div>
 
@@ -252,46 +301,48 @@
   </div>
 </section>
 
-<!-- ================= HOW IT WORKS ================= -->
-<section class="py-24 bg-gray-50" id="how-it-works">
+<!-- ================= SYSTEM WORKFLOW ================= -->
+<section class="py-16 bg-white">
   <div class="max-w-7xl mx-auto px-6">
     
-    <div class="text-center mb-16">
-      <h2 class="text-4xl md:text-5xl font-extrabold mb-4">
-        How <span class="gradient-text">It Works</span>
+    <div class="text-center mb-12">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 animate-fadeInUp">
+        How It Works
       </h2>
-      <p class="text-xl text-gray-600">Simple, fast, and efficient in 3 easy steps</p>
+      <p class="text-lg text-gray-600 animate-fadeInUp delay-100">
+        Simple three-step process for seamless attendance management
+      </p>
     </div>
 
-    <div class="grid md:grid-cols-3 gap-12">
+    <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
       
-      <div class="text-center">
-        <div class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6 glow-effect">
-          <span class="text-3xl font-bold text-white">1</span>
+      <div class="text-center group animate-fadeInUp delay-200">
+        <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform">
+          <span class="text-2xl font-bold text-white">1</span>
         </div>
-        <h3 class="text-xl font-bold mb-3">Register Faces</h3>
+        <h3 class="text-xl font-bold mb-2 text-gray-900">Enroll Employees</h3>
         <p class="text-gray-600">
-          Simply capture employee photos to build your secure face database.
+          Add employee details and capture facial data for recognition database
         </p>
       </div>
 
-      <div class="text-center">
-        <div class="w-20 h-20 bg-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 glow-effect">
-          <span class="text-3xl font-bold text-white">2</span>
+      <div class="text-center group animate-fadeInUp delay-400">
+        <div class="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform">
+          <span class="text-2xl font-bold text-white">2</span>
         </div>
-        <h3 class="text-xl font-bold mb-3">Instant Recognition</h3>
+        <h3 class="text-xl font-bold mb-2 text-gray-900">Face Detection</h3>
         <p class="text-gray-600">
-          AI automatically identifies employees as they arrive or depart.
+          System automatically detects and verifies employee faces in real-time
         </p>
       </div>
 
-      <div class="text-center">
-        <div class="w-20 h-20 bg-orange-600 rounded-3xl flex items-center justify-center mx-auto mb-6 glow-effect">
-          <span class="text-3xl font-bold text-white">3</span>
+      <div class="text-center group animate-fadeInUp delay-600">
+        <div class="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform">
+          <span class="text-2xl font-bold text-white">3</span>
         </div>
-        <h3 class="text-xl font-bold mb-3">Track & Analyze</h3>
+        <h3 class="text-xl font-bold mb-2 text-gray-900">Track & Report</h3>
         <p class="text-gray-600">
-          View real-time data and generate comprehensive attendance reports.
+          View attendance logs, generate reports, and monitor workforce metrics
         </p>
       </div>
 
@@ -300,78 +351,65 @@
 </section>
 
 <!-- ================= CTA SECTION ================= -->
-<section class="py-24 bg-gradient-to-br from-blue-600 to-purple-600 text-white relative overflow-hidden">
-  <div class="absolute inset-0 opacity-10">
-    <div class="absolute top-0 left-1/4 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-    <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-  </div>
-  
-  <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
-    <h2 class="text-4xl md:text-5xl font-extrabold mb-6">
-      Ready to Transform Your Attendance System?
+<section class="py-16 bg-gradient-to-br from-blue-600 to-purple-600 text-white">
+  <div class="max-w-4xl mx-auto px-6 text-center">
+    <h2 class="text-3xl md:text-4xl font-bold mb-4 animate-fadeInUp">
+      Ready to Get Started?
     </h2>
-    <p class="text-xl mb-10 opacity-90">
-      Join modern companies using FaceTrack Pro for seamless attendance management
+    <p class="text-lg mb-8 opacity-90 animate-fadeInUp delay-200">
+      Access the system to manage attendance, view reports, and monitor workforce efficiently
     </p>
     
-    <div class="flex flex-wrap gap-4 justify-center">
+    <div class="flex flex-wrap gap-4 justify-center animate-fadeInUp delay-300">
       <a href="/auth/login"
-         class="px-10 py-4 bg-white text-blue-600 font-bold rounded-xl hover:bg-gray-100 transition shadow-2xl">
-        Start Free Trial
+         class="px-8 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition shadow-lg hover:scale-105 transform">
+        <i class="fas fa-sign-in-alt mr-2"></i>Login to System
       </a>
-      <a href="#features"
-         class="px-10 py-4 bg-blue-700/50 backdrop-blur text-white font-bold rounded-xl hover:bg-blue-700/70 transition border-2 border-white/30">
-        View Demo
+      <a href="/contact"
+         class="px-8 py-3 bg-blue-700/50 backdrop-blur text-white font-semibold rounded-lg hover:bg-blue-700/70 transition border-2 border-white/30 hover:scale-105 transform">
+        <i class="fas fa-envelope mr-2"></i>Contact Support
       </a>
     </div>
   </div>
 </section>
 
 <!-- ================= FOOTER ================= -->
-<footer class="bg-gray-900 text-gray-400 pt-16 pb-8">
+<footer class="bg-gray-900 text-gray-400 pt-12 pb-6">
   <div class="max-w-7xl mx-auto px-6">
     
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
 
       <div>
         <div class="flex items-center gap-2 mb-4">
           <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
             <span class="text-white text-xl font-bold">F</span>
           </div>
-          <span class="text-xl font-bold text-white">FaceTrack Pro</span>
+          <span class="text-lg font-bold text-white">FaceTrack Pro</span>
         </div>
         <p class="text-sm leading-relaxed">
-          Next-generation AI-powered facial recognition system for modern workplace attendance management.
+          AI-powered facial recognition attendance system for modern workplace management.
         </p>
       </div>
 
       <div>
-        <h4 class="text-white font-semibold mb-4">Product</h4>
+        <h4 class="text-white font-semibold mb-3">Quick Links</h4>
         <ul class="space-y-2 text-sm">
           <li><a href="/" class="hover:text-white transition">Home</a></li>
-          <li><a href="#features" class="hover:text-white transition">Features</a></li>
-          <li><a href="#how-it-works" class="hover:text-white transition">How It Works</a></li>
+          <li><a href="/about" class="hover:text-white transition">About</a></li>
+          <li><a href="/contact" class="hover:text-white transition">Contact</a></li>
+          <li><a href="/help" class="hover:text-white transition">Help</a></li>
           <li><a href="/auth/login" class="hover:text-white transition">Login</a></li>
         </ul>
       </div>
 
       <div>
-        <h4 class="text-white font-semibold mb-4">Developer</h4>
+        <h4 class="text-white font-semibold mb-3">System Info</h4>
         <ul class="space-y-2 text-sm">
-          <li class="font-medium text-white">Mallikarjun S. Asapure</li>
-          <li>📧 asapuremallikarjun23@gmail.com</li>
-          <li>📞 +91 95796 88201</li>
-        </ul>
-      </div>
-
-      <div>
-        <h4 class="text-white font-semibold mb-4">Project Info</h4>
-        <ul class="space-y-2 text-sm">
-          <li>Face Recognition System</li>
-          <li>Web Application</li>
           <li>Version 1.0</li>
-          <li class="pt-2">
-            <span class="inline-flex items-center gap-1 px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">
+          <li>Face Recognition</li>
+          <li>Web Application</li>
+          <li class="pt-1">
+            <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-medium">
               <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
               Active
             </span>
@@ -379,11 +417,19 @@
         </ul>
       </div>
 
+      <div>
+        <h4 class="text-white font-semibold mb-3">Contact</h4>
+        <ul class="space-y-2 text-sm">
+          <li><i class="fas fa-envelope mr-2"></i>support@facetrackpro.com</li>
+          <li><i class="fas fa-phone mr-2"></i>+91 98765 43210</li>
+          <li><i class="fas fa-map-marker-alt mr-2"></i>Solapur, Maharashtra</li>
+        </ul>
+      </div>
+
     </div>
 
-    <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm">
-      <p>© 2025 FaceTrack Pro. All rights reserved.</p>
-      <p class="mt-2 md:mt-0">Built with ❤️ by Mallikarjun S. Asapure</p>
+    <div class="border-t border-gray-800 pt-6 text-center text-sm">
+      <p>© 2026 FaceTrack Pro. All rights reserved.</p>
     </div>
 
   </div>

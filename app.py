@@ -160,6 +160,10 @@ def about():
 def contact():
     return render_template("contact.html")
 
+@app.route("/help")
+def help_page():
+    return render_template("help.html")
+
 
 @app.route("/favicon.ico", endpoint="favicon")
 def favicon():
@@ -307,3 +311,4 @@ if __name__ == "__main__":
 
     debug_mode = bool(app.config.get('DEBUG', False))
     app.run(debug=debug_mode, host='0.0.0.0', port=int(os.getenv('PORT', 5000)), use_reloader=False)
+
