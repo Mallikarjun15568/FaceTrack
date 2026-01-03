@@ -1,96 +1,97 @@
 {% extends "base.html" %}
+{% block head %}
+<style>
+    .card { transition: all 0.3s ease; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+    .btn { transition: all 0.2s ease; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+    .btn:active { transform: translateY(0); }
+    img, video { transition: all 0.3s ease; }
+</style>
+{% endblock %}
 {% block content %}
 
-<div class="max-w-4xl mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-4">Face Enrollment</h1>
-    <p class="text-gray-600 mb-4">Employee: <b>{{ employee.name }}</b> (ID: {{ employee.id }})</p>
-
-    <!-- Camera Preview -->
-    <div class="flex justify-center">
-        <video id="camera" autoplay playsinline class="rounded-lg shadow-lg w-96 h-72 bg-black"></video>
+<div class="max-w-5xl mx-auto p-6">
+    
+    <!-- Header -->
+    <div class="card mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+                    <i class="fas fa-camera text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Face Enrollment</h1>
+                    <p class="text-sm text-gray-600 mt-1">Employee: <span class="font-semibold text-indigo-600">{{ employee.name }}</span> (ID: {{ employee.id }})</p>
+                </div>
+            </div>
+            <a href="/enroll" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to List
+            </a>
+        </div>
     </div>
 
-    <!-- Capture Button -->
-    <div class="flex justify-center mt-5">
-        <button id="captureBtn" 
-                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-lg font-semibold">
-            Capture Face
-        </button>
-    </div>
+    <!-- Camera Section -->
+    <div class="card">
+        
+        <!-- Camera Preview -->
+        <div class="flex justify-center mb-6">
+            <div class="relative inline-block">
+                <video id="camera" autoplay playsinline 
+                       class="rounded-lg shadow-lg w-[640px] h-[480px] bg-black border-2 border-gray-300 object-cover"></video>
+                
+                <!-- Green Square Face Detection Canvas -->
+                <canvas id="faceCanvas" 
+                        class="absolute top-0 left-0 w-full h-full pointer-events-none"
+                        style="z-index: 10;"></canvas>
+                
+                <!-- Guidance Text -->
+                <div id="guidanceText" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-lg text-sm font-medium z-20 hidden">
+                    Center your face
+                </div>
+            </div>
+        </div>
 
-    <!-- Preview -->
-    <div class="flex justify-center mt-6 hidden" id="previewBox">
-        <img id="capturedImg" class="w-72 rounded-lg shadow-lg"/>
-    </div>
+        <!-- Buttons -->
+        <div class="flex justify-center gap-3 mb-4">
+            <button id="startCameraBtn" class="btn btn-success hidden">
+                <i class="fas fa-video"></i>
+                Start Camera
+            </button>
+            
+            <button id="stopCameraBtn" class="btn btn-danger hidden">
+                <i class="fas fa-stop"></i>
+                Stop Camera
+            </button>
+            
+            <button id="captureBtn" class="btn btn-primary">
+                <i class="fas fa-camera"></i>
+                Capture Face
+            </button>
+        </div>
 
-    <!-- Loading -->
-    <div id="loadingBox" class="hidden text-center mt-4 text-lg text-blue-600 font-semibold">
-        Processing... Please wait.
-    </div>
+        <!-- Preview -->
+        <div class="flex justify-center hidden" id="previewBox">
+            <div class="relative">
+                <img id="capturedImg" class="w-[480px] rounded-lg shadow-lg border-2 border-green-400"/>
+                <div class="absolute -top-3 -right-3 w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+        </div>
 
+        <!-- Loading -->
+        <div id="loadingBox" class="hidden text-center py-4">
+            <div class="inline-flex items-center gap-3 bg-blue-50 px-6 py-3 rounded-lg border border-blue-200">
+                <div class="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-base text-blue-700 font-semibold">Processing... Please wait</span>
+            </div>
+        </div>
+
+    </div>
 </div>
 
-
-<!-- JS SECTION -->
-<script>
-let video = document.getElementById("camera");
-let captureBtn = document.getElementById("captureBtn");
-let previewBox = document.getElementById("previewBox");
-let capturedImg = document.getElementById("capturedImg");
-let loadingBox = document.getElementById("loadingBox");
-
-// Start Webcam
-navigator.mediaDevices.getUserMedia({ video: true })
-    .then(stream => {
-        video.srcObject = stream;
-    })
-    .catch(err => {
-        alert("Camera not accessible!");
-        console.error(err);
-    });
-
-// Capture Function
-captureBtn.onclick = async function () {
-    loadingBox.classList.remove("hidden");
-
-    // Create Canvas
-    let canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    let context = canvas.getContext("2d");
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    let imageBase64 = canvas.toDataURL("image/jpeg");
-
-    // Show Preview
-    previewBox.classList.remove("hidden");
-    capturedImg.src = imageBase64;
-
-    // Send to backend
-    let response = await fetch("/enroll/capture", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            employee_id: "{{ employee.id }}",
-            image: imageBase64
-        })
-    });
-
-    let result = await response.json();
-    loadingBox.classList.add("hidden");
-
-    if (result.status === "success") {
-        alert("Face enrolled successfully!");
-        window.location.href = "/enroll";  // redirect to list
-    }
-    else if (result.status === "no_face") {
-        alert("No face detected! Try again.");
-    }
-    else {
-        alert("Error: " + result.message);
-    }
-};
-</script>
+<script src="/static/js/employees_face_enroll.js"></script>
 
 {% endblock %}

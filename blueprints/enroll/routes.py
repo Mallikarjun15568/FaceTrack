@@ -13,6 +13,7 @@ from utils.face_encoder import invalidate_embeddings_cache, face_encoder
 from utils.logger import logger
 import numpy as np
 import cv2
+import face_recognition
 
 
 # -----------------------------------------------------
@@ -182,6 +183,44 @@ def capture_face():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# -----------------------------------------------------
+# 2C. FACE DETECTION (for real-time green square)
+# -----------------------------------------------------
+@bp.route("/detect_face", methods=["POST"])
+@login_required
+def detect_face():
+    """
+    Detect if a face is present in the image for real-time UI feedback.
+    Returns: {"face_detected": true/false}
+    """
+    try:
+        data = request.get_json()
+        image_base64 = data.get("image")
+        
+        if not image_base64:
+            return jsonify({"face_detected": False})
+        
+        # Decode base64 image
+        image_data = base64.b64decode(image_base64.split(",")[1])
+        np_arr = np.frombuffer(image_data, np.uint8)
+        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        
+        if img is None:
+            return jsonify({"face_detected": False})
+        
+        # Convert BGR to RGB
+        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        
+        # Detect faces
+        face_locations = face_recognition.face_locations(rgb, model="hog")
+        
+        return jsonify({"face_detected": len(face_locations) > 0})
+        
+    except Exception as e:
+        logger.error(f"Face detection error: {e}")
+        return jsonify({"face_detected": False})
 
 
 # -----------------------------------------------------

@@ -4,47 +4,112 @@
     <meta charset="UTF-8">
     <title>Update Face - {{ employee.full_name }}</title>
     <link rel="stylesheet" href="/static/css/output.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .card { transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        .btn { transition: all 0.2s ease; }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .btn:active { transform: translateY(0); }
+        img { transition: all 0.3s ease; }
+        video { transition: all 0.3s ease; }
+    </style>
 </head>
 
 <body class="bg-gray-100 min-h-screen p-6">
 
-<div class="max-w-4xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
+<div class="max-w-6xl mx-auto">
 
-    <h2 class="text-2xl font-bold mb-6 text-blue-600">
-        Update Face – {{ employee.full_name }}
-    </h2>
+    <!-- Header with Logo and Back Button -->
+    <div class="card mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+                    <i class="fas fa-fingerprint text-white text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Update Face Recognition</h2>
+                    <p class="text-sm text-gray-600 mt-1">Employee: <span class="font-semibold text-blue-600">{{ employee.full_name }}</span></p>
+                </div>
+            </div>
+            <a href="/enroll" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to List
+            </a>
+        </div>
+    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         <!-- CURRENT SAVED FACE -->
-        <div class="bg-gray-50 p-4 rounded-xl border shadow">
-            <h3 class="text-lg font-semibold mb-3">Current Registered Face</h3>
+        <div class="card">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="fas fa-user text-gray-600"></i>
+                <h3 class="text-lg font-semibold text-gray-900">Current Registered Face</h3>
+            </div>
 
-            {% if employee.photo_path %}
-                <img src="{{ employee.photo_path }}"
-                     class="w-56 h-56 rounded-xl object-cover border shadow">
-            {% else %}
-                <p class="text-gray-500">No photo available</p>
-            {% endif %}
+            <div class="flex justify-center">
+                {% if employee.photo_path %}
+                    <img src="{{ url_for('static', filename=employee.photo_path.replace('/static/', '')) }}"
+                         alt="{{ employee.full_name }}"
+                         class="w-80 h-80 rounded-lg object-cover border-2 border-gray-300 shadow-lg">
+                {% else %}
+                    <div class="w-80 h-80 rounded-lg bg-gray-100 flex items-center justify-center border-2 border-gray-300">
+                        <div class="text-center">
+                            <i class="fas fa-user-slash text-5xl text-gray-400 mb-3"></i>
+                            <p class="text-gray-500 font-medium">No photo available</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
         </div>
 
         <!-- LIVE CAMERA -->
-        <div class="bg-gray-50 p-4 rounded-xl border shadow">
-            <h3 class="text-lg font-semibold mb-3">Live Camera Preview</h3>
+        <div class="card">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="fas fa-video text-blue-600"></i>
+                <h3 class="text-lg font-semibold text-gray-900">Live Camera Preview</h3>
+            </div>
 
-            <video id="camera" autoplay playsinline
-                   class="w-full h-56 bg-black rounded-xl shadow"></video>
+            <div class="relative mb-4">
+                <video id="camera" autoplay playsinline
+                       class="w-full h-80 bg-black rounded-lg shadow-lg border-2 border-gray-300 object-cover"></video>
+                
+                <!-- Green Square Face Detection Canvas -->
+                <canvas id="faceCanvas" 
+                        class="absolute top-0 left-0 w-full h-full pointer-events-none rounded-lg"
+                        style="z-index: 10;"></canvas>
+                
+                <!-- Guidance Text -->
+                <div id="guidanceText" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-lg text-sm font-medium z-20 hidden">
+                    Center your face
+                </div>
+            </div>
 
-            <button id="captureBtn"
-                    class="mt-4 w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700">
-                Capture New Face
-            </button>
+            <div class="flex gap-3 mb-4">
+                <button id="startCameraBtn" class="btn btn-success hidden">
+                    <i class="fas fa-video"></i>
+                    Start Camera
+                </button>
+                
+                <button id="stopCameraBtn" class="btn btn-danger hidden">
+                    <i class="fas fa-stop"></i>
+                    Stop Camera
+                </button>
+                
+                <button id="captureBtn" class="flex-1 btn btn-primary">
+                    <i class="fas fa-camera"></i>
+                    Capture New Face
+                </button>
+            </div>
 
             <img id="previewImg"
-                 class="hidden mt-4 w-56 h-56 rounded-xl border shadow object-cover mx-auto" />
+                 class="hidden w-full h-80 rounded-lg border-2 border-green-400 shadow-lg object-cover" />
 
             <button id="saveBtn"
-                    class="hidden mt-4 w-full bg-green-600 text-white py-2 rounded-xl hover:bg-green-700">
+                    class="hidden w-full btn btn-success mt-4">
+                <i class="fas fa-check-circle"></i>
                 Save Updated Face
             </button>
         </div>

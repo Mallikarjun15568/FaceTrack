@@ -1,0 +1,914 @@
+{% extends "base_kiosk.html" %}
+{% block title %}Kiosk Mode - FaceTrack{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**Happy Testing! 🎥📱💻**---- Real-time switching without page reload- Cross-browser compatible- Error recovery mechanisms- Mobile-first design- All camera types supported🚀 **Production Ready:**- **Advanced**: DroidCam for mobile-as-webcam- **Mobile**: Real device on same network- **Development**: Laptop webcam + USB camera🎯 **Best Setup for Testing:**- Error handling and recovery- Multiple camera dropdown- DroidCam support (via USB/WiFi)- Android Chrome compatibility- iOS Safari compatibility- Hot-plug camera detection- USB camera detection and selection- Mobile front/back camera switching✅ **Working Features:**## 📝 Summary---```  });      .forEach(d => console.log(d.label || 'Unknown Camera'));    devices.filter(d => d.kind === 'videoinput')  .then(devices => {navigator.mediaDevices.enumerateDevices()// After granting permission```javascript### **3. Check camera labels:**```  .catch(err => console.error('❌ Error:', err));  })    stream.getTracks().forEach(t => t.stop());    console.log('✅ Camera access granted');  .then(stream => {navigator.mediaDevices.getUserMedia({ video: true })// Paste in browser console```javascript### **2. Test camera access:**```  });    console.log('Cameras:', devices.filter(d => d.kind === 'videoinput'));  .then(devices => {navigator.mediaDevices.enumerateDevices()// Paste in browser console```javascript### **1. Check camera permissions:**## 🎯 Quick Test Commands---| Edge (Mobile) | ✅ | ✅ | ✅ | Working || Samsung Internet | ✅ | ✅ | ✅ | Working || Firefox (Android) | ✅ | ✅ | ✅ | Working || Safari (iOS) | ✅ | ✅ | ✅ | Working || Chrome (Android) | ✅ | ✅ | ✅ | Working ||---------|-------------|-------------|-------------|--------|| Browser | Front Camera | Back Camera | Flip Button | Status |## 📱 Mobile Browser Compatibility---```4. Restart DroidCam service3. Check Windows Device Manager2. Refresh browser after connecting1. Start DroidCam Client firstSolution:```bash### **Issue 5: DroidCam not showing**```4. Try different resolution constraints3. Check console for errors2. Verify stream.getTracks() returns tracks1. Check video.srcObject is setSolution:```bash### **Issue 4: Black screen**```4. Use HTTPS (localhost is OK for HTTP)3. Allow camera permission in browser2. Check Chrome settings → Privacy → Camera1. Clear browser cache/cookiesSolution:```bash### **Issue 3: Permission denied**```4. Inspect element: should have class "lg:hidden"3. Check if window width < 1024px2. Camera must be running1. Must be on mobile device or responsive modeSolution:```bash### **Issue 2: Flip button not visible**```4. Check if camera is used by another app3. Try different browser (Chrome recommended)2. Refresh page after connecting camera1. Check browser permissionsSolution:```bash### **Issue 1: Camera not detected**## 🐛 Troubleshooting---```Camera error: NotAllowedError: Permission denied❌ Camera access denied or unavailable```javascript### **Error:**```✅ Camera flipped to back 📸📱 Switching to back camera🔄 Flipping camera...```javascript### **Mobile Flip:**```🟢 Drawing green face box✅ 2 camera(s) available for selection✅ Canvas initialized: 1280 x 720  📹 📸 Back Camera  📹 🤳 Front Camera📹 Found 2 camera device(s)📹 Camera permission granted```javascript### **Success:**## 📊 Console Debug Output---- [ ] Camera disconnected → recovery- [ ] No camera found → warning- [ ] Camera in use → fallback behavior- [ ] Permission denied → error message### **Error Handling**- [ ] Multiple USB cameras simultaneously- [ ] OBS Virtual Camera- [ ] IP Webcam stream- [ ] DroidCam via USB- [ ] DroidCam via WiFi### **Advanced Tests**- [ ] Android Chrome compatibility- [ ] iOS Safari compatibility- [ ] Notification shows camera switch- [ ] Flip button switches cameras- [ ] Flip button visible on mobile- [ ] Front camera opens by default### **Mobile Tests**- [ ] Camera labels appear correctly- [ ] Hot-plug USB camera- [ ] Switch between cameras- [ ] Multiple cameras in dropdown- [ ] USB camera detection- [ ] Built-in webcam detection### **Desktop Tests**## 🔍 Testing Checklist---   ```   📹 OBS Virtual Camera   Camera dropdown shows:   ```3. **Use in FaceTrack:**   ```   - Click "Start Virtual Camera"   - Select IP Webcam / DroidCam   - Add "Video Capture Device" source   ```2. **Setup virtual camera:**   ```   Download: https://obsproject.com/   ```1. **Install OBS Studio:**### **Test 6: OBS Virtual Camera** 📹---   ```   Can be integrated with OBS Virtual Camera   Note: IP Webcam creates network stream, not direct webcam   ```4. **Use in FaceTrack:**   ```   - Live video stream appears   - Click "Browser" under viewers   - Open in Chrome: http://192.168.1.50:8080   ```3. **Browser test:**   ```   - Note URL: http://192.168.1.50:8080   - Click "Start Server"   - Scroll down   - Open app   ```2. **Start server:**   ```   Play Store: "IP Webcam"   ```1. **Install app:**### **Test 5: IP Webcam (Android)** 🌐---   - Mobile camera feeds to kiosk   - Start camera   - Select "DroidCam Source 3"5. **Test:**   ```   📹 DroidCam Source 3   Camera dropdown shows:   ```4. **Verify in FaceTrack:**   ```   - Click "Start" in DroidCam Client   - Connect via USB cable   - Enable USB Debugging on mobile   Option 2: USB   - Click "Start"   - Enter IP in DroidCam Client   - Note IP address (e.g., 192.168.1.50)   - Open DroidCam app on mobile   Option 1: WiFi (easier)   ```3. **Connect:**   ```   Install DroidCam Client   Download: https://www.dev47apps.com/droidcam/windows/   ```2. **Install on PC:**   ```   Play Store: "DroidCam Wireless Webcam"   ```1. **Install on mobile:**#### **Setup DroidCam:**### **Test 4: DroidCam (Mobile as USB Webcam)** 🔄---   ```   ✅ Camera flipped to back 📸   📱 Switching to back camera   🔄 Flipping camera...   ✅ Camera flipped to front 🤳   📱 Switching to front camera   📱 Requesting camera access (mobile-friendly)...   ```5. **Expected behavior:**   - Camera switches instantly   - Notification: "🤳 Front Camera" → "📸 Back Camera"   - Click flip button (🔄)4. **Test flip button:**   - Front camera opens (selfie view)   - Permission dialog → Allow   - Click "Start Camera"3. **Test front camera:**   ```   (Replace with your PC's IP)   http://192.168.1.100:5000/kiosk   ```2. **Access from mobile:**   ```   PC IP: ipconfig → 192.168.x.x   Mobile WiFi: Same as PC   ```1. **Connect mobile to same network:**#### **B. Actual Mobile Device**```5. Flip button should be visible4. Refresh page3. Select device: iPhone 14 Pro / Samsung Galaxy S232. Click "Toggle Device Toolbar" (Ctrl+Shift+M)1. Open Chrome DevTools (F12)```bash#### **A. Desktop Browser (Responsive Mode)**### **Test 3: Mobile - Front/Back Camera** 📱---   ```   ✅ 2 camera(s) available for selection     📹 Logitech HD Webcam C920     📹 Integrated Camera   📹 Found 2 camera device(s)   📹 Camera devices updated   ```5. **Expected console:**   - Verify video feed changes   - Start camera   - Select different camera from dropdown   - Stop current camera4. **Test each camera:**   ```   📹 Logitech HD Webcam C920   📹 Integrated Camera   📹 Select Camera Device   Camera dropdown should show:   ```3. **Check dropdown:**2. **Refresh page** (camera list auto-updates)   - Wait 2-3 seconds   - Plug in Logitech/external webcam1. **Connect USB camera:**### **Test 2: Desktop - Multiple USB Cameras** 🎥---   ```   ✅ Canvas initialized: 640 x 480     📹 🤳 Integrated Camera   📹 Found 1 camera device(s)   📹 Camera permission granted   ```4. **Expected output:**   - Face detection box should appear   - Green light appears   - Browser asks for permission → Allow   - Click "Start Camera"3. **Start camera:**   ```   Should see: "📹 Found 1 camera device(s)"   Press F12 → Console   ```2. **Check console:**   ```   http://localhost:5000/kiosk   ```1. **Open kiosk page:**### **Test 1: Desktop - Built-in Webcam** 💻## 🧪 Testing Methods---- ✅ Error recovery- ✅ Camera permission handling- ✅ Switch camera dynamically- ✅ Start/Stop camera### 3. **Camera Controls**- ✅ Select specific camera by deviceId- ✅ Device labels with names- ✅ Hot-plug detection (auto-refresh)- ✅ Dropdown list of all cameras**Features:**```devices.filter(d => d.kind === "videoinput")// Filter video devicesnavigator.mediaDevices.enumerateDevices()// Enumerate all cameras```javascript### 2. **USB Camera Support**- ✅ Responsive UI for mobile screens- ✅ Auto-detection of camera labels- ✅ iOS Safari support (playsInline)- ✅ Flip button to switch front ↔ back- ✅ Automatic front camera on mobile**Features:**```facingMode: 'environment'// Back camera (flip button)facingMode: 'user'// Front camera (default)```javascript### 1. **Mobile Camera Support**## ✅ Implemented Features---- 📱 **Mobile as Webcam** (DroidCam, IP Webcam)- 🎥 **USB External Camera** (Logitech, etc.)- 💻 **Built-in Webcam** (Laptop camera)- 📸 **Mobile Back Camera** (Rear camera)- 🤳 **Mobile Front Camera** (Selfie camera)FaceTrack Pro supports **multiple camera types**:## 🎯 Overview
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- TOP BAR -->
+<div class="h-16 px-6 flex items-center justify-between bg-white border-b border-gray-200 shadow-sm">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center">
+      <i class="fas fa-fingerprint text-white text-lg"></i>
+    </div>
+    <div>
+      <h1 class="text-gray-900 font-bold text-lg">FaceTrack</h1>
+      <p class="text-xs text-gray-500">Kiosk Mode</p>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-4">
+    <div id="currentTime" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-900 font-semibold text-sm" role="timer" aria-live="polite"></div>
+    
+    <button id="openSettingsBtn" class="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors" aria-label="Open kiosk settings">
+      <i class="fas fa-cog text-gray-600" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="h-[calc(100vh-64px)] p-3 md:p-6 overflow-auto bg-gray-50">
+  <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+
+    <!-- LEFT: CAMERA -->
+    <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6" aria-label="Face recognition camera">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-2 h-2 rounded-full bg-green-500" role="status" aria-label="Camera active"></div>
+        <h2 class="text-base md:text-lg font-semibold text-gray-900">Camera Feed</h2>
+      </div>
+      <p class="text-sm text-gray-500 text-center mb-4">
+        Position your face in the camera view
+      </p>
+
+      <!-- Camera Container -->
+      <div class="relative aspect-video rounded-lg bg-gray-900 overflow-hidden border-2 border-gray-300 shadow-lg transition-all duration-500">
+        <video id="kioskVideo" muted playsinline class="w-full h-full object-cover transition-opacity duration-700" aria-label="Live camera feed for face recognition" style="opacity: 0;"></video>
+
+        <!-- FACE DETECTION CANVAS OVERLAY - Green square box -->
+        <canvas id="kioskFaceCanvas" 
+                class="absolute inset-0 w-full h-full pointer-events-none z-40"></canvas>
+
+        <!-- Real-time Status - Moved outside camera view -->
+        <div class="absolute top-4 left-4 right-4 pointer-events-none z-20 hidden">
+          <!-- Placeholder - indicators moved outside -->
+        </div>
+
+        <!-- Scan Overlay -->
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div id="scanRing" class="relative w-48 h-48 rounded-full border-4 border-gray-500 flex items-center justify-center transition-all duration-500">
+            <div class="text-center">
+              <i class="fas fa-video-slash text-4xl text-gray-400 mb-2"></i>
+              <p id="scanStatusText" class="text-white font-semibold text-sm">
+                CAMERA OFF
+              </p>
+              <p id="scanSubText" class="text-gray-300 text-xs mt-1">
+                Start camera to begin
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Guidance Text -->
+        <div class="absolute bottom-4 left-0 right-0 text-center pointer-events-none z-30">
+          <div class="bg-black/80 backdrop-blur-sm inline-block px-6 py-3 rounded-full shadow-2xl border border-white/20">
+            <p id="guidanceText" class="text-white text-base font-bold drop-shadow-lg">Position your face in the frame</p>
+          </div>
+        </div>
+
+        <!-- Corner Indicators -->
+        <div class="absolute top-4 left-4 w-5 h-5 border-l-2 border-t-2 border-gray-400/50 rounded-tl"></div>
+        <div class="absolute top-4 right-4 w-5 h-5 border-r-2 border-t-2 border-gray-400/50 rounded-tr"></div>
+        <div class="absolute bottom-4 left-4 w-5 h-5 border-l-2 border-b-2 border-gray-400/50 rounded-bl"></div>
+        <div class="absolute bottom-4 right-4 w-5 h-5 border-r-2 border-b-2 border-gray-400/50 rounded-br"></div>
+      </div>
+
+      <!-- Status Indicators Panel - Clean, compact, below camera -->
+      <div class="mt-2 flex justify-center gap-2">
+        <div id="distanceMeter" class="hidden bg-gray-100 border border-gray-300 rounded px-2 py-1 text-xs">
+          <span id="distanceText" class="text-gray-700 font-medium"></span>
+        </div>
+        
+        <div id="lightingMeter" class="hidden bg-gray-100 border border-gray-300 rounded px-2 py-1 text-xs">
+          <span id="lightingText" class="text-gray-700 font-medium"></span>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="mt-6 space-y-4">
+        <div class="flex gap-3">
+          <button id="startCameraBtn"
+                  class="flex-1 btn btn-primary h-12 text-sm md:text-base">
+            <i class="fas fa-play"></i>
+            <span class="hidden sm:inline">Start Camera</span>
+            <span class="sm:hidden">Start</span>
+          </button>
+          
+          <button id="stopCameraBtn"
+                  class="hidden flex-1 btn btn-danger h-12 text-sm md:text-base">
+            <i class="fas fa-stop"></i>
+            <span class="hidden sm:inline">Stop Camera</span>
+            <span class="sm:hidden">Stop</span>
+          </button>
+          
+          <!-- Mobile Camera Flip Button (shows only on mobile when camera running) -->
+          <button id="flipCameraBtn"
+                  class="hidden lg:hidden w-12 h-12 btn btn-secondary flex items-center justify-center"
+                  title="Switch Camera">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+        </div>
+
+        <div id="cameraStatusBlock"
+             class="flex items-center justify-center gap-2 text-xs md:text-sm font-medium bg-gray-100 rounded-lg p-2 md:p-3 border border-gray-200">
+          <span id="statusDot" class="w-3 h-3 rounded-full bg-red-500 shadow-lg animate-pulse-fast"></span>
+          <span id="cameraStatus" class="text-gray-700">Camera Off</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: STATUS -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-2 h-2 rounded-full bg-purple-500"></div>
+        <h2 class="text-base md:text-lg font-semibold text-gray-900">Attendance Status</h2>
+      </div>
+      <p class="text-xs md:text-sm text-gray-500 mb-4">Real-time recognition system</p>
+
+      <!-- Waiting Card -->
+      <div id="waiting-block" class="card mb-4 bg-blue-50 border-blue-200">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-indigo-600 flex items-center justify-center text-2xl text-white">
+            <i class="fas fa-hourglass-half"></i>
+          </div>
+          <div class="flex-1">
+            <p class="font-semibold text-gray-900">Ready for identification</p>
+            <p class="text-sm text-gray-500 mt-1">Please look directly at the camera</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unknown Face Card -->
+      <div id="unknown-card" class="hidden card mb-4 bg-red-50 border-red-200 transition-all duration-500 transform">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-red-600 flex items-center justify-center text-2xl text-white">
+            <i class="fas fa-times"></i>
+          </div>
+          <div class="flex-1">
+            <p class="font-semibold text-gray-900">Face Not Recognized</p>
+            <p class="text-sm text-gray-600 mt-1">Please try again or contact admin</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Employee Card -->
+      <div id="employee-card" class="hidden card mb-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 shadow-lg transition-all duration-500 transform">
+        <div class="flex items-center gap-4">
+          <img id="emp-photo" src="{{ url_for('static', filename='default_user.png') }}"
+               class="w-16 h-16 rounded-xl object-cover border-3 border-green-400 shadow-md">
+          <div class="flex-1">
+            <p id="emp-name" class="font-bold text-lg text-gray-900">Employee Name</p>
+            <p id="emp-dept" class="text-sm text-gray-600 mt-1 font-medium">Department</p>
+          </div>
+          <span id="emp-status" class="px-4 py-2 rounded-lg font-bold text-sm shadow-md">
+            CHECKED IN
+          </span>
+        </div>
+      </div>
+
+      <!-- Placeholder -->
+      <p id="resultsPlaceholder" class="text-sm text-gray-400 text-center py-4">
+        Recognition results will appear here
+      </p>
+
+      <!-- Recent Logs -->
+      <div class="mt-4">
+        <div class="flex items-center gap-2 mb-3 pb-3 border-b-2 border-gray-200">
+          <i class="fas fa-history text-indigo-600 text-lg"></i>
+          <h3 class="text-lg font-bold text-gray-900">Recent Activity</h3>
+        </div>
+        <div id="logs-list" class="space-y-3 max-h-80 overflow-y-auto">
+          <!-- Log entries will be added here dynamically -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PIN MODAL -->
+<div id="pinModal" class="fixed inset-0 bg-black/70 backdrop-blur-md hidden items-center justify-center z-50 transition-all duration-300">
+  <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-200 overflow-hidden transform transition-all duration-500 scale-95 opacity-0" id="pinModalContent">
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-indigo-600 to-purple-600 p-6 text-center">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm mb-3 animate-pulse-slow">
+        <i class="fas fa-cog text-white text-2xl"></i>
+      </div>
+      <h3 class="text-2xl font-bold text-white mb-1">Quick Access</h3>
+      <p class="text-indigo-100 text-sm">PIN optional for settings</p>
+    </div>
+
+    <!-- Body -->
+    <div class="p-8">
+      <form id="pinForm" autocomplete="off" onsubmit="pinVerify.click(); return false;">
+        <input id="pinInput"
+               name="pin"
+               type="password"
+               maxlength="6"
+               aria-label="Admin PIN"
+               autocomplete="off"
+               class="w-full px-4 py-4 text-center text-2xl font-bold tracking-widest border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none transition-all mb-6 bg-gray-50"
+               placeholder="••••••">
+
+        <div class="flex flex-col gap-3">
+          <div class="flex gap-3">
+            <button id="pinCancel"
+                    type="button"
+                    class="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all">
+              <i class="fas fa-times mr-2"></i>Cancel
+            </button>
+            <button id="pinVerify"
+                    type="button"
+                    class="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
+              <i class="fas fa-check-circle mr-2"></i>Verify
+            </button>
+          </div>
+          <button id="skipPin"
+                  type="button"
+                  class="w-full px-6 py-3 bg-white hover:bg-gray-50 text-gray-600 hover:text-indigo-600 font-medium rounded-xl transition-all border-2 border-dashed border-gray-300 hover:border-indigo-400">
+            <i class="fas fa-forward mr-2"></i>Skip PIN (View Settings Only)
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS PANEL -->
+<div id="settingsPanel"
+  class="fixed inset-y-0 right-0 w-full md:w-96 bg-white border-l border-gray-200 shadow-2xl translate-x-full transition-all duration-500 ease-in-out z-50 flex flex-col">
+
+  <div class="p-6 border-b border-gray-200 bg-gray-50">
+    <h3 class="text-xl font-bold text-gray-900 mb-1">Kiosk Settings</h3>
+    <p class="text-sm text-gray-500">Administrator controls</p>
+  </div>
+
+  <div class="p-6 space-y-4 overflow-y-auto flex-1">
+    <!-- Camera Selection -->
+    <div class="card">
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        <i class="fas fa-video text-indigo-600 mr-2"></i>
+        Camera Device
+      </label>
+      <select id="adminCameraSelect" class="input w-full"></select>
+    </div>
+    
+    <!-- Voice Toggle -->
+    <div id="voiceToggle" class="card cursor-pointer hover:bg-gray-50 transition-colors">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <i class="fas fa-volume-up text-indigo-600 text-lg"></i>
+          <span class="font-semibold text-gray-700">Enable Voice</span>
+        </div>
+        <div class="toggle-switch w-12 h-6 bg-green-500 rounded-full flex items-center px-1 transition-colors">
+          <div class="toggle-knob w-5 h-5 bg-white rounded-full translate-x-6 transition-transform shadow-sm"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Camera Status Toggle -->
+    <div id="cameraStatusToggle" class="card cursor-pointer hover:bg-gray-50 transition-colors">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <i class="fas fa-info-circle text-indigo-600 text-lg"></i>
+          <span class="font-semibold text-gray-700">Show Camera Status</span>
+        </div>
+        <div class="toggle-switch w-12 h-6 bg-green-500 rounded-full flex items-center px-1 transition-colors">
+          <div class="toggle-knob w-5 h-5 bg-white rounded-full translate-x-6 transition-transform shadow-sm"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Camera Switch Toggle -->
+    <div id="cameraSwitchToggle" class="card cursor-pointer hover:bg-gray-50 transition-colors">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <i class="fas fa-exchange-alt text-indigo-600 text-lg"></i>
+          <span class="font-semibold text-gray-700">Allow Camera Switch</span>
+        </div>
+        <div class="toggle-switch w-12 h-6 bg-green-500 rounded-full flex items-center px-1 transition-colors">
+          <div class="toggle-knob w-5 h-5 bg-white rounded-full translate-x-6 transition-transform shadow-sm"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="p-6 border-t border-gray-200 space-y-3">
+    <button id="exitKioskBtn" class="w-full btn btn-danger">
+      <i class="fas fa-sign-out-alt"></i>
+      Exit Kiosk
+    </button>
+
+    <button id="closeSettingsBtn" class="w-full btn btn-secondary">
+      <i class="fas fa-times"></i>
+      Close Settings
+    </button>
+  </div>
+</div>
+
+<style>
+/* Face Detection Frame */
+.face-guide-oval {
+  position: relative;
+  width: 280px;
+  height: 360px;
+  border: 3px solid rgba(99, 102, 241, 0.6);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2), 0 0 30px rgba(99, 102, 241, 0.3);
+  animation: face-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.face-guide-oval.detected {
+  border-color: rgba(34, 197, 94, 0.8);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.3), 0 0 40px rgba(34, 197, 94, 0.5);
+  animation: face-pulse-success 1.5s ease-in-out infinite;
+}
+
+.corner-marker {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 3px solid #6366f1;
+  transition: all 0.3s;
+}
+
+.face-guide-oval.detected .corner-marker {
+  border-color: #22c55e;
+}
+
+.corner-marker.top-left {
+  top: -3px;
+  left: 20px;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 8px 0 0 0;
+}
+
+.corner-marker.top-right {
+  top: -3px;
+  right: 20px;
+  border-left: none;
+  border-bottom: none;
+  border-radius: 0 8px 0 0;
+}
+
+.corner-marker.bottom-left {
+  bottom: -3px;
+  left: 20px;
+  border-right: none;
+  border-top: none;
+  border-radius: 0 0 0 8px;
+}
+
+.corner-marker.bottom-right {
+  bottom: -3px;
+  right: 20px;
+  border-left: none;
+  border-top: none;
+  border-radius: 0 0 8px 0;
+}
+
+@keyframes face-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2), 0 0 30px rgba(99, 102, 241, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0.1), 0 0 50px rgba(99, 102, 241, 0.4);
+  }
+}
+
+@keyframes face-pulse-success {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.3), 0 0 40px rgba(34, 197, 94, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.2), 0 0 60px rgba(34, 197, 94, 0.6);
+  }
+}
+
+/* Minimal animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Toggle switch styling */
+.toggle-switch.off {
+  background-color: #d1d5db;
+}
+
+.toggle-switch.off .toggle-knob {
+  transform: translateX(0);
+}
+
+/* Loading Spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Slide Down Animation for Notifications */
+@keyframes slideDown {
+  from {
+    transform: translate(-50%, -100%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.3s ease-out forwards;
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/kiosk.js') }}"></script>
+<script src="{{ url_for('static', filename='js/kiosk_mobile_flip.js') }}"></script>
+<script>
+// Kiosk mode: Intercept back button and show PIN modal
+let backButtonPressed = false;
+
+history.pushState(null, '', location.href);
+window.addEventListener('popstate', function(e) {
+  // Prevent actual navigation
+  history.pushState(null, '', location.href);
+  
+  // Show PIN modal for exit
+  backButtonPressed = true;
+  const pinModal = document.getElementById('pinModal');
+  const pinInput = document.getElementById('pinInput');
+  
+  if (pinModal && pinInput) {
+    window.pendingExit = true; // Set flag for exit (used by kiosk.js)
+    pinInput.value = '';
+    pinModal.classList.remove('hidden');
+    pinModal.classList.add('flex');
+    setTimeout(() => pinInput.focus(), 100);
+  }
+});
+</script>
+{% endblock %}
