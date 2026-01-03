@@ -1,6 +1,7 @@
 from flask import render_template, request, jsonify, current_app, session, redirect, url_for, flash
 from werkzeug.security import check_password_hash, generate_password_hash
 from markupsafe import escape
+from blueprints.auth.utils import role_required
 from . import bp
 from .utils import recognize_and_mark, decode_frame
 from utils.liveness_detector import LivenessDetector
@@ -327,12 +328,10 @@ def verify_pin():
 # ---------------------------------------------------------
 @bp.route("/admin/set_pin", methods=["POST"])
 @csrf.exempt
+@role_required("admin")
 def set_kiosk_pin():
     """Admin endpoint - set/update kiosk exit PIN"""
-    # Admin-only check
-    if session.get("role") != "admin":
-        return jsonify({"success": False, "message": "Admin access required."}), 403
-
+    
     data = request.get_json()
     new_pin_raw = data.get("pin", "")
     
@@ -366,11 +365,9 @@ def kiosk_status():
 # ---------------------------------------------------------
 @bp.route("/admin/force_unlock", methods=["POST"])
 @csrf.exempt
+@role_required("admin")
 def force_unlock():
     """Admin emergency unlock - bypass PIN requirement to exit kiosk mode"""
-    # Admin-only check
-    if session.get("role") != "admin":
-        return jsonify({"success": False, "message": "Admin access required."}), 403
     
     # Audit force unlock action
     try:

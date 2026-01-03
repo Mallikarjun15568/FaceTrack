@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 from werkzeug.utils import secure_filename
 from utils.db import get_db
-from blueprints.auth.utils import login_required
+from blueprints.auth.utils import login_required, role_required
 from utils.face_encoder import face_encoder, invalidate_embeddings_cache
 from utils.logger import logger
 from db_utils import log_audit
@@ -112,11 +112,8 @@ def list_employees():
 # ============================================================
 @bp.route("/add", methods=["GET", "POST"])
 @login_required
+@role_required("admin", "hr")
 def add_employee():
-    # Only admin and HR can add employees
-    if session.get("role") not in ["admin", "hr"]:
-        flash("Only admins and HR can add employees", "error")
-        return redirect(url_for("employees.list_employees"))
 
     db = get_db()
     cursor = db.cursor(dictionary=True)
@@ -230,10 +227,8 @@ def add_employee():
 # ============================================================
 @bp.route("/delete/<int:emp_id>", methods=["POST"])
 @login_required
+@role_required("admin", "hr")
 def delete_employee(emp_id):
-    # Only admin and HR can delete employees
-    if session.get("role") not in ["admin", "hr"]:
-        return jsonify({"success": False, "error": "Unauthorized"}), 403
 
     db = get_db()
     cursor = db.cursor(dictionary=True)
@@ -255,10 +250,8 @@ def delete_employee(emp_id):
 # ============================================================
 @bp.route("/bulk_delete", methods=["POST"])
 @login_required
+@role_required("admin", "hr")
 def bulk_delete():
-    # Only admin and HR can bulk delete
-    if session.get("role") not in ["admin", "hr"]:
-        return jsonify({"success": False, "error": "Unauthorized"}), 403
 
     data = request.get_json()
     ids = data.get("ids", [])
@@ -282,6 +275,7 @@ def bulk_delete():
 # ============================================================
 @bp.route("/view/<int:emp_id>")
 @login_required
+@role_required("admin", "hr")
 def view_employee(emp_id):
 
     db = get_db()
@@ -306,11 +300,8 @@ def view_employee(emp_id):
 # ============================================================
 @bp.route("/edit/<int:emp_id>", methods=["GET", "POST"])
 @login_required
+@role_required("admin", "hr")
 def edit_employee(emp_id):
-    # Only admin and HR can edit employees
-    if session.get("role") not in ["admin", "hr"]:
-        flash("Only admins and HR can edit employees", "error")
-        return redirect(url_for("employees.list_employees"))
 
     db = get_db()
     cursor = db.cursor(dictionary=True)

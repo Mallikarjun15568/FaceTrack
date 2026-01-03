@@ -4,7 +4,7 @@ import io
 from datetime import datetime
 from flask import render_template, request, jsonify, send_file, session, redirect, url_for, flash, current_app
 from utils.db import get_connection, close_db
-from blueprints.auth.utils import login_required
+from blueprints.auth.utils import login_required, role_required
 from . import bp
 from werkzeug.utils import secure_filename
 from PIL import Image
@@ -37,14 +37,23 @@ def require_admin():
     return None
 
 # ---------------------------------------------------------
-# Admin-only protection
+# Admin-only protection - All settings routes require admin
 # ---------------------------------------------------------
 @bp.before_request
-@login_required
 def restrict_to_admin():
+    # Skip auth check for static files
+    if request.endpoint and 'static' in request.endpoint:
+        return None
+    
+    # Check login
+    if not session.get("logged_in"):
+        flash("Please login first", "error")
+        return redirect(url_for("auth.login"))
+    
+    # Check admin role
     if session.get("role") != "admin":
-        flash("Only admins can access Settings", "error")
-        return redirect(url_for("dashboard.admin_dashboard"))
+        flash("⛔ Only admins can access Settings", "error")
+        return redirect(url_for("dashboard.index"))
 
 
 # ---------------------------------------------------------

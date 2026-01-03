@@ -6,7 +6,7 @@ from flask import render_template, request, jsonify, session, redirect, flash
 from . import bp
 from utils.db import get_db
 from utils.helpers import generate_unique_filename, ensure_folder
-from blueprints.auth.utils import login_required
+from blueprints.auth.utils import login_required, role_required
 
 from blueprints.kiosk import utils as kiosk_utils
 from utils.face_encoder import invalidate_embeddings_cache, face_encoder
@@ -21,11 +21,8 @@ import face_recognition
 # -----------------------------------------------------
 @bp.route("/<int:employee_id>")
 @login_required
+@role_required("admin", "hr")
 def enroll_page(employee_id):
-    # Only admin and HR can enroll faces
-    if session.get("role") not in ["admin", "hr"]:
-        flash("Only admins and HR can enroll faces", "error")
-        return redirect("/dashboard")
 
     db = get_db()
     cursor = db.cursor(dictionary=True)
@@ -44,11 +41,8 @@ def enroll_page(employee_id):
 # -----------------------------------------------------
 @bp.route("/update/<int:employee_id>")
 @login_required
+@role_required("admin", "hr")
 def update_enroll_page(employee_id):
-    # Only admin and HR can update enrollment
-    if session.get("role") not in ["admin", "hr"]:
-        flash("Only admins and HR can update enrollment", "error")
-        return redirect("/dashboard")
 
     db = get_db()
     cursor = db.cursor(dictionary=True)
@@ -67,10 +61,8 @@ def update_enroll_page(employee_id):
 # -----------------------------------------------------
 @bp.route("/capture", methods=["POST"])
 @login_required
+@role_required("admin", "hr")
 def capture_face():
-    # Only admin and HR can capture faces
-    if session.get("role") not in ["admin", "hr"]:
-        return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     try:
         data = request.get_json()
@@ -228,10 +220,8 @@ def detect_face():
 # -----------------------------------------------------
 @bp.route("/update_capture", methods=["POST"])
 @login_required
+@role_required("admin", "hr")
 def update_capture_face():
-    # Only admin and HR can update captures
-    if session.get("role") not in ["admin", "hr"]:
-        return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     try:
         data = request.get_json()
