@@ -238,7 +238,7 @@ def recognize_and_mark(frame_b64, app):
         faces = face_encoder.app.get(np_img)
         
         # DEBUG: Log face detection
-        logger.info(f"🔍 Kiosk: Detected {len(faces)} face(s) in frame")
+        logger.info(f"Kiosk: Detected {len(faces)} face(s) in frame")
 
         # Thread-safe cooldown using session (per-client)
         last_unknown_str = session.get("kiosk_last_unknown")
@@ -288,16 +288,16 @@ def recognize_and_mark(frame_b64, app):
         threshold = float(app.config.get("EMBED_THRESHOLD", 0.75))
         result = face_encoder.match(embedding, threshold=threshold)
         
-        logger.info(f"🎯 Kiosk: Threshold={threshold}, Match result={result}")
+        logger.info(f"Kiosk: Threshold={threshold}, Match result={result}")
 
         if result is None:
             match = None
             sim_score = 0.0
-            logger.info(f"❌ Kiosk: No match found (similarity below {threshold})")
+            logger.info(f"Kiosk: No match found (similarity below {threshold})")
         else:
             emp_id_match, similarity = result
             sim_score = float(similarity)
-            logger.info(f"✅ Kiosk: Matched employee_id={emp_id_match}, similarity={sim_score:.3f}")
+            logger.info(f"Kiosk: Matched employee_id={emp_id_match}, similarity={sim_score:.3f}")
             # Find full employee details from cache
             db_entries = load_embeddings()
             match = next((e for e in db_entries if e["emp_id"] == emp_id_match), None)

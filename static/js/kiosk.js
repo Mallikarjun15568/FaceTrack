@@ -13,7 +13,6 @@ const adminCameraSelect = document.getElementById("adminCameraSelect");
 const exitKioskBtn = document.getElementById("exitKioskBtn");
 const statusText = document.getElementById("cameraStatus");
 const statusDot = document.getElementById("statusDot");
-
 const scanRing = document.getElementById("scanRing");
 const scanBorderEffect = document.getElementById("scanBorderEffect");
 const scanStatusText = document.getElementById("scanStatusText");
@@ -42,6 +41,34 @@ const guidanceText = document.getElementById("guidanceText");
 // Centralized scan message setter — single source of truth for scanSubText
 function setScanMessage(text) {
     if (scanSubText) scanSubText.textContent = text;
+    // Also mirror important guidance to the guidanceText element so
+    // backend liveness messages appear without being overwritten.
+    if (guidanceText) {
+        guidanceText.textContent = text;
+        guidanceText.style.display = "block";
+        guidanceText.style.visibility = "visible";
+    }
+}
+
+// Safe text setter to avoid "Cannot set properties of null" errors
+function safeText(el, text) {
+    if (el) el.textContent = text;
+}
+
+// Safe class setter to avoid null errors
+function safeClass(el, className) {
+    if (el) el.className = className;
+}
+
+// Camera inactive overlay helpers
+function showCameraInactive() {
+    const el = document.getElementById("cameraInactiveOverlay");
+    if (el) el.classList.remove("hidden");
+}
+
+function hideCameraInactive() {
+    const el = document.getElementById("cameraInactiveOverlay");
+    if (el) el.classList.add("hidden");
 }
 
 // -------- STATE --------
@@ -65,8 +92,8 @@ let confettiFired = false;
 let lastSpokenName = null;
 let lastSpokenTime = 0;
 const VOICE_COOLDOWN_MS = 5000;
-let hardCooldownUntil = 0;
 
+let hardCooldownUntil = 0;
 const RECOGNITION_COOLDOWN_MS = parseInt(localStorage.getItem('recognitionCooldownMs') || '4000', 10);
 
 // Settings state
@@ -77,40 +104,35 @@ let showCameraStatus = true;
 // ===== Enhanced Scan Ring State Helpers with Animations =====
 function setScanIdle() {
     scanRing.className = "relative w-56 h-56 rounded-full border-3 border-gray-400 flex items-center justify-center transition-all duration-500 shadow-lg";
-    
     if (scanBorderEffect) {
         scanBorderEffect.style.opacity = '0';
     }
-    
-    scanStatusText.textContent = "CAMERA INACTIVE";
+    safeText(scanStatusText, "CAMERA INACTIVE");
     // scanSubText is controlled centrally via setScanMessage()
-    scanStatusText.className = "text-white font-bold text-base drop-shadow-2xl tracking-wide";
-    
+    safeClass(scanStatusText, "text-white font-bold text-base drop-shadow-2xl tracking-wide");
+
     // Do not replace DOM nodes here. Update existing text nodes only.
-    
     if (waitingBlock) {
         const primary = waitingBlock.querySelector('p');
         const secondary = waitingBlock.querySelector('p.text-sm');
         if (primary) primary.textContent = 'Ready for identification';
         if (secondary) secondary.textContent = 'Please look directly at the camera';
     }
+
     if (resultsPlaceholder) resultsPlaceholder.classList.remove('hidden');
 }
 
 function setScanScanning() {
     scanRing.className = "relative w-56 h-56 rounded-full border-3 border-blue-500 flex items-center justify-center transition-all duration-500 shadow-lg animate-pulse-slow";
-    
     // Enable rotating border effect
     if (scanBorderEffect) {
         scanBorderEffect.style.opacity = '0.5';
     }
-    
-    scanStatusText.textContent = "VERIFYING IDENTITY";
+    safeText(scanStatusText, "VERIFYING IDENTITY");
     // scanSubText is controlled centrally via setScanMessage()
-    scanStatusText.className = "text-blue-400 font-bold text-base drop-shadow-2xl tracking-wide animate-pulse";
-    
+    safeClass(scanStatusText, "text-blue-400 font-bold text-base drop-shadow-2xl tracking-wide animate-pulse");
+
     // Do not recreate DOM nodes; only update text and classes to preserve element references
-    
     if (waitingBlock) {
         const primary = waitingBlock.querySelector('p');
         const secondary = waitingBlock.querySelector('p.text-sm');
@@ -120,27 +142,25 @@ function setScanScanning() {
         if (employeeCard) employeeCard.classList.add('hidden');
         if (unknownCard) unknownCard.classList.add('hidden');
     }
+
     if (resultsPlaceholder) resultsPlaceholder.classList.add('hidden');
 }
 
 function setScanSuccess() {
     scanRing.className = "relative w-56 h-56 rounded-full border-3 border-green-500 flex items-center justify-center transition-all duration-500 shadow-lg shadow-green-500/30 animate-scale-in";
-    
     if (scanBorderEffect) {
         scanBorderEffect.style.opacity = '0';
     }
-    
-    scanStatusText.textContent = "✓ ID VERIFIED";
+    safeText(scanStatusText, "✓ ID VERIFIED");
     // scanSubText is controlled centrally via setScanMessage()
-    scanStatusText.className = "text-green-400 font-bold text-xl drop-shadow-2xl tracking-wide";
-    
+    safeClass(scanStatusText, "text-green-400 font-bold text-xl drop-shadow-2xl tracking-wide");
+
     // Preserve DOM nodes; update text instead of replacing elements
-    
     if (resultsPlaceholder) resultsPlaceholder.classList.add('hidden');
-    
+
     // Confetti effect
     createConfetti();
-    
+
     setTimeout(() => {
         if (cameraRunning) setScanScanning();
     }, 2500);
@@ -148,19 +168,16 @@ function setScanSuccess() {
 
 function setScanError() {
     scanRing.className = "relative w-56 h-56 rounded-full border-4 border-red-500 flex items-center justify-center transition-all duration-500 shadow-2xl shadow-red-500/50 animate-shake";
-    
     if (scanBorderEffect) {
         scanBorderEffect.style.opacity = '0';
     }
-    
-    scanStatusText.textContent = "FACE NOT RECOGNIZED";
+    safeText(scanStatusText, "FACE NOT RECOGNIZED");
     // scanSubText is controlled centrally via setScanMessage()
-    scanStatusText.className = "text-red-400 font-bold text-xl drop-shadow-2xl tracking-wide";
-    
+    safeClass(scanStatusText, "text-red-400 font-bold text-xl drop-shadow-2xl tracking-wide");
+
     // Preserve DOM nodes; update text instead of replacing elements
-    
     if (resultsPlaceholder) resultsPlaceholder.classList.add('hidden');
-    
+
     setTimeout(() => {
         if (cameraRunning) setScanScanning();
     }, 2500);
@@ -170,9 +187,10 @@ function setScanError() {
 function createConfetti() {
     if (confettiFired) return;
     confettiFired = true;
+
     const colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'];
     const confettiCount = 30;
-    
+
     for (let i = 0; i < confettiCount; i++) {
         const confetti = document.createElement('div');
         confetti.style.position = 'fixed';
@@ -184,14 +202,13 @@ function createConfetti() {
         confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
         confetti.style.zIndex = '9999';
         confetti.style.pointerEvents = 'none';
-        
         document.body.appendChild(confetti);
-        
+
         const angle = (Math.PI * 2 * i) / confettiCount;
         const velocity = 3 + Math.random() * 4;
         const tx = Math.cos(angle) * velocity * 50;
         const ty = Math.sin(angle) * velocity * 50;
-        
+
         confetti.animate([
             { transform: 'translate(0, 0) rotate(0deg)', opacity: 1 },
             { transform: `translate(${tx}px, ${ty}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
@@ -213,6 +230,7 @@ function updateClock() {
         second: '2-digit',
         hour12: true
     });
+
     const clockEl = document.getElementById('currentTime');
     if (clockEl) {
         if (clockEl.textContent !== timeStr) {
@@ -222,6 +240,7 @@ function updateClock() {
         clockEl.textContent = timeStr;
     }
 }
+
 setInterval(updateClock, 1000);
 updateClock();
 
@@ -229,6 +248,7 @@ updateClock();
 // AUDIO & SOUND
 // =======================
 const _sharedAudio = { ctx: null };
+
 function getAudioCtx() {
     if (_sharedAudio.ctx) return _sharedAudio.ctx;
     try {
@@ -249,7 +269,6 @@ function playBeep(freq = 800, dur = 200) {
 // =======================
 function canSpeak(name) {
     if (!voiceEnabled) return false;
-    
     const now = Date.now();
     if (lastSpokenName === name && (now - lastSpokenTime) < VOICE_COOLDOWN_MS) {
         return false;
@@ -283,19 +302,20 @@ async function loadCameras() {
         } catch (permErr) {
             console.warn('📹 Camera permission needed:', permErr);
         }
-        
+
         const devices = await navigator.mediaDevices.enumerateDevices();
         if (!cameraSelect) return;
-        
+
         const videoDevices = devices.filter(d => d.kind === "videoinput");
         console.log(`📹 Found ${videoDevices.length} camera device(s)`);
-        
+
         const currentValue = cameraSelect.value;
         cameraSelect.innerHTML = '<option value="">📹 Select Camera Device</option>';
-        
+
         videoDevices.forEach((d, idx) => {
             const o = document.createElement("option");
             o.value = d.deviceId;
+
             // Better labeling with mobile-friendly names
             let label = d.label;
             if (!label || label === '') {
@@ -312,11 +332,12 @@ async function loadCameras() {
             } else if (label.toLowerCase().includes('back') || label.toLowerCase().includes('rear')) {
                 label = `📸 ${label}`;
             }
+
             o.textContent = label;
             cameraSelect.appendChild(o);
-            console.log(`  📹 ${label}`);
+            console.log(`   📹 ${label}`);
         });
-        
+
         if (currentValue && videoDevices.some(d => d.deviceId === currentValue)) {
             cameraSelect.value = currentValue;
         }
@@ -327,7 +348,7 @@ async function loadCameras() {
 
 document.addEventListener("DOMContentLoaded", () => {
     loadCameras();
-    
+
     // Hide all status indicators on load
     if (distanceMeter) {
         distanceMeter.classList.add("hidden");
@@ -338,14 +359,14 @@ document.addEventListener("DOMContentLoaded", () => {
         lightingMeter.style.display = "none";
     }
     if (guidanceText) guidanceText.style.display = "none";
-    
+
     // Add initial page load animation
     document.body.style.opacity = '0';
     setTimeout(() => {
         document.body.style.transition = 'opacity 0.5s';
         document.body.style.opacity = '1';
     }, 100);
-    
+
     // Show camera count after loading
     setTimeout(() => {
         if (cameraSelect && cameraSelect.options.length > 1) {
@@ -365,12 +386,13 @@ navigator.mediaDevices.ondevicechange = async () => {
 if (startBtn) {
     startBtn.addEventListener("click", async () => {
         if (cameraRunning || startingCamera) return;
+
         // Kiosk mode: use browser default camera (no employee-facing select)
-        
+
         // Add loading animation to button
         startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
         startBtn.disabled = true;
-        
+
         try {
             if (stream) {
                 stream.getTracks().forEach(t => t.stop());
@@ -380,16 +402,27 @@ if (startBtn) {
 
             startingCamera = true;
 
+            // Get selected device ID from admin camera select (if available)
+            let selectedDevice = null;
+            if (adminCameraSelect && adminCameraSelect.value) {
+                selectedDevice = adminCameraSelect.value;
+                console.log('📹 Using admin selected camera:', selectedDevice);
+            }
+
             // Mobile-friendly camera constraints
             const constraints = {
-                video: {
+                video: selectedDevice ? {
+                    deviceId: { exact: selectedDevice },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                } : {
                     width: { ideal: 1280 },
                     height: { ideal: 720 },
                     facingMode: 'user' // Front camera for face recognition
                 },
                 audio: false
             };
-            
+
             console.log('📱 Requesting camera access (mobile-friendly)...');
             stream = await navigator.mediaDevices.getUserMedia(constraints);
             window.stream = stream;
@@ -402,6 +435,12 @@ if (startBtn) {
 
             try {
                 await video.play();
+
+                // Hide the camera-inactive overlay as soon as playback starts
+                try {
+                    hideCameraInactive();
+                } catch (e) { /* ignore */ }
+
                 // Smooth fade-in animation
                 setTimeout(() => {
                     video.style.opacity = '1';
@@ -410,6 +449,9 @@ if (startBtn) {
                 if (playErr.name === 'AbortError') {
                     await new Promise(r => setTimeout(r, 120));
                     await video.play();
+                    try {
+                        hideCameraInactive();
+                    } catch (e) { /* ignore */ }
                     setTimeout(() => {
                         video.style.opacity = '1';
                     }, 100);
@@ -422,24 +464,36 @@ if (startBtn) {
             cameraRunning = true;
             window.cameraRunning = true;
             window.startingCamera = false;
-            
+
             // Initialize canvas for face box
             if (kioskFaceCanvas) {
                 const rect = video.getBoundingClientRect();
                 kioskFaceCanvas.width = rect.width;
                 kioskFaceCanvas.height = rect.height;
                 console.log('✅ Canvas initialized:', kioskFaceCanvas.width, 'x', kioskFaceCanvas.height);
+
+                // Draw static guide box once on camera start
+                try {
+                    drawKioskFaceBox();
+                } catch (e) { /* ignore */ }
+
+                // Show simple guidance when camera is on
+                if (guidanceText) {
+                    guidanceText.textContent = "Align your face inside the box";
+                    guidanceText.style.display = 'block';
+                    guidanceText.style.visibility = 'visible';
+                }
             }
-            
+
             startBtn.classList.add("hidden");
             if (stopBtn) stopBtn.classList.remove("hidden");
-            
+
             // Show flip button on mobile
             const flipBtn = document.getElementById("flipCameraBtn");
             if (flipBtn && window.innerWidth < 1024) {
                 flipBtn.classList.remove("hidden");
             }
-            
+
             if (cameraSelect) {
                 if (!cameraSwitchAllowed) {
                     cameraSelect.disabled = true;
@@ -448,7 +502,7 @@ if (startBtn) {
                     cameraSelect.classList.add("hidden");
                 }
             }
-            
+
             if (statusText) {
                 statusText.textContent = "Camera Active";
                 statusText.classList.add('animate-pulse-slow');
@@ -460,8 +514,8 @@ if (startBtn) {
 
             setScanScanning();
             await loadCameras();
-
             startRecognitionLoop();
+
         } catch (err) {
             alert("❌ Camera access denied or unavailable");
             console.error("Camera error:", err);
@@ -483,11 +537,14 @@ if (stopBtn) {
         stream.getTracks().forEach(t => t.stop());
         video.srcObject = null;
         stream = null;
-
         cameraRunning = false;
-        
-        // Clear all detection UI
-        drawKioskFaceBox(false);
+
+        // Clear all detection UI (clear static guide box)
+        if (kioskFaceCanvas) {
+            const ctx = kioskFaceCanvas.getContext('2d');
+            if (ctx) ctx.clearRect(0, 0, kioskFaceCanvas.width, kioskFaceCanvas.height);
+        }
+
         if (distanceMeter) {
             distanceMeter.classList.add("hidden");
             distanceMeter.style.display = "none";
@@ -497,19 +554,24 @@ if (stopBtn) {
             lightingMeter.style.display = "none";
         }
         if (guidanceText) guidanceText.style.display = "none";
-        
+
+        // Show camera inactive overlay when camera is stopped
+        try {
+            showCameraInactive();
+        } catch (e) { /* ignore */ }
+
         stopBtn.classList.add("hidden");
         if (startBtn) {
             startBtn.classList.remove("hidden");
             startBtn.innerHTML = '<i class="fas fa-play text-sm"></i> Start Camera';
             startBtn.disabled = false;
         }
-        
+
         if (cameraSelect) {
             cameraSelect.disabled = false;
             cameraSelect.classList.remove("opacity-50", "cursor-not-allowed", "hidden");
         }
-        
+
         if (statusText) {
             statusText.textContent = "Camera Off";
             statusText.classList.remove('animate-pulse-slow');
@@ -520,7 +582,7 @@ if (stopBtn) {
         }
 
         setScanIdle();
-        
+
         if (waitingBlock) waitingBlock.classList.remove("hidden");
         if (employeeCard) employeeCard.classList.add("hidden");
         if (unknownCard) unknownCard.classList.add("hidden");
@@ -532,7 +594,7 @@ if (stopBtn) {
 // =======================
 function updateUI(data) {
     console.log('Updating UI with:', data);
-    
+
     // Hide all status cards first
     if (waitingBlock) {
         waitingBlock.classList.add("hidden");
@@ -546,7 +608,7 @@ function updateUI(data) {
         resultsPlaceholder.classList.add("hidden");
         resultsPlaceholder.style.display = 'none';
     }
-    
+
     // Update employee data BEFORE showing card
     if (empName) empName.textContent = data.name || "Unknown";
     if (empDept) empDept.textContent = data.dept || "";
@@ -557,7 +619,6 @@ function updateUI(data) {
 
     if (empStatus) {
         empStatus.className = 'px-4 py-2 text-sm font-bold rounded-xl shadow-lg';
-        
         if (data.status === "check-in") {
             empStatus.textContent = "✓ CHECKED IN";
             empStatus.classList.add('bg-gradient-to-r', 'from-green-600', 'to-emerald-600', 'text-white', 'animate-pulse-slow');
@@ -571,7 +632,7 @@ function updateUI(data) {
             empStatus.textContent = data.status || "";
         }
     }
-    
+
     // NOW show the employee card with multiple methods
     if (employeeCard) {
         employeeCard.classList.remove("hidden");
@@ -579,7 +640,6 @@ function updateUI(data) {
         employeeCard.style.visibility = 'visible';
         employeeCard.style.opacity = '1';
         employeeCard.classList.add("animate-scale-in");
-        
         console.log('Employee card should be visible now', {
             display: employeeCard.style.display,
             classList: employeeCard.classList.toString(),
@@ -612,7 +672,7 @@ function updateUI(data) {
 function addLog(name, status, time, photo) {
     if (!status) return;
     if (!logsList) return;
-    
+
     const row = document.createElement("div");
     row.className = "flex items-center gap-4 bg-gradient-to-r from-gray-50 to-white border-2 border-gray-200 p-4 rounded-xl hover:shadow-xl transition-all duration-300 hover:scale-[1.02] animate-fade-in";
 
@@ -638,7 +698,7 @@ function addLog(name, status, time, photo) {
     row.appendChild(meta);
 
     logsList.prepend(row);
-    
+
     while (logsList.children.length > 4) {
         logsList.removeChild(logsList.lastChild);
     }
@@ -651,11 +711,10 @@ function addLog(name, status, time, photo) {
 // Calculate distance from camera based on face box size
 function calculateDistance(faceBox) {
     if (!faceBox || !faceBox.width || !faceBox.height) return "unknown";
-    
     const faceSize = (faceBox.width + faceBox.height) / 2;
     const videoWidth = video.videoWidth || 640;
     const relativeFaceSize = faceSize / videoWidth;
-    
+
     // Thresholds: < 0.15 = too far, 0.15-0.4 = perfect, > 0.4 = too close
     if (relativeFaceSize < 0.15) return "far";
     if (relativeFaceSize > 0.4) return "close";
@@ -665,21 +724,20 @@ function calculateDistance(faceBox) {
 // Analyze lighting quality from image data
 function analyzeLighting(canvas) {
     if (!canvas) return "unknown";
-    
     const ctx = canvas.getContext("2d");
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
-    
+
     let totalBrightness = 0;
     const sampleSize = Math.min(10000, data.length / 4); // Sample pixels
-    
+
     for (let i = 0; i < sampleSize * 4; i += 4) {
         const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
         totalBrightness += brightness;
     }
-    
+
     const avgBrightness = totalBrightness / sampleSize;
-    
+
     // Thresholds: < 60 = dark, 60-200 = good, > 200 = bright
     if (avgBrightness < 60) return "dark";
     if (avgBrightness > 200) return "bright";
@@ -689,17 +747,14 @@ function analyzeLighting(canvas) {
 // Update face detection UI with real-time feedback
 function updateFaceDetection(detected, faceBox, confidence, canvas) {
     // Oval frame removed - only canvas box and indicators remain
-    
+
     if (detected && faceBox) {
-        // Draw face box on canvas
-        drawKioskFaceBox(true);
-        
         // Calculate and show distance - clean compact panel
         const distance = calculateDistance(faceBox);
         if (distanceMeter && distanceText && cameraRunning) {
             distanceMeter.classList.remove("hidden");
             distanceMeter.style.display = "inline-block";
-            
+
             if (distance === "far") {
                 distanceText.textContent = "↓ Move Closer";
                 distanceText.className = "text-orange-600 font-medium";
@@ -711,13 +766,13 @@ function updateFaceDetection(detected, faceBox, confidence, canvas) {
                 distanceText.className = "text-green-600 font-medium";
             }
         }
-        
+
         // Calculate and show lighting - clean compact panel
         const lighting = analyzeLighting(canvas);
         if (lightingMeter && lightingText && cameraRunning) {
             lightingMeter.classList.remove("hidden");
             lightingMeter.style.display = "inline-block";
-            
+
             if (lighting === "dark") {
                 lightingText.textContent = "🌙 Too Dark";
                 lightingText.className = "text-orange-600 font-medium";
@@ -729,13 +784,12 @@ function updateFaceDetection(detected, faceBox, confidence, canvas) {
                 lightingText.className = "text-green-600 font-medium";
             }
         }
-        
+
         // Confidence score hidden to reduce clutter
-        
+
         // Update guidance text - only for critical issues
         if (guidanceText && cameraRunning) {
             let guidance = "";
-            
             // Only show if there's a problem
             if (distance === "far") {
                 guidance = "📏 Move Closer";
@@ -748,7 +802,7 @@ function updateFaceDetection(detected, faceBox, confidence, canvas) {
             } else if (distance === "perfect" && lighting === "good") {
                 guidance = "✨ Verifying...";
             }
-            
+
             if (guidance) {
                 guidanceText.textContent = guidance;
                 guidanceText.className = "text-white text-sm font-semibold drop-shadow-lg";
@@ -758,11 +812,8 @@ function updateFaceDetection(detected, faceBox, confidence, canvas) {
                 guidanceText.style.display = "none";
             }
         }
-        
+
     } else {
-        // Clear face box
-        drawKioskFaceBox(false);
-        
         // Hide detection UI when no face
         if (distanceMeter) distanceMeter.classList.add("hidden");
         if (lightingMeter) lightingMeter.classList.add("hidden");
@@ -775,94 +826,51 @@ function updateFaceDetection(detected, faceBox, confidence, canvas) {
 }
 
 /* Draw face detection box on kiosk canvas */
-function drawKioskFaceBox(hasFace) {
+function drawKioskFaceBox() {
     const canvas = kioskFaceCanvas;
     const videoEl = video;
-    
+
     if (!canvas || !videoEl) {
         console.warn('❌ Canvas or video not found');
         return;
     }
-    
+
     // Match canvas size to video display size
     const rect = videoEl.getBoundingClientRect();
     if (canvas.width !== rect.width || canvas.height !== rect.height) {
         canvas.width = rect.width;
         canvas.height = rect.height;
     }
-    
+
     const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    if (hasFace) {
-        console.log('🟢 Drawing green face box');
-        // Draw centered face box (approximation)
-        const boxSize = Math.min(canvas.width, canvas.height) * 0.6;
-        const x = (canvas.width - boxSize) / 2;
-        const y = (canvas.height - boxSize) / 2;
-        
-        // Draw rounded rectangle with pulsing effect
-        ctx.strokeStyle = "#10b981"; // green-500
-        ctx.lineWidth = 4;
-        ctx.shadowColor = "#10b981";
-        ctx.shadowBlur = 15;
-        
-        // Rounded corners
-        const radius = 20;
-        ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + boxSize - radius, y);
-        ctx.arcTo(x + boxSize, y, x + boxSize, y + radius, radius);
-        ctx.lineTo(x + boxSize, y + boxSize - radius);
-        ctx.arcTo(x + boxSize, y + boxSize, x + boxSize - radius, y + boxSize, radius);
-        ctx.lineTo(x + radius, y + boxSize);
-        ctx.arcTo(x, y + boxSize, x, y + boxSize - radius, radius);
-        ctx.lineTo(x, y + radius);
-        ctx.arcTo(x, y, x + radius, y, radius);
-        ctx.closePath();
-        ctx.stroke();
-        
-        // Corner markers
-        const cornerSize = 25;
-        ctx.strokeStyle = "#10b981";
-        ctx.lineWidth = 5;
-        
-        // Top-left
-        ctx.beginPath();
-        ctx.moveTo(x + cornerSize, y);
-        ctx.lineTo(x, y);
-        ctx.lineTo(x, y + cornerSize);
-        ctx.stroke();
-        
-        // Top-right
-        ctx.beginPath();
-        ctx.moveTo(x + boxSize - cornerSize, y);
-        ctx.lineTo(x + boxSize, y);
-        ctx.lineTo(x + boxSize, y + cornerSize);
-        ctx.stroke();
-        
-        // Bottom-left
-        ctx.beginPath();
-        ctx.moveTo(x, y + boxSize - cornerSize);
-        ctx.lineTo(x, y + boxSize);
-        ctx.lineTo(x + cornerSize, y + boxSize);
-        ctx.stroke();
-        
-        // Bottom-right
-        ctx.beginPath();
-        ctx.moveTo(x + boxSize - cornerSize, y + boxSize);
-        ctx.lineTo(x + boxSize, y + boxSize);
-        ctx.lineTo(x + boxSize, y + boxSize - cornerSize);
-        ctx.stroke();
-    } else {
-        console.log('⚪ Clearing face box');
-    }
+
+    // ALWAYS DRAW STATIC BOX (guide) while camera is ON
+    const boxSize = Math.min(canvas.width, canvas.height) * 0.6;
+    const x = (canvas.width - boxSize) / 2;
+    const y = (canvas.height - boxSize) / 2;
+
+    // Outer glow stroke
+    ctx.save();
+    ctx.strokeStyle = "#10b981";
+    ctx.lineWidth = 5;
+    ctx.shadowColor = "rgba(16,185,129,0.9)";
+    ctx.shadowBlur = 14;
+    ctx.strokeRect(x, y, boxSize, boxSize);
+    ctx.restore();
+
+    // Inner subtle stroke for definition
+    ctx.strokeStyle = "rgba(16,185,129,0.25)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 3, y + 3, boxSize - 6, boxSize - 6);
 }
 
 // =======================
 // RECOGNITION LOOP
 // =======================
-const POLLING_DELAY_MS = 1500; // Slower for proper face detection - 1.5 seconds
+const POLLING_DELAY_MS = 400; // Faster polling for better UX - ~0.4 seconds
 
 async function sendFrame() {
     if (!cameraRunning || sendingFrame || !video.videoWidth) return;
@@ -871,14 +879,13 @@ async function sendFrame() {
     try {
         if (Date.now() < hardCooldownUntil) return;
 
-        // Show scanning state immediately
-        setScanScanning();
-        setScanMessage("Analyzing face...");
+        // (Intentionally left blank) do not overwrite backend messages here
 
         const canvas = document.createElement("canvas");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         canvas.getContext("2d").drawImage(video, 0, 0);
+
         const frame = canvas.toDataURL("image/jpeg", 0.75); // Better quality
 
         const res = await fetch("/kiosk/recognize", {
@@ -886,60 +893,44 @@ async function sendFrame() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ frame })
         });
-        
+
         const data = await res.json();
         console.log('🎯 Recognition response:', JSON.stringify(data));
         console.log('🔍 Face detected:', data.face_detected, '| Recognized:', data.recognized, '| Similarity:', data.similarity, '| Status:', data.status);
+
         if (!data) return;
-        
-        // Detect if face is present based on multiple indicators
-        const hasFace = data.face_detected === true || 
-                       data.recognized === true || 
-                       (data.face_box && Object.keys(data.face_box).length > 0) ||
-                       (data.status === "WAIT" && data.message && data.message.includes("Analyzing"));
-        
-        console.log('📦 Should draw box?', hasFace, '| Reason:', 
-                   data.face_detected ? 'face_detected' : 
-                   data.recognized ? 'recognized' : 
-                   data.face_box ? 'face_box' : 
-                   (data.message && data.message.includes("Analyzing")) ? 'analyzing' : 'none');
-        
+
+        // Detect if face is present based on explicit face_detected flag from backend
+        const hasFace = Boolean(data.face_detected);
+        console.log('📦 Should draw box?', hasFace, '| face_detected=', data.face_detected);
+
         // Update face detection UI with feedback
-        if (hasFace) {
-            drawKioskFaceBox(true);
-            updateFaceDetection(
-                true, 
-                data.face_box || null, 
-                data.similarity || 0,
-                canvas
-            );
-        } else {
-            drawKioskFaceBox(false);
-            updateFaceDetection(false, null, 0, null);
-        }
+        // Delegate draw/clear responsibility solely to updateFaceDetection()
+        // Provide a dummy centered box when backend doesn't provide face_box
+        updateFaceDetection(
+            hasFace,
+            data.face_box || { width: 1, height: 1 },
+            data.similarity || 0,
+            canvas
+        );
 
         // --- UI mapping for liveness WAIT messages ---
         if (data.status === "WAIT") {
             const msg = (data.message || "").toLowerCase();
-
             setScanScanning();
 
             if (msg.includes("no face")) {
                 setScanIdle();
                 setScanMessage("Please face the camera");
                 updateFaceDetection(false, null, 0, null);
-            }
-            else if (msg.includes("multiple")) {
+            } else if (msg.includes("multiple")) {
                 setScanIdle();
                 setScanMessage("Only one person at a time");
-            }
-            else if (msg.includes("analyzing")) {
-                setScanMessage("Please stay still… Verifying");
-            }
-            else if (msg.includes("pass ratio")) {
+            } else if (msg.includes("analyzing")) {
+                setScanMessage("Hold still • Verifying liveness");
+            } else if (msg.includes("pass ratio")) {
                 const m = msg.match(/pass ratio:\s*([0-9.]+)/i);
                 const ratio = m ? parseFloat(m[1]) : 0;
-
                 if (ratio < 0.4) {
                     setScanMessage("Please blink or move slightly");
                 } else if (ratio < 0.6) {
@@ -947,8 +938,7 @@ async function sendFrame() {
                 } else {
                     setScanMessage("Verified! Marking attendance…");
                 }
-            }
-            else {
+            } else {
                 setScanMessage("Verifying…");
             }
 
@@ -962,20 +952,20 @@ async function sendFrame() {
             setScanMessage("Face not recognized. Please try again");
             setScanError();
             hardCooldownUntil = Date.now() + RECOGNITION_COOLDOWN_MS;
-            // Clear detection UI
-            drawKioskFaceBox(false);
+
+            // Clear detection UI (static box remains until camera stop)
             if (distanceMeter) distanceMeter.classList.add("hidden");
             if (lightingMeter) lightingMeter.classList.add("hidden");
             if (guidanceText) guidanceText.style.display = "none";
+
             return;
         }
 
-        // Success - clear all detection UI
-        drawKioskFaceBox(false);
+        // Success - clear all detection UI (static box remains until camera stop)
         if (distanceMeter) distanceMeter.classList.add("hidden");
         if (lightingMeter) lightingMeter.classList.add("hidden");
         if (guidanceText) guidanceText.style.display = "none";
-        
+
         updateUI(data);
         hardCooldownUntil = Date.now() + RECOGNITION_COOLDOWN_MS;
 
@@ -989,6 +979,7 @@ async function sendFrame() {
 async function startRecognitionLoop() {
     if (recognitionRunning) return;
     recognitionRunning = true;
+
     while (recognitionRunning) {
         await sendFrame();
         await new Promise(r => setTimeout(r, POLLING_DELAY_MS));
@@ -997,8 +988,12 @@ async function startRecognitionLoop() {
 
 function stopRecognitionLoop() {
     recognitionRunning = false;
+
     // Clear all detection UI when stopping
-    drawKioskFaceBox(false);
+    if (kioskFaceCanvas) {
+        const ctx = kioskFaceCanvas.getContext('2d');
+        if (ctx) ctx.clearRect(0, 0, kioskFaceCanvas.width, kioskFaceCanvas.height);
+    }
     if (distanceMeter) {
         distanceMeter.classList.add("hidden");
         distanceMeter.style.display = "none";
@@ -1015,12 +1010,12 @@ function stopRecognitionLoop() {
 // =======================
 function showUnknownCard() {
     if (!unknownCard || !waitingBlock || !employeeCard) return;
-    
+
     waitingBlock.classList.add('hidden');
     employeeCard.classList.add('hidden');
     unknownCard.classList.remove('hidden');
     unknownCard.classList.add('animate-shake');
-    
+
     setScanError();
 
     setTimeout(() => {
@@ -1041,7 +1036,6 @@ const pinVerify = document.getElementById("pinVerify");
 const pinCancel = document.getElementById("pinCancel");
 const settingsPanel = document.getElementById("settingsPanel");
 const closeSettingsBtn = document.getElementById("closeSettingsBtn");
-
 const voiceToggle = document.getElementById("voiceToggle");
 const cameraSwitchToggle = document.getElementById("cameraSwitchToggle");
 const cameraStatusToggle = document.getElementById("cameraStatusToggle");
@@ -1052,9 +1046,8 @@ let pendingExit = false;
 function updateToggleUI(toggleElement, isEnabled) {
     const toggle = toggleElement.querySelector(".toggle-switch");
     const knob = toggleElement.querySelector(".toggle-knob");
-    
     if (!toggle || !knob) return;
-    
+
     if (isEnabled) {
         toggle.classList.remove("bg-gray-400");
         toggle.classList.add("bg-green-500");
@@ -1074,7 +1067,7 @@ if (openSettingsBtn && pinModal) {
         pinInput.value = "";
         pinModal.classList.remove("hidden");
         pinModal.classList.add("flex");
-        
+
         // Smooth modal animation
         const modalContent = document.getElementById("pinModalContent");
         setTimeout(() => {
@@ -1095,7 +1088,7 @@ if (exitKioskBtn && pinModal) {
         pinInput.value = "";
         pinModal.classList.remove("hidden");
         pinModal.classList.add("flex");
-        
+
         // Animate modal
         const modalContent = document.getElementById("pinModalContent");
         if (modalContent) {
@@ -1104,7 +1097,6 @@ if (exitKioskBtn && pinModal) {
                 modalContent.style.opacity = "1";
             }, 50);
         }
-        
         setTimeout(() => pinInput.focus(), 100);
     });
 }
@@ -1113,13 +1105,12 @@ if (pinCancel && pinModal) {
     pinCancel.addEventListener("click", () => {
         pendingExit = false;
         const modalContent = document.getElementById("pinModalContent");
-        
+
         // Smooth close animation
         if (modalContent) {
             modalContent.style.transform = "scale(0.95)";
             modalContent.style.opacity = "0";
         }
-        
         setTimeout(() => {
             pinModal.classList.add("hidden");
             pinModal.classList.remove("flex");
@@ -1130,6 +1121,7 @@ if (pinCancel && pinModal) {
 if (pinVerify) {
     pinVerify.addEventListener("click", async () => {
         const pin = (pinInput.value || "").trim();
+
         if (!pin) {
             pinInput.classList.add('animate-shake');
             setTimeout(() => pinInput.classList.remove('animate-shake'), 500);
@@ -1142,27 +1134,31 @@ if (pinVerify) {
             console.log('🔍 Exit Kiosk - Sending PIN to /kiosk/exit');
             pinVerify.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
             pinVerify.disabled = true;
+
             try {
                 const res = await fetch('/kiosk/exit', {
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
                     },
                     body: JSON.stringify({ pin })
                 });
-                
+
                 console.log('🔍 Exit Response Status:', res.status);
                 const data = await res.json().catch(err => {
                     console.error('Failed to parse response:', err);
                     return {};
                 });
-                
                 console.log('🔍 Exit Response Data:', data);
-                
+
+                try {
+                    showCameraInactive();
+                } catch (e) { /* ignore */ }
+
                 if (res.ok && data.success) {
                     console.log('✅ Exit successful, redirecting to:', data.redirect);
-                    
+
                     // Professional exit notification
                     const exitMsg = document.createElement('div');
                     exitMsg.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] animate-fadeIn';
@@ -1181,13 +1177,14 @@ if (pinVerify) {
                         </div>
                     `;
                     document.body.appendChild(exitMsg);
-                    
+
                     setTimeout(() => {
                         window.location.href = data.redirect || '/dashboard';
                     }, 1500);
+
                 } else {
                     console.error('❌ Exit failed:', data.message);
-                    
+
                     // Professional error notification
                     const errorMsg = document.createElement('div');
                     errorMsg.className = 'fixed top-4 right-4 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] animate-slideInRight';
@@ -1201,12 +1198,12 @@ if (pinVerify) {
                         </div>
                     `;
                     document.body.appendChild(errorMsg);
-                    
                     setTimeout(() => errorMsg.remove(), 4000);
-                    
+
                     pinInput.value = '';
                     pinInput.focus();
                 }
+
             } catch (err) {
                 console.error('❌ Network error during exit:', err);
                 alert('Network error. Please check your connection and try again.');
@@ -1220,6 +1217,7 @@ if (pinVerify) {
 
         pinVerify.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         pinVerify.disabled = true;
+
         try {
             const res = await fetch('/kiosk/verify_pin', {
                 method: 'POST',
@@ -1235,12 +1233,12 @@ if (pinVerify) {
                     modalContent.style.transform = "scale(0.95)";
                     modalContent.style.opacity = "0";
                 }
-                
+
                 setTimeout(() => {
                     pinModal.classList.add("hidden");
                     pinModal.classList.remove("flex");
                     settingsPanel.style.transform = 'translateX(0)';
-                    
+
                     // Enable all controls
                     const adminControls = settingsPanel.querySelectorAll('select, button');
                     adminControls.forEach(ctrl => {
@@ -1249,10 +1247,16 @@ if (pinVerify) {
                         ctrl.style.cursor = 'pointer';
                     });
                 }, 300);
-                
+
                 console.log('✅ Admin access granted');
+
                 // Populate admin camera list before showing settings
-                try { await loadAdminCameras(); } catch (e) { console.error(e); }
+                try {
+                    await loadAdminCameras();
+                } catch (e) {
+                    console.error(e);
+                }
+
             } else {
                 alert(data.message || "Invalid PIN");
                 pinInput.value = "";
@@ -1273,18 +1277,18 @@ const skipPinBtn = document.getElementById("skipPin");
 if (skipPinBtn && pinModal && settingsPanel) {
     skipPinBtn.addEventListener("click", () => {
         console.log('👁️ Settings opened in view-only mode');
-        
+
         const modalContent = document.getElementById("pinModalContent");
         if (modalContent) {
             modalContent.style.transform = "scale(0.95)";
             modalContent.style.opacity = "0";
         }
-        
+
         setTimeout(() => {
             pinModal.classList.add("hidden");
             pinModal.classList.remove("flex");
             settingsPanel.style.transform = 'translateX(0)';
-            
+
             // Disable controls in view mode
             const adminControls = settingsPanel.querySelectorAll('select, button');
             adminControls.forEach(ctrl => {
@@ -1325,7 +1329,7 @@ if (cameraSwitchToggle) {
     cameraSwitchToggle.addEventListener("click", () => {
         cameraSwitchAllowed = !cameraSwitchAllowed;
         updateToggleUI(cameraSwitchToggle, cameraSwitchAllowed);
-        
+
         if (cameraSelect) {
             if (cameraRunning && !cameraSwitchAllowed) {
                 cameraSelect.disabled = true;
@@ -1335,7 +1339,7 @@ if (cameraSwitchToggle) {
                 cameraSelect.classList.remove("opacity-50", "cursor-not-allowed");
             }
         }
-        
+
         console.log("📹 Camera Switch:", cameraSwitchAllowed ? "ALLOWED" : "BLOCKED");
     });
 }
@@ -1344,6 +1348,7 @@ if (cameraStatusToggle) {
     cameraStatusToggle.addEventListener("click", () => {
         showCameraStatus = !showCameraStatus;
         updateToggleUI(cameraStatusToggle, showCameraStatus);
+
         if (cameraStatusBlock) {
             if (showCameraStatus) {
                 cameraStatusBlock.classList.remove('hidden');
@@ -1351,6 +1356,7 @@ if (cameraStatusToggle) {
                 cameraStatusBlock.classList.add('hidden');
             }
         }
+
         console.log("ℹ️ Show Camera Status:", showCameraStatus ? "ON" : "OFF");
     });
 }
@@ -1359,7 +1365,7 @@ if (cameraStatusToggle) {
 async function loadAdminCameras() {
     try {
         if (!adminCameraSelect) return;
-        
+
         // Request permission first for device labels
         try {
             const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -1367,10 +1373,10 @@ async function loadAdminCameras() {
         } catch (e) {
             console.warn('Admin camera permission needed');
         }
-        
+
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(d => d.kind === 'videoinput');
-        
+
         adminCameraSelect.innerHTML = '';
         videoDevices.forEach((d, idx) => {
             const o = document.createElement('option');
@@ -1378,7 +1384,26 @@ async function loadAdminCameras() {
             o.textContent = d.label || `Camera ${idx + 1} (${d.deviceId.substring(0, 8)}...)`;
             adminCameraSelect.appendChild(o);
         });
-        
+
+        // Add change event listener to restart camera with new device
+        adminCameraSelect.addEventListener('change', async () => {
+            console.log('📹 Camera changed, restarting with:', adminCameraSelect.value);
+            if (cameraRunning) {
+                // Stop current camera
+                if (stream) {
+                    stream.getTracks().forEach(t => t.stop());
+                    video.srcObject = null;
+                    stream = null;
+                }
+                cameraRunning = false;
+                
+                // Restart with new camera
+                if (startBtn) {
+                    startBtn.click();
+                }
+            }
+        });
+
         console.log(`📹 Admin: Loaded ${videoDevices.length} camera(s)`);
     } catch (err) {
         console.error('❌ Error loading admin cameras:', err);

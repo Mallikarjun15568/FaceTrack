@@ -44,10 +44,14 @@ def admin_dashboard():
 
     # 5) Recent Attendance (last 5)
     cursor.execute("""
-        SELECT e.full_name, a.date, a.time 
+        SELECT e.full_name, 
+               DATE(a.check_in_time) AS date, 
+               TIME(a.check_in_time) AS time,
+               a.status
         FROM attendance a
         JOIN employees e ON e.id = a.employee_id
-        ORDER BY a.id DESC
+        WHERE a.check_in_time IS NOT NULL
+        ORDER BY a.check_in_time DESC
         LIMIT 5
     """)
     recent_attendance = cursor.fetchall()

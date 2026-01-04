@@ -395,24 +395,42 @@ FaceTrack/
 
 ## 🗄️ Database Schema
 
-### Users Table
+### Users Table (Authentication)
 
 ```sql
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    emp_id VARCHAR(20) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
+    username VARCHAR(80) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     role ENUM('admin', 'hr', 'employee') DEFAULT 'employee',
-    department VARCHAR(50),
-    status ENUM('Active', 'Inactive', 'On Leave') DEFAULT 'Active',
-    face_enrolled BOOLEAN DEFAULT FALSE,
-    profile_photo VARCHAR(255),
+    email VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_emp_id (emp_id),
-    INDEX idx_email (email)
+    INDEX idx_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### Employees Table (Master Data)
+
+```sql
+CREATE TABLE employees (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNIQUE,
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(150) UNIQUE,
+    phone VARCHAR(20),
+    gender VARCHAR(20),
+    job_title VARCHAR(100),
+    department_id INT,
+    join_date DATE,
+    status VARCHAR(20) DEFAULT 'Active',
+    photo_path TEXT,
+    profile_photo VARCHAR(255),
+    face_embedding LONGBLOB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
+    INDEX idx_email (email),
+    INDEX idx_department (department_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
@@ -421,20 +439,22 @@ CREATE TABLE users (
 ```sql
 CREATE TABLE attendance (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    emp_id VARCHAR(20) NOT NULL,
-    date DATE NOT NULL,
-    check_in TIME,
-    check_out TIME,
-    total_hours DECIMAL(4,2),
-    status ENUM('Present', 'Absent', 'Late', 'Half-Day') DEFAULT 'Present',
-    snapshot_path VARCHAR(255),
+    employee_id INT NOT NULL,
+    date DATE NOT NULL,                    -- Legacy column (not used in queries)
+    status ENUM('present','late','absent','check-in','check-out','already') DEFAULT 'present',
+    captured_photo_path TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_emp_date (emp_id, date),
-    FOREIGN KEY (emp_id) REFERENCES users(emp_id) ON DELETE CASCADE,
-    INDEX idx_date (date),
-    INDEX idx_emp_id (emp_id)
+    timestamp DATETIME,                     -- Last action timestamp
+    check_in_time DATETIME,                 -- Primary check-in datetime (used in all queries)
+    check_out_time DATETIME,                -- Check-out datetime
+    working_hours FLOAT,                    -- Calculated hours (check_out - check_in)
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+    INDEX idx_employee_date (employee_id, check_in_time),
+    INDEX idx_date (date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- IMPORTANT: All queries use DATE(check_in_time) as primary date field
+-- Legacy 'date' column exists for backward compatibility but is NOT used
 ```
 
 ### Face Encodings Table
@@ -442,12 +462,11 @@ CREATE TABLE attendance (
 ```sql
 CREATE TABLE face_data (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    emp_id VARCHAR(20) NOT NULL,
-    embedding BLOB NOT NULL,         -- 512-dim float32 array (2048 bytes)
+    emp_id INT NOT NULL,
+    embedding LONGBLOB NOT NULL,     -- 512-dim float32 array (2048 bytes)
     image_path VARCHAR(255),
-    quality_score FLOAT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (emp_id) REFERENCES users(emp_id) ON DELETE CASCADE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (emp_id) REFERENCES employees(id) ON DELETE CASCADE,
     INDEX idx_emp_id (emp_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```

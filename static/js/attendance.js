@@ -119,15 +119,43 @@ function renderAttendance(records) {
         const photo = r.photo || "/static/default_user.png";
         const snapshot = r.snapshot || "/static/default_snapshot.png";
 
-        // Format date-time split
+        // Format date-time split (MySQL datetime string - no timezone conversion)
         const formatDateTime = (datetime) => {
             if (!datetime || datetime === "-") return "<span class='text-gray-400'>-</span>";
             try {
-                const date = new Date(datetime);
-                const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-                const timeStr = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+                // MySQL returns datetime in format: "2026-01-03 22:16:14"
+                // Parse manually to avoid timezone conversion issues
+                const parts = datetime.split(' ');
+                if (parts.length !== 2) return datetime;
+                
+                const dateParts = parts[0].split('-');  // [2026, 01, 03]
+                const timeParts = parts[1].split(':');  // [22, 16, 14]
+                
+                if (dateParts.length !== 3 || timeParts.length !== 3) return datetime;
+                
+                const year = parseInt(dateParts[0]);
+                const month = parseInt(dateParts[1]);
+                const day = parseInt(dateParts[2]);
+                const hour = parseInt(timeParts[0]);
+                const minute = parseInt(timeParts[1]);
+                
+                // Month names
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                
+                // Create date to get day of week
+                const date = new Date(year, month - 1, day);
+                const dayName = dayNames[date.getDay()];
+                
+                // Format: "Sat, 03 Jan 2026" (top line)
+                const dateStr = `${dayName}, ${day.toString().padStart(2, '0')} ${monthNames[month - 1]} ${year}`;
+                
+                // Format: "22:16" (bottom line)
+                const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                
                 return `<div class='text-sm'><div class='font-medium text-gray-900'>${dateStr}</div><div class='text-gray-500 text-xs mt-0.5'>${timeStr}</div></div>`;
-            } catch {
+            } catch (e) {
+                console.error('Date parse error:', e, datetime);
                 return datetime;
             }
         };

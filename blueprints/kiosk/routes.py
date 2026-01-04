@@ -207,7 +207,7 @@ def kiosk_exit():
     # Sanitize PIN input (digits only)
     pin = sanitize_pin(pin_raw)
     if pin is None:
-        logger.warning("❌ Invalid PIN format")
+        logger.warning("Invalid PIN format")
         return jsonify({"success": False, "message": "Invalid PIN format"}), 400
 
     # Stricter brute-force protection

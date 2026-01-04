@@ -147,6 +147,12 @@ def api_attendance():
         if r.get("photo"):
             r["photo"] = norm(r["photo"])
         
+        # Convert datetime objects to string format (YYYY-MM-DD HH:MM:SS) without timezone
+        if r.get("check_in_time") and hasattr(r["check_in_time"], 'strftime'):
+            r["check_in_time"] = r["check_in_time"].strftime('%Y-%m-%d %H:%M:%S')
+        if r.get("check_out_time") and hasattr(r["check_out_time"], 'strftime'):
+            r["check_out_time"] = r["check_out_time"].strftime('%Y-%m-%d %H:%M:%S')
+        
         # Override status if on approved leave
         if r.get("is_on_leave") and r["is_on_leave"] > 0:
             r["status"] = "on_leave"
