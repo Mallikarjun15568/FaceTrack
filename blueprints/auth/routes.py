@@ -54,7 +54,12 @@ def login():
             session["username"] = user["username"]
             session["role"] = user.get("role")
 
+
             if employee:
+                # STEP 6: Block login if employee is not active
+                if employee.get("status") != "active":
+                    flash("Your account is inactive. Contact admin.", "danger")
+                    return redirect(url_for("auth.logout"))
                 session['employee_id'] = employee['id']
                 session['full_name'] = employee.get('full_name') or user.get('username')
             else:

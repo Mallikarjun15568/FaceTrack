@@ -114,7 +114,7 @@ def api_attendance():
                 WHERE h.holiday_date = DATE(a.check_in_time)
             ) AS is_holiday
         FROM attendance a
-        JOIN employees e ON e.id = a.employee_id
+        JOIN employees e ON e.id = a.employee_id AND e.status = 'active'
         WHERE 1=1
     """
 

@@ -1,42 +1,38 @@
+        // =======================
+        // ACTIVATE EMPLOYEE LOGIC
+        // =======================
+        window.activateEmployee = function (empId) {
+            fetch(`/employees/activate/${empId}`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) location.reload();
+                else alert("Failed to activate employee");
+            });
+        };
 document.addEventListener("DOMContentLoaded", function () {
 
     // =======================
     // ELEMENTS
     // =======================
-    const selectAll = document.getElementById("selectAll");
     const globalSearch = document.getElementById("globalSearch");
     const clearSearch = document.getElementById("clearSearch");
-    const bulkDeleteBtn = document.getElementById("bulkDeleteBtn");
-    const selectedCountEl = document.getElementById("selectedCount");
-
-    function rowCheckboxes() {
-        return Array.from(document.querySelectorAll(".rowCheckbox"));
-    }
 
 
     // =======================
     // UPDATE SELECTED COUNT
     // =======================
-    function updateSelectedCount() {
-        const count = rowCheckboxes().filter(cb => cb.checked).length;
-        selectedCountEl.innerText = count;
-        bulkDeleteBtn.disabled = count === 0;
-    }
+    // Bulk delete and selected count logic removed
 
 
     // =======================
     // SELECT ALL CHECKBOX
     // =======================
-    selectAll?.addEventListener("change", (e) => {
-        rowCheckboxes().forEach(cb => cb.checked = e.target.checked);
-        updateSelectedCount();
-    });
-
-    document.addEventListener("change", (e) => {
-        if (e.target && e.target.classList.contains("rowCheckbox")) {
-            updateSelectedCount();
-        }
-    });
+    // Select all and row checkbox logic removed
 
 
     // =======================
@@ -58,114 +54,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     // =======================
-    // BULK DELETE
-    // =======================
-    bulkDeleteBtn?.addEventListener("click", async () => {
-
-        const ids = rowCheckboxes().filter(c => c.checked).map(c => c.value);
-
-        if (ids.length === 0) return;
-
-        Swal.fire({
-            title: "Delete Selected?",
-            text: `${ids.length} employees will be permanently deleted.`,
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Yes, delete",
-        }).then(async (result) => {
-
-            if (!result.isConfirmed) return;
-
-            try {
-                // ✅ CSRF Token included with null safety
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                if (!csrfToken) {
-                    Swal.fire("Security error", "CSRF token missing", "error");
-                    return;
-                }
-                
-                const resp = await fetch("/employees/bulk_delete", {
-                    method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": csrfToken
-                    },
-                    body: JSON.stringify({ ids })
-                });
-
-                const data = await resp.json();
-
-                if (data.success) {
-                    Swal.fire({
-                        icon: "success",
-                        title: "Deleted!",
-                        timer: 1200,
-                        showConfirmButton: false
-                    });
-                    // 🟡 POLISH: Reset selectAll before reload
-                    selectAll && (selectAll.checked = false);
-                    setTimeout(() => location.reload(), 1200);
-                }
-
-            } catch (err) {
-                Swal.fire("Error", "Could not delete selected employees", "error");
-                console.error(err);
-            }
-
-        });
-    });
-
-
-    // =======================
-    // SINGLE DELETE FUNCTION
-    // (Used directly in employees.html)
-    // =======================
-    window.deleteSingle = function (empId) {
-
-        Swal.fire({
-            title: "Confirm Delete",
-            text: "Employee will be permanently deleted.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Delete",
-        }).then(async (result) => {
-
-            if (!result.isConfirmed) return;
-
-            try {
-                // ✅ CSRF Token included with null safety
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                if (!csrfToken) {
-                    Swal.fire("Security error", "CSRF token missing", "error");
-                    return;
-                }
-                
-                const resp = await fetch("/employees/delete/" + empId, {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": csrfToken
-                    }
-                });
-                const data = await resp.json();
-
-                if (data.success) {
-                    Swal.fire({
-                        icon: "success",
-                        title: "Employee Deleted",
-                        timer: 1300,
-                        showConfirmButton: false
-                    });
-                    setTimeout(() => location.reload(), 1300);
-                }
-
-            } catch (err) {
-                Swal.fire("Error", "Failed to delete employee", "error");
-                console.error(err);
-            }
-
-        });
-
-    };
+    // Bulk delete and single delete logic removed
 
 
     // =======================
@@ -190,5 +79,54 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("resetFilters")?.addEventListener("click", () => {
         window.location.search = "";
     });
+
+
+        // =======================
+        // DEACTIVATE MODAL LOGIC
+        // =======================
+        let deactivateEmpId = null;
+        const deactivateModal = document.getElementById("deactivateModal");
+        const confirmDeactivateBtn = document.getElementById("confirmDeactivateBtn");
+        // CSRF token
+        const csrfToken = document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute("content");
+
+        // Open modal (called from button)
+            window.openDeactivateModal = function (empId) {
+                deactivateEmpId = empId;
+                deactivateModal.classList.remove("hidden");
+            };
+
+        // Close modal
+            window.closeDeactivateModal = function () {
+                deactivateEmpId = null;
+                deactivateModal.classList.add("hidden");
+                // Force repaint for Chrome overlay bug
+                deactivateModal.offsetHeight;
+            };
+
+        // Confirm deactivate
+        confirmDeactivateBtn?.addEventListener("click", () => {
+            if (!deactivateEmpId) return;
+
+            fetch(`/employees/deactivate/${deactivateEmpId}`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrfToken
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                closeDeactivateModal();   // 🔥 MOST IMPORTANT
+                if (data.success) {
+                    location.reload();
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                closeDeactivateModal();   // 🔥 EVEN ON ERROR
+            });
+        });
 
 });

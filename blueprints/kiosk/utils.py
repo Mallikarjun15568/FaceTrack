@@ -104,6 +104,7 @@ def load_embeddings():
         FROM employees e
         LEFT JOIN departments d ON e.department_id = d.id
         JOIN face_data f ON f.emp_id = e.id
+        WHERE e.status = 'active'
     """)
 
     embeddings = []

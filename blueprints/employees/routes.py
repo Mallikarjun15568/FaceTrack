@@ -1,4 +1,62 @@
+# 🔴 Blueprint import must be first
 from . import bp
+
+# 🔴 Auth decorators must be imported before use
+from blueprints.auth.utils import login_required, role_required
+# ============================================================
+# DEACTIVATE EMPLOYEE (SOFT DELETE)
+# ============================================================
+@bp.route("/deactivate/<int:emp_id>", methods=["POST"])
+@login_required
+@role_required("admin", "hr")
+def deactivate_employee(emp_id):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+        UPDATE employees
+        SET status = 'inactive'
+        WHERE id = %s
+    """, (emp_id,))
+    db.commit()
+
+    log_audit(
+        user_id=session.get("user_id"),
+        action="EMPLOYEE_DEACTIVATED",
+        module="employees",
+        details=f"Employee ID {emp_id} deactivated",
+        ip_address=request.remote_addr
+    )
+
+    return jsonify({"success": True})
+
+
+# ============================================================
+# ACTIVATE EMPLOYEE
+# ============================================================
+@bp.route("/activate/<int:emp_id>", methods=["POST"])
+@login_required
+@role_required("admin", "hr")
+def activate_employee(emp_id):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+        UPDATE employees
+        SET status = 'active'
+        WHERE id = %s
+    """, (emp_id,))
+    db.commit()
+
+    log_audit(
+        user_id=session.get("user_id"),
+        action="EMPLOYEE_ACTIVATED",
+        module="employees",
+        details=f"Employee ID {emp_id} activated",
+        ip_address=request.remote_addr
+    )
+
+    return jsonify({"success": True})
 from flask import (
     render_template, request, redirect,
     url_for, flash, session, jsonify
@@ -32,9 +90,13 @@ def list_employees():
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
+
     department_id = request.args.get("department_id")
     enrolled = request.args.get("enrolled")
     sort = request.args.get("sort", "newest")
+
+    # STEP 3: Status filter (default active)
+    status_filter = request.args.get("status", "active")
 
     # 🔧 FIX 2: Pagination optimization for employee role
     if role == "employee":
@@ -63,6 +125,11 @@ def list_employees():
         where_clauses.append("fd.embedding IS NOT NULL")
     elif enrolled == "not_enrolled":
         where_clauses.append("fd.embedding IS NULL")
+
+    # STEP 3: Status filter logic
+    if status_filter != "all":
+        where_clauses.append("e.status = %s")
+        params.append(status_filter)
 
     where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
@@ -162,7 +229,7 @@ def add_employee():
         department_id = request.form.get("department_id")
         job_title = request.form.get("job_title")
         join_date = request.form.get("joining_date")
-        status = request.form.get("status")
+        status = "active"
 
         # Validate email format
         from utils.validators import validate_email
@@ -298,74 +365,8 @@ def add_employee():
 # ============================================================
 # DELETE EMPLOYEE
 # ============================================================
-@bp.route("/delete/<int:emp_id>", methods=["POST"])
-@login_required
-@role_required("admin", "hr")
-def delete_employee(emp_id):
-
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-
-    # 🔧 FIX 4: Transaction safety
-    try:
-        db.start_transaction()
-    except AttributeError:
-        pass
-
-    try:
-        cursor.execute("SELECT photo_path FROM employees WHERE id=%s", (emp_id,))
-        row = cursor.fetchone()
-
-        cursor.execute("DELETE FROM employees WHERE id=%s", (emp_id,))
-        db.commit()
-
-        # Delete photo after successful DB commit
-        if row and row.get("photo_path") and os.path.exists(row["photo_path"]):
-            os.remove(row["photo_path"])
-
-        return jsonify({"success": True})
-        
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error deleting employee {emp_id}: {e}", exc_info=True)
-        return jsonify({"success": False, "error": str(e)}), 500
 
 
-# ============================================================
-# BULK DELETE
-# ============================================================
-@bp.route("/bulk_delete", methods=["POST"])
-@login_required
-@role_required("admin", "hr")
-def bulk_delete():
-
-    data = request.get_json()
-    ids = data.get("ids", [])
-
-    if not ids:
-        return jsonify({"success": False, "error": "No IDs provided"}), 400
-
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-
-    # 🔧 FIX 4: Transaction safety
-    try:
-        db.start_transaction()
-    except AttributeError:
-        pass
-
-    try:
-        placeholders = ",".join(["%s"] * len(ids))
-        query = "DELETE FROM employees WHERE id IN (" + placeholders + ")"
-        cursor.execute(query, tuple(ids))
-        db.commit()
-
-        return jsonify({"success": True})
-        
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error bulk deleting employees: {e}", exc_info=True)
-        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # ============================================================
