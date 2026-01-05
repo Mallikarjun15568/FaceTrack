@@ -11,7 +11,7 @@ from utils.db import get_db
 from blueprints.auth.utils import login_required, role_required
 from utils.face_encoder import face_encoder, invalidate_embeddings_cache
 from utils.logger import logger
-from db_utils import log_audit
+from db_utils import log_audit, execute
 
 
 # ============================================================
@@ -20,22 +20,42 @@ from db_utils import log_audit
 @bp.route("/", methods=["GET"])
 @login_required
 def list_employees():
+    # ✅ ROLE-BASED ACCESS CONTROL
+    role = session.get("role")
+    employee_id = session.get("employee_id")
+
+    # Security check: employee must have employee_id
+    if role == "employee" and not employee_id:
+        flash("Invalid session. Please login again.", "danger")
+        return redirect(url_for("auth.logout"))
 
     db = get_db()
     cursor = db.cursor(dictionary=True)
-
-    page = int(request.args.get("page", 1))
-    per_page = 10
-    offset = (page - 1) * per_page
 
     department_id = request.args.get("department_id")
     enrolled = request.args.get("enrolled")
     sort = request.args.get("sort", "newest")
 
+    # 🔧 FIX 2: Pagination optimization for employee role
+    if role == "employee":
+        page = 1
+        per_page = 1
+        offset = 0
+    else:
+        page = int(request.args.get("page", 1))
+        per_page = 10
+        offset = (page - 1) * per_page
+
     where_clauses = []
     params = []
 
-    if department_id:
+    # 🔒 DATA-LEVEL SECURITY: Employee sees only their own record
+    if role == "employee":
+        where_clauses.append("e.id = %s")
+        params.append(employee_id)
+
+    # 🔧 FIX 1: Department filter ignored for employees (security)
+    if department_id and role != "employee":
         where_clauses.append("e.department_id = %s")
         params.append(department_id)
 
@@ -103,7 +123,8 @@ def list_employees():
         start=offset,
         end=offset + len(employees),
         querystring=qs,
-        sort=sort
+        sort=sort,
+        current_role=role
     )
 
 
@@ -123,54 +144,81 @@ def add_employee():
         departments = cursor.fetchall()
         return render_template("add_employee.html", departments=departments)
 
-    full_name = request.form.get("full_name")
-    email = request.form.get("email")
-    phone = request.form.get("phone")
-    gender = request.form.get("gender")
-    department_id = request.form.get("department_id")
-    job_title = request.form.get("job_title")
-    join_date = request.form.get("joining_date")
-    status = request.form.get("status")
-
-    # Validate email format
-    from utils.validators import validate_email
-    is_valid_email, email_error = validate_email(email)
-    if not is_valid_email:
-        flash(f"Invalid email: {email_error}", "danger")
-        return redirect(url_for("employees.add_employee"))
-
-    photo_file = request.files.get("photo")
-
-    if not photo_file:
-        flash("Please upload a photo!", "danger")
-        return redirect(url_for("employees.add_employee"))
-    
-    # Validate file upload
-    from utils.validators import validate_image_upload
-    is_valid, error_msg = validate_image_upload(photo_file)
-    if not is_valid:
-        flash(f"Photo upload failed: {error_msg}", "danger")
-        return redirect(url_for("employees.add_employee"))
-
-    cursor.execute("""
-        INSERT INTO employees (full_name, email, phone, gender, job_title, department_id, join_date, status, photo_path, face_embedding)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, '', NULL)
-    """, (full_name, email, phone, gender, job_title, department_id, join_date, status))
-    db.commit()
-
-    employee_id = cursor.lastrowid
-
-    folder_path = f"static/uploads/employees/{employee_id}/"
-    os.makedirs(folder_path, exist_ok=True)
-
-    filename = secure_filename(photo_file.filename)
-    image_path = os.path.join(folder_path, filename)
-    photo_file.save(image_path)
+    # ✅ START TRANSACTION
+    try:
+        db.start_transaction()
+    except AttributeError:
+        # Fallback for older MySQL connector versions
+        pass
 
     try:
-        # Use InsightFace for consistent embeddings
+        full_name = request.form.get("full_name")
+        email = request.form.get("email")
+        # 🔧 FIX 5: Merge country_code with phone
+        country_code = request.form.get("country_code", "")
+        phone_raw = request.form.get("phone", "")
+        phone = f"{country_code}{phone_raw}" if country_code and phone_raw else phone_raw
+        gender = request.form.get("gender")
+        department_id = request.form.get("department_id")
+        job_title = request.form.get("job_title")
+        join_date = request.form.get("joining_date")
+        status = request.form.get("status")
+
+        # Validate email format
+        from utils.validators import validate_email
+        is_valid_email, email_error = validate_email(email)
+        if not is_valid_email:
+            db.rollback()
+            flash(f"Invalid email: {email_error}", "danger")
+            return redirect(url_for("employees.add_employee"))
+
+        photo_file = request.files.get("photo")
+
+        if not photo_file:
+            db.rollback()
+            flash("Please upload a photo!", "danger")
+            return redirect(url_for("employees.add_employee"))
+        
+        # Validate file upload
+        from utils.validators import validate_image_upload
+        is_valid, error_msg = validate_image_upload(photo_file)
+        if not is_valid:
+            db.rollback()
+            flash(f"Photo upload failed: {error_msg}", "danger")
+            return redirect(url_for("employees.add_employee"))
+
+        # PRE-CHECK: avoid duplicate employee by email
+        cursor.execute("SELECT id FROM employees WHERE email=%s", (email,))
+        if cursor.fetchone():
+            db.rollback()
+            flash("Employee with this email already exists", "danger")
+            return redirect(url_for("employees.add_employee"))
+
+        # ❌ NO COMMIT HERE - Insert employee without committing
+        from mysql.connector import IntegrityError
+        cursor.execute("""
+            INSERT INTO employees (full_name, email, phone, gender, job_title, department_id, join_date, status, photo_path, face_embedding)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, '', NULL)
+        """, (full_name, email, phone, gender, job_title, department_id, join_date, status))
+        # ❌ NO db.commit() HERE
+
+        employee_id = cursor.lastrowid
+
+        # Save photo to disk
+        folder_path = f"static/uploads/employees/{employee_id}/"
+        os.makedirs(folder_path, exist_ok=True)
+
+        filename = secure_filename(photo_file.filename)
+        image_path = os.path.join(folder_path, filename)
+        photo_file.save(image_path)
+
+        # Process face embedding
         img = cv2.imread(image_path)
         if img is None:
+            db.rollback()
+            # 🔧 FIX 3: Filesystem cleanup on rollback
+            if os.path.exists(image_path):
+                os.remove(image_path)
             flash("Failed to read uploaded photo!", "danger")
             return redirect(url_for("employees.add_employee"))
 
@@ -178,6 +226,10 @@ def add_employee():
         embedding = face_encoder.get_embedding(rgb)
 
         if embedding is None:
+            db.rollback()
+            # 🔧 FIX 3: Filesystem cleanup on rollback
+            if os.path.exists(image_path):
+                os.remove(image_path)
             flash("No face detected in the photo!", "danger")
             logger.warning(f"No face detected in uploaded photo for employee: {full_name}")
             return redirect(url_for("employees.add_employee"))
@@ -198,10 +250,17 @@ def add_employee():
             VALUES (%s, %s, %s, NOW())
         """, (employee_id, embedding_bytes, image_path))
         
+        # ✅ SINGLE COMMIT - Only at the end after all operations
         db.commit()
 
         # Invalidate cache so new embedding is loaded
         invalidate_embeddings_cache()
+
+        # Create leave_balance row for new employee (MANDATORY for admin credit to work)
+        execute("""
+            INSERT INTO leave_balance (employee_id, casual_leave, sick_leave, vacation_leave, work_from_home)
+            VALUES (%s, 0, 0, 0, 0)
+        """, (employee_id,))
 
         # Audit log
         log_audit(
@@ -215,8 +274,22 @@ def add_employee():
         flash("Employee added successfully!", "success")
         logger.info(f"Employee added: {full_name} (ID: {employee_id})")
         return redirect(url_for("employees.list_employees"))
-    except Exception as e:
+        
+    except IntegrityError as e:
+        # ✅ ROLLBACK on database constraint error
         db.rollback()
+        # 🔧 FIX 3: Filesystem cleanup on rollback
+        if 'image_path' in locals() and os.path.exists(image_path):
+            os.remove(image_path)
+        logger.error(f"Database integrity error adding employee: {e}", exc_info=True)
+        flash("Failed to add employee due to database constraint.", "danger")
+        return redirect(url_for("employees.add_employee"))
+    except Exception as e:
+        # ✅ ROLLBACK on any other error
+        db.rollback()
+        # 🔧 FIX 3: Filesystem cleanup on rollback
+        if 'image_path' in locals() and os.path.exists(image_path):
+            os.remove(image_path)
         logger.error(f"Error adding employee: {e}", exc_info=True)
         flash(f"Error adding employee: {str(e)}", "danger")
         return redirect(url_for("employees.add_employee"))
@@ -233,16 +306,29 @@ def delete_employee(emp_id):
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
-    cursor.execute("SELECT photo_path FROM employees WHERE id=%s", (emp_id,))
-    row = cursor.fetchone()
+    # 🔧 FIX 4: Transaction safety
+    try:
+        db.start_transaction()
+    except AttributeError:
+        pass
 
-    cursor.execute("DELETE FROM employees WHERE id=%s", (emp_id,))
-    db.commit()
+    try:
+        cursor.execute("SELECT photo_path FROM employees WHERE id=%s", (emp_id,))
+        row = cursor.fetchone()
 
-    if row and row.get("photo_path") and os.path.exists(row["photo_path"]):
-        os.remove(row["photo_path"])
+        cursor.execute("DELETE FROM employees WHERE id=%s", (emp_id,))
+        db.commit()
 
-    return jsonify({"success": True})
+        # Delete photo after successful DB commit
+        if row and row.get("photo_path") and os.path.exists(row["photo_path"]):
+            os.remove(row["photo_path"])
+
+        return jsonify({"success": True})
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting employee {emp_id}: {e}", exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # ============================================================
@@ -262,12 +348,24 @@ def bulk_delete():
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
-    placeholders = ",".join(["%s"] * len(ids))
-    query = "DELETE FROM employees WHERE id IN (" + placeholders + ")"
-    cursor.execute(query, tuple(ids))
-    db.commit()
+    # 🔧 FIX 4: Transaction safety
+    try:
+        db.start_transaction()
+    except AttributeError:
+        pass
 
-    return jsonify({"success": True})
+    try:
+        placeholders = ",".join(["%s"] * len(ids))
+        query = "DELETE FROM employees WHERE id IN (" + placeholders + ")"
+        cursor.execute(query, tuple(ids))
+        db.commit()
+
+        return jsonify({"success": True})
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error bulk deleting employees: {e}", exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # ============================================================
@@ -317,7 +415,10 @@ def edit_employee(emp_id):
 
     full_name = request.form.get("full_name")
     email = request.form.get("email")
-    phone = request.form.get("phone")
+    # 🔧 FIX 5: Merge country_code with phone (for edit too)
+    country_code = request.form.get("country_code", "")
+    phone_raw = request.form.get("phone", "")
+    phone = f"{country_code}{phone_raw}" if country_code and phone_raw else phone_raw
     gender = request.form.get("gender")
     job_title = request.form.get("job_title")
     department_id = request.form.get("department_id")

@@ -77,9 +77,19 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!result.isConfirmed) return;
 
             try {
+                // ✅ CSRF Token included with null safety
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                if (!csrfToken) {
+                    Swal.fire("Security error", "CSRF token missing", "error");
+                    return;
+                }
+                
                 const resp = await fetch("/employees/bulk_delete", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrfToken
+                    },
                     body: JSON.stringify({ ids })
                 });
 
@@ -92,6 +102,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         timer: 1200,
                         showConfirmButton: false
                     });
+                    // 🟡 POLISH: Reset selectAll before reload
+                    selectAll && (selectAll.checked = false);
                     setTimeout(() => location.reload(), 1200);
                 }
 
@@ -121,8 +133,18 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!result.isConfirmed) return;
 
             try {
+                // ✅ CSRF Token included with null safety
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                if (!csrfToken) {
+                    Swal.fire("Security error", "CSRF token missing", "error");
+                    return;
+                }
+                
                 const resp = await fetch("/employees/delete/" + empId, {
-                    method: "POST"
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": csrfToken
+                    }
                 });
                 const data = await resp.json();
 

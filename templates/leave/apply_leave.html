@@ -63,7 +63,7 @@
         <!-- Leave Application Form -->
         <div class="premium-card p-8 scroll-reveal" style="--delay: 0.2s">
             <form method="POST" id="leaveForm">
-                
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <!-- Leave Type -->
                 <div class="mb-6">
                     <label for="leave_type" class="block text-sm font-medium text-gray-700 mb-2">

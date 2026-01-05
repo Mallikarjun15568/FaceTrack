@@ -179,6 +179,14 @@ body {
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
+.country-select {
+  width: 5.5rem;        /* enough for +966 */
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  text-align: right;
+}
+
+
 /* ==================================================
    BADGES
    ================================================== */

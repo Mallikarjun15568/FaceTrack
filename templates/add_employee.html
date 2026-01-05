@@ -25,6 +25,8 @@
               enctype="multipart/form-data"
               class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
             <!-- Full Name -->
             <div class="scroll-reveal" style="transition-delay:0.15s">
                 <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
@@ -45,28 +47,8 @@
                        class="input-premium" />
             </div>
 
-            <!-- Phone with Country Code -->
-            <div class="scroll-reveal" style="transition-delay:0.21s">
-                <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
-                    <i class="fas fa-phone text-blue-600 text-sm"></i>
-                    Phone
-                </label>
-                <div class="flex gap-3">
-                    <select name="country_code" id="country_code" class="input-premium w-24 shrink-0" aria-label="Country code">
-                        <option value="+91" title="India">+91 India</option>
-                        <option value="+1" title="United States">+1 United States</option>
-                        <option value="+44" title="United Kingdom">+44 United Kingdom</option>
-                        <option value="+61" title="Australia">+61 Australia</option>
-                        <option value="+966" title="Saudi Arabia">+966 Saudi Arabia</option>
-                    </select>
-                          <input name="phone" id="phoneInput" type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
-                              placeholder="Enter 10 digit number" title="Enter 10 digit phone number" class="input-premium flex-1" />
-                </div>
-                <p class="text-xs text-gray-500 mt-1">Enter phone digits only (no spaces or symbols).</p>
-            </div>
-
             <!-- Gender -->
-            <div class="scroll-reveal" style="transition-delay:0.24s">
+            <div class="scroll-reveal" style="transition-delay:0.21s">
                 <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
                     <i class="fas fa-venus-mars text-blue-600 text-sm"></i>
                     Gender
@@ -76,6 +58,27 @@
                     <option>Female</option>
                     <option>Other</option>
                 </select>
+            </div>
+
+            <!-- Phone with Country Code -->
+            <div class="scroll-reveal" style="transition-delay:0.24s">
+                <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-phone text-blue-600 text-sm"></i>
+                    Phone
+                </label>
+                <div class="flex gap-2 items-center">
+                    <select name="country_code" id="country_code" class="input-premium w-12 flex-shrink-0" aria-label="Country code" style="width:3rem">
+                        <option value="+91">+91</option>
+                        <option value="+1">+1</option>
+                        <option value="+44">+44</option>
+                        <option value="+61">+61</option>
+                        <option value="+966">+966</option>
+                    </select>
+                    <input name="phone" id="phoneInput" type="tel" inputmode="numeric" 
+                           autocomplete="off" maxlength="10" minlength="10" pattern="\d{10}" 
+                           placeholder="9876543210" 
+                           class="input-premium flex-1" required />
+                </div>
             </div>
 
             <!-- Department -->
@@ -107,7 +110,7 @@
                     <i class="fas fa-calendar text-blue-600 text-sm"></i>
                     Joining Date
                 </label>
-                <input name="join_date" type="date"
+                <input name="joining_date" type="date"
                        class="input-premium" />
             </div>
 
@@ -135,9 +138,9 @@
 
             <!-- Submit Button -->
             <div class="col-span-1 md:col-span-2 flex justify-end gap-3 scroll-reveal" style="transition-delay:0.42s">
-                <a href="{{ url_for('employees.list_employees') }}" class="btn-secondary">
+                <button type="button" class="btn-secondary" onclick="window.location.href='{{ url_for('employees.list_employees') }}'">
                     Cancel
-                </a>
+                </button>
                 <button type="submit" class="btn-premium btn-premium-primary flex items-center gap-2">
                     <i class="fa-solid fa-save"></i>
                     Save Employee

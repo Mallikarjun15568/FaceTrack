@@ -26,6 +26,8 @@
               enctype="multipart/form-data"
               class="space-y-6">
 
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
             <!-- Full Name -->
             <div>
                 <label class="block mb-2 font-medium text-gray-700">

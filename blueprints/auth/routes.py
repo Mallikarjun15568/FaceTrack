@@ -37,6 +37,7 @@ def login():
                     pass
                 return redirect(url_for("auth.login"))
 
+
             # Fetch linked employee row (if any)
             db = get_db()
             cur = db.cursor(dictionary=True)
@@ -46,15 +47,23 @@ def login():
             # Clear old session and regenerate session ID (prevent session fixation)
             old_session_data = dict(session)  # Preserve any needed data
             session.clear()
-            
+
             # Set new session data
             session["logged_in"] = True
             session["user_id"] = user["id"]
             session["username"] = user["username"]
             session["role"] = user.get("role")
-            session['employee_id'] = employee['id'] if employee else None
-            session['full_name'] = employee['full_name'] if employee and employee.get('full_name') else user.get('username')
-            
+
+            if employee:
+                session['employee_id'] = employee['id']
+                session['full_name'] = employee.get('full_name') or user.get('username')
+            else:
+                session['employee_id'] = None
+                session['full_name'] = user.get('username')
+                if user.get('role') == 'employee':
+                    flash("Your employee profile is not created yet. Contact admin.", "error")
+                    return redirect(url_for('auth.login'))
+
             # Force session ID regeneration
             session.modified = True
 
@@ -110,26 +119,26 @@ def signup():
         if password != confirm:
             flash("Passwords do not match", "error")
             return redirect(url_for("auth.signup"))
-        
+
         # 2. Password strength validation
         from utils.validators import validate_password, sanitize_email, sanitize_text, sanitize_username
-        
+
         is_strong, msg = validate_password(password)
         if not is_strong:
             flash(msg, "error")
             return redirect(url_for("auth.signup"))
-        
+
         # 3. Sanitize inputs
         clean_email = sanitize_email(email)
         if not clean_email:
             flash("Invalid email format", "error")
             return redirect(url_for("auth.signup"))
-        
+
         clean_username = sanitize_username(username)
         if not clean_username:
             flash("Username must be 3-50 characters (letters, numbers, underscore, hyphen only)", "error")
             return redirect(url_for("auth.signup"))
-        
+
         clean_name = sanitize_text(full_name, max_length=100)
         if not clean_name:
             flash("Full name is required", "error")
@@ -141,40 +150,54 @@ def signup():
         db = get_db()
         cur = db.cursor(dictionary=True)
 
-        # 2. Username exists?
-        cur.execute("SELECT * FROM users WHERE username=%s", (clean_username,))
+        # PRE-CHECKS: username/email existence (better UX + avoids duplicate inserts)
+        cur.execute("SELECT id FROM users WHERE username=%s", (clean_username,))
         if cur.fetchone():
             flash("Username already taken", "error")
+            return redirect(url_for("auth.signup"))
+
+        cur.execute("SELECT id FROM users WHERE email=%s", (clean_email,))
+        if cur.fetchone():
+            flash("Email already registered", "error")
+            return redirect(url_for("auth.signup"))
+
+        # 🔴 CHECK: employee must already exist
+        cur.execute(
+            "SELECT id, user_id FROM employees WHERE email=%s",
+            (clean_email,)
+        )
+        employee = cur.fetchone()
+        if not employee:
+            flash("Employee record not found. Please contact admin.", "error")
+            return redirect(url_for("auth.signup"))
+        if employee["user_id"] is not None:
+            flash("Account already created for this employee.", "error")
             return redirect(url_for("auth.signup"))
 
         # 3. Hash password
         from .utils import hash_password
         hashed = hash_password(password)
 
-        # 4. Insert user
-        cur.execute("""
-            INSERT INTO users (username, password, role, email)
-            VALUES (%s, %s, %s, %s)
-        """, (clean_username, hashed, role, clean_email))
-        db.commit()
-
-        # 5. Get user ID
-        cur.execute("SELECT id FROM users WHERE username=%s", (clean_username,))
-        new_user_id = cur.fetchone()["id"]
-
-        # 6. Create employee record (always)
-        cur.execute("""
-            INSERT INTO employees 
-            (user_id, full_name, email, phone, gender, department_id, join_date)
-            VALUES (%s, %s, %s, %s, %s, %s, CURDATE())
-        """, (new_user_id, clean_name, clean_email, phone, gender, 1))
-        db.commit()
-
-        flash("Account created successfully! Please login.", "success")
-        return redirect(url_for("auth.login"))
+        try:
+            cur.execute("""
+                INSERT INTO users (username, password, role, email)
+                VALUES (%s, %s, %s, %s)
+            """, (clean_username, hashed, role, clean_email))
+            user_id = cur.lastrowid
+            # 🔗 LINK employee → user
+            cur.execute(
+                "UPDATE employees SET user_id=%s WHERE id=%s",
+                (user_id, employee["id"])
+            )
+            db.commit()
+            flash("Account created! You can now login.", "success")
+            return redirect(url_for("auth.login"))
+        except Exception as e:
+            db.rollback()
+            flash("Signup failed. Please try again.", "error")
+            return redirect(url_for("auth.signup"))
 
     return render_template("signup.html")
-
 
 
 # ============================================================

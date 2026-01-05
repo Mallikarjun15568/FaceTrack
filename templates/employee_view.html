@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% block extra_head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
 {% block content %}
 
 <div class="p-6 space-y-6 max-w-4xl mx-auto">
@@ -72,7 +75,17 @@ function deleteEmp(id) {
         confirmButtonText: "Delete"
     }).then((result) => {
         if (!result.isConfirmed) return;
-        fetch("/employees/delete/" + id, { method: "POST" })
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (!csrfToken) {
+            Swal.fire("Security error", "CSRF token missing", "error");
+            return;
+        }
+        fetch("/employees/delete/" + id, { 
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken
+            }
+        })
         .then(r => r.json())
         .then(res => {
             if (res.success) {

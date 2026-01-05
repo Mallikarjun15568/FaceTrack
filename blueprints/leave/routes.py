@@ -32,6 +32,7 @@ def admin_required(f):
 
 # ==================== EMPLOYEE ROUTES ====================
 
+
 @leave_bp.route('/')
 @login_required
 def index():
@@ -45,6 +46,7 @@ def index():
             JOIN employees e ON l.employee_id = e.id
             ORDER BY l.applied_date DESC
         """)
+        employees = fetchall("SELECT id, full_name FROM employees ORDER BY full_name ASC")
     else:
         leaves = fetchall("""
             SELECT l.*, e.full_name AS employee_name
@@ -53,6 +55,7 @@ def index():
             WHERE l.employee_id = %s
             ORDER BY l.applied_date DESC
         """, (employee_id,))
+        employees = None
 
     balance = fetchone("""
         SELECT * FROM leave_balance WHERE employee_id = %s
@@ -62,13 +65,65 @@ def index():
         'leave/leave_list.html',
         leaves=leaves,
         balance=balance,
-        role=role
+        role=role,
+        employees=employees
     )
+
+
+# ==================== ADMIN: LEAVE BALANCE ADJUSTMENT ====================
+@leave_bp.route('/adjust_balance', methods=['POST'])
+@admin_required
+def adjust_balance():
+    employee_id = request.form.get('employee_id')
+    leave_type = request.form.get('leave_type')
+    adjust_days = request.form.get('adjust_days')
+    reason = request.form.get('reason', '')
+
+    # Validate input
+    if not employee_id or not leave_type or not adjust_days:
+        flash('All fields are required.', 'error')
+        return redirect(url_for('leave.index'))
+
+    try:
+        adjust_days = int(adjust_days)
+    except Exception:
+        flash('Adjustment must be a number.', 'error')
+        return redirect(url_for('leave.index'))
+
+    allowed_types = ['casual_leave', 'sick_leave', 'vacation_leave', 'work_from_home']
+    if leave_type not in allowed_types:
+        flash('Invalid leave type.', 'error')
+        return redirect(url_for('leave.index'))
+
+    # Transaction safety
+    from utils.db import get_db
+    db = get_db()
+    try:
+        # Check if leave_balance row exists
+        balance = fetchone("SELECT * FROM leave_balance WHERE employee_id = %s", (employee_id,))
+        if not balance:
+            # Optionally, create a new row if missing (admin only)
+            execute("""
+                INSERT INTO leave_balance (employee_id, casual_leave, sick_leave, vacation_leave, work_from_home)
+                VALUES (%s, 0, 0, 0, 0)
+            """, (employee_id,))
+        # Update the leave balance
+        execute(
+            f"UPDATE leave_balance SET {leave_type} = {leave_type} + %s WHERE employee_id = %s",
+            (adjust_days, employee_id)
+        )
+        flash('Leave balance adjusted successfully.', 'success')
+    except Exception as e:
+        flash('Failed to adjust leave balance.', 'error')
+    return redirect(url_for('leave.index'))
 
 
 @leave_bp.route('/apply', methods=['GET', 'POST'])
 @login_required
 def apply():
+    if session.get("role") != "employee":
+        flash("Admins cannot apply for leave", "error")
+        return redirect(url_for("leave.index"))
     employee_id = session.get('employee_id')
 
     if request.method == 'POST':
@@ -83,7 +138,7 @@ def apply():
 
         if total_days <= 0:
             flash('Invalid date range', 'error')
-            return redirect(url_for('leave.apply'))
+            return redirect(url_for('leave.index'))
 
         balance = fetchone("""
             SELECT * FROM leave_balance WHERE employee_id = %s
@@ -91,7 +146,7 @@ def apply():
 
         if not balance:
             flash("Leave balance not found. Contact admin.", "error")
-            return redirect(url_for("leave.apply"))
+            return redirect(url_for("leave.index"))
 
         leave_map = {
             'Casual Leave': 'casual_leave',
@@ -103,16 +158,19 @@ def apply():
         column = leave_map.get(leave_type)
         if column and balance[column] < total_days:
             flash('Insufficient leave balance', 'error')
-            return redirect(url_for('leave.apply'))
+            return redirect(url_for('leave.index'))
 
-        execute("""
-            INSERT INTO leaves
-            (employee_id, leave_type, start_date, end_date, total_days, reason)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (employee_id, leave_type, start_date, end_date, total_days, reason))
-
-        flash('Leave application submitted', 'success')
-        return redirect(url_for('leave.index'))
+        try:
+            execute("""
+                INSERT INTO leaves
+                (employee_id, leave_type, start_date, end_date, total_days, reason)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (employee_id, leave_type, start_date, end_date, total_days, reason))
+            flash('Leave application submitted', 'success')
+            return redirect(url_for('leave.index'))
+        except Exception as e:
+            flash('Failed to submit leave application', 'error')
+            return redirect(url_for('leave.index'))
 
     balance = fetchone("""
         SELECT * FROM leave_balance WHERE employee_id = %s
@@ -120,9 +178,13 @@ def apply():
 
     if not balance:
         flash("Leave balance not found. Contact admin.", "error")
-        return redirect(url_for("leave.apply"))
+        return redirect(url_for("leave.index"))
 
-    return render_template('leave/apply_leave.html', balance=balance)
+    # Get today's date for date input min attribute
+    from datetime import date
+    today = date.today().strftime('%Y-%m-%d')
+
+    return render_template('leave/apply_leave.html', balance=balance, today=today)
 
 
 @leave_bp.route('/cancel/<int:leave_id>', methods=['POST'])
@@ -175,10 +237,8 @@ def approve(leave_id):
 
     column = leave_map.get(leave['leave_type'])
     if column:
-        # Ensure column is one of the known safe columns before interpolating
         allowed_columns = set(leave_map.values())
         if column in allowed_columns:
-            # Column names cannot be parameterized, validated above from fixed map
             execute(
                 "UPDATE leave_balance SET " + column + " = " + column + " - %s WHERE employee_id = %s",
                 (leave['total_days'], leave['employee_id'])
@@ -205,31 +265,47 @@ def reject(leave_id):
     reason = request.form.get('rejection_reason', 'No reason provided')
     approver_id = session.get('employee_id')
 
-    # Update leave status
-    execute("""
-        UPDATE leaves
-        SET status = 'rejected',
-            approved_by = %s,
-            approved_date = CURRENT_TIMESTAMP,
-            rejection_reason = %s
-        WHERE id = %s AND status = 'pending'
-    """, (approver_id, reason, leave_id))
-
-    # Send rejection email (best-effort)
+    # ✅ Transaction safety
+    from utils.db import get_db
+    db = get_db()
     try:
-        lv = fetchone("SELECT employee_id, leave_type, start_date, end_date FROM leaves WHERE id = %s", (leave_id,))
-        if lv:
-            emp = fetchone("SELECT full_name, email FROM employees WHERE id = %s", (lv['employee_id'],))
-            if emp and emp.get('email'):
-                rejected_by = session.get('full_name', 'HR')
-                email_service.send_leave_rejection(
-                    emp['email'], emp.get('full_name', ''), lv.get('leave_type'), lv.get('start_date'), lv.get('end_date'), reason, rejected_by
-                )
-    except Exception:
+        db.start_transaction()
+    except AttributeError:
         pass
+    
+    try:
+        # Update leave status
+        execute("""
+            UPDATE leaves
+            SET status = 'rejected',
+                approved_by = %s,
+                approved_date = CURRENT_TIMESTAMP,
+                rejection_reason = %s
+            WHERE id = %s AND status = 'pending'
+        """, (approver_id, reason, leave_id))
+        
+        db.commit()
 
-    flash('Leave rejected', 'success')
-    return redirect(url_for('leave.index'))
+        # Send rejection email (best-effort)
+        try:
+            lv = fetchone("SELECT employee_id, leave_type, start_date, end_date FROM leaves WHERE id = %s", (leave_id,))
+            if lv:
+                emp = fetchone("SELECT full_name, email FROM employees WHERE id = %s", (lv['employee_id'],))
+                if emp and emp.get('email'):
+                    rejected_by = session.get('full_name', 'HR')
+                    email_service.send_leave_rejection(
+                        emp['email'], emp.get('full_name', ''), lv.get('leave_type'), lv.get('start_date'), lv.get('end_date'), reason, rejected_by
+                    )
+        except Exception:
+            pass
+
+        flash('Leave rejected', 'success')
+        return redirect(url_for('leave.index'))
+        
+    except Exception as e:
+        db.rollback()
+        flash('Failed to reject leave', 'error')
+        return redirect(url_for('leave.index'))
 
 # ==================== API ====================
 
