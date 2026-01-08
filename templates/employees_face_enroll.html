@@ -34,28 +34,35 @@
 
     <!-- Camera Section -->
     <div class="card">
-        
         <!-- Camera Preview -->
         <div class="flex justify-center mb-6">
             <div class="relative inline-block">
-                <video id="camera" autoplay playsinline 
-                       class="rounded-lg shadow-lg w-[640px] h-[480px] bg-black border-2 border-gray-300 object-cover"></video>
-                
-                <!-- Green Square Face Detection Canvas -->
-                <canvas id="faceCanvas" 
-                        class="absolute top-0 left-0 w-full h-full pointer-events-none"
-                        style="z-index: 10;"></canvas>
-                
-                <!-- Guidance Text -->
-                <div id="guidanceText" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-lg text-sm font-medium z-20 hidden">
+                 <div id="cameraInactiveBox"
+                     class="flex flex-col items-center justify-center w-[640px] h-[480px] bg-white rounded-lg shadow-lg border-2 border-gray-300">
+                    <div class="relative w-48 h-48 rounded-full border-4 border-gray-400 flex items-center justify-center bg-white/90 transition-all duration-300">
+                        <div class="text-center">
+                            <i class="fas fa-video-slash text-4xl text-gray-400 mb-2"></i>
+                            <p class="text-gray-800 font-semibold text-sm">CAMERA INACTIVE</p>
+                            <p class="text-gray-500 text-xs mt-1">Start camera to begin</p>
+                        </div>
+                    </div>
+                </div>
+                  <video id="camera"
+                      autoplay playsinline
+                      class="rounded-lg shadow-lg w-[640px] h-[480px] bg-black border-2 border-gray-300 object-cover hidden"></video>
+                <canvas id="faceCanvas"
+                    class="absolute top-0 left-0 w-full h-full pointer-events-none hidden"
+                    style="z-index: 10;"></canvas>
+                 <div id="guidanceText"
+                     class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-lg text-sm font-medium z-20 hidden">
                     Center your face
                 </div>
             </div>
         </div>
 
         <!-- Buttons -->
-        <div class="flex justify-center gap-3 mb-4">
-            <button id="startCameraBtn" class="btn btn-success hidden">
+        <div id="cameraControls" class="flex justify-center gap-3 mb-4">
+            <button id="startCameraBtn" class="btn btn-success">
                 <i class="fas fa-video"></i>
                 Start Camera
             </button>
@@ -65,11 +72,12 @@
                 Stop Camera
             </button>
             
-            <button id="captureBtn" class="btn btn-primary">
+            <button id="captureBtn" class="btn btn-primary hidden">
                 <i class="fas fa-camera"></i>
                 Capture Face
             </button>
         </div>
+
 
         <!-- Preview -->
         <div class="flex justify-center hidden" id="previewBox">
@@ -79,6 +87,16 @@
                     <i class="fas fa-check"></i>
                 </div>
             </div>
+        </div>
+
+        <!-- DSLR Action Buttons -->
+        <div class="flex justify-center gap-3 mt-4 hidden" id="actionBtns">
+          <button id="retakeBtn" class="btn btn-warning">
+            <i class="fas fa-redo"></i> Retake
+          </button>
+          <button id="saveBtn" class="btn btn-success">
+            <i class="fas fa-save"></i> Save Face
+          </button>
         </div>
 
         <!-- Loading -->

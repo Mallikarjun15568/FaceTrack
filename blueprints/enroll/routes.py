@@ -47,7 +47,15 @@ def update_enroll_page(employee_id):
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM employees WHERE id = %s", (employee_id,))
+    cursor.execute("""
+        SELECT 
+            e.*,
+            fd.image_path AS face_image,
+            fd.created_at AS face_updated_at
+        FROM employees e
+        LEFT JOIN face_data fd ON fd.emp_id = e.id
+        WHERE e.id = %s
+    """, (employee_id,))
     employee = cursor.fetchone()
 
     if not employee:
@@ -207,12 +215,14 @@ def detect_face():
         
         # Detect faces
         face_locations = face_recognition.face_locations(rgb, model="hog")
-        
-        return jsonify({"face_detected": len(face_locations) > 0})
-        
+        face_count = len(face_locations)
+        return jsonify({
+            "face_detected": face_count > 0,
+            "face_count": face_count
+        })
     except Exception as e:
         logger.error(f"Face detection error: {e}")
-        return jsonify({"face_detected": False})
+        return jsonify({"face_detected": False, "face_count": 0})
 
 
 # -----------------------------------------------------
@@ -222,100 +232,79 @@ def detect_face():
 @login_required
 @role_required("admin", "hr")
 def update_capture_face():
-
     try:
         data = request.get_json()
         employee_id = data.get("employee_id")
-        image_base64 = data.get("image")
+        image_data = data.get("image")
 
-        if not employee_id or not image_base64:
-            return jsonify({"status": "error", "message": "Invalid data"}), 400
-
-        # Decode image using central helper
-        try:
-            pil_img, frame = kiosk_utils.decode_frame(image_base64)
-        except Exception:
-            return jsonify({"status": "error", "message": "Invalid image format"}), 400
-
-        temp_folder = os.path.join("static", "temp")
-        ensure_folder(temp_folder)
-        temp_filename = generate_unique_filename("jpg")
-        temp_path = os.path.join(temp_folder, temp_filename)
-        try:
-            pil_img.save(temp_path, "JPEG")
-        except Exception:
-            with open(temp_path, "wb") as f:
-                f.write(base64.b64decode(image_base64.split(',',1)[1] if ',' in image_base64 else image_base64))
-
-        # Run quality check
-        try:
-            is_valid, quality_score, issues = face_encoder.check_image_quality(temp_path)
-        except Exception as e:
-            try:
-                os.remove(temp_path)
-            except Exception:
-                pass
-            return jsonify({"status": "error", "message": "Quality check failed"}), 500
-
-        if not is_valid:
-            try:
-                os.remove(temp_path)
-            except Exception:
-                pass
-            feedback = face_encoder.get_quality_feedback(issues)
+        if not employee_id or not image_data:
             return jsonify({
-                "status": "quality_failed",
-                "message": "Image quality too low",
-                "quality_score": round(quality_score, 2),
-                "issues": issues,
-                "feedback": feedback
+                "status": "error",
+                "message": "Invalid request data"
             }), 400
+
+        # BASE64 → BYTES
+        header, encoded = image_data.split(",", 1)
+        img_bytes = base64.b64decode(encoded)
+
+        # bytes → numpy → image
+        img_array = np.frombuffer(img_bytes, np.uint8)
+        img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+
+        if img is None:
+            return jsonify({
+                "status": "error",
+                "message": "Failed to decode image"
+            }), 400
+
+        # BGR → RGB
+        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        embedding = face_encoder.get_embedding(rgb)
+
+        if embedding is None:
+            return jsonify({
+                "status": "error",
+                "message": "No face detected"
+            }), 400
+
+        embedding_bytes = embedding.astype(np.float32).tobytes()
+
+        # Save image
+        folder = os.path.join("static", "faces", str(employee_id))
+        ensure_folder(folder)
+
+        filename = generate_unique_filename("jpg")
+        image_path = os.path.join(folder, filename)
+
+        with open(image_path, "wb") as f:
+            f.write(img_bytes)
+
 
         db = get_db()
         cursor = db.cursor()
 
-        # 1️⃣ Delete OLD embeddings
+        # Always delete old face_data for this employee to prevent duplicates
         cursor.execute("DELETE FROM face_data WHERE emp_id = %s", (employee_id,))
 
-        # 2️⃣ Delete OLD images from folder
-        folder_path = os.path.join("static", "faces", str(employee_id))
-        ensure_folder(folder_path)
+        cursor.execute("""
+INSERT INTO face_data (emp_id, embedding, image_path, created_at)
+VALUES (%s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE
+    embedding = VALUES(embedding),
+    image_path = VALUES(image_path),
+    created_at = VALUES(created_at)
+""", (employee_id, embedding_bytes, image_path, datetime.now()))
 
-        for file in os.listdir(folder_path):
-            try:
-                os.remove(os.path.join(folder_path, file))
-            except:
-                pass
-
-        # 3️⃣ Save NEW image
-        filename = generate_unique_filename("jpg")
-        file_path = os.path.join(folder_path, filename)
-
-        with open(file_path, "wb") as f:
-            f.write(img_bytes)
-
-        # 4️⃣ Insert NEW embedding
-        cursor.execute(
-            """
-            INSERT INTO face_data (emp_id, embedding, image_path, created_at)
-            VALUES (%s, %s, %s, %s)
-            """,
-            (employee_id, new_emb_bytes, file_path, datetime.now())
-        )
- 
         db.commit()
+
+        # Reload embeddings
         try:
             kiosk_utils.reload_embeddings(force=True)
         except TypeError:
-            # older signature: call without force
             kiosk_utils.reload_embeddings()
-        # Invalidate face-encoder cache so recognizer reloads from DB
-        try:
-            invalidate_embeddings_cache()
-        except Exception:
-            pass
-        # Immediately reload face_encoder embeddings so kiosk recognizer
-        # sees the new embedding without waiting for another trigger.
+
+        invalidate_embeddings_cache()
+
         try:
             face_encoder.load_all_embeddings()
         except Exception:
@@ -324,11 +313,15 @@ def update_capture_face():
         return jsonify({
             "status": "success",
             "message": "Face updated successfully",
-            "image_path": file_path
+            "image_path": image_path
         })
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        logger.error(f"Update face failed: {e}", exc_info=True)
+        return jsonify({
+            "status": "error",
+            "message": "Internal server error"
+        }), 500
 
 # -----------------------------------------------------
 # 3. Enrollment list page

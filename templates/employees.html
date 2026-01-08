@@ -124,13 +124,19 @@
             <a href="/employees/view/{{ emp.id }}" class="text-indigo-600 hover:text-indigo-700 font-medium">View</a>
             {% if current_role != 'employee' %}
             <a href="/employees/edit/{{ emp.id }}" class="text-green-600 hover:text-green-700 font-medium">Edit</a>
-            <!-- Status badge -->
+            <!-- Status badge and action button with string comparison -->
             {% if emp.status == 'active' %}
-              <span class="badge badge-success">Active</span>
-              <button class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded-lg ml-2" onclick="openDeactivateModal({{ emp.id }})">Deactivate</button>
+              <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">Active</span>
+              <button onclick="toggleEmployee({{ emp.id }}, 'deactivate')"
+                      class="bg-orange-500 text-white px-3 py-1 rounded-full text-xs ml-2">
+                Deactivate
+              </button>
             {% else %}
-              <span class="badge badge-danger">Inactive</span>
-              <button class="btn btn-success btn-xs ml-2" onclick="activateEmployee({{ emp.id }})">Activate</button>
+              <span class="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs">Inactive</span>
+              <button onclick="toggleEmployee({{ emp.id }}, 'activate')"
+                      class="bg-green-500 text-white px-3 py-1 rounded-full text-xs ml-2">
+                Activate
+              </button>
             {% endif %}
             {% endif %}
           </td>

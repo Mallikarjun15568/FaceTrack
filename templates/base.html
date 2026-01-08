@@ -240,4 +240,41 @@
 {% block scripts %}{% endblock %}
 
 </body>
+
+<!-- Status Modal (Global) -->
+<div id="statusModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-xl w-[360px] p-6 text-center">
+    <div id="modalIcon" class="text-4xl mb-3">✅</div>
+    <h3 id="modalTitle" class="text-lg font-semibold mb-2">Success</h3>
+    <p id="modalMessage" class="text-sm text-gray-600"></p>
+    <button onclick="closeStatusModal()"
+      class="mt-5 px-5 py-2 bg-indigo-600 text-white rounded-lg">
+      OK
+    </button>
+  </div>
+</div>
+
+<script>
+function showStatusModal(type, message) {
+  const modal = document.getElementById("statusModal");
+  const icon = document.getElementById("modalIcon");
+  const title = document.getElementById("modalTitle");
+  const msg = document.getElementById("modalMessage");
+  if (type === "success") {
+    icon.textContent = "✅";
+    title.textContent = "Success";
+  } else {
+    icon.textContent = "❌";
+    title.textContent = "Error";
+  }
+  msg.textContent = message;
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+function closeStatusModal() {
+  const modal = document.getElementById("statusModal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+</script>
 </html>

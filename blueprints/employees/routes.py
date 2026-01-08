@@ -1,8 +1,23 @@
-# 🔴 Blueprint import must be first
+"""
+# ============================================================
+# IMPORTS (MUST BE FIRST)
+# ============================================================
+"""
 from . import bp
-
-# 🔴 Auth decorators must be imported before use
+from flask import (
+    render_template, request, redirect,
+    url_for, flash, session, jsonify
+)
+import os
+import cv2
+import numpy as np
+from werkzeug.utils import secure_filename
+from utils.db import get_db
+from utils.face_encoder import face_encoder, invalidate_embeddings_cache
+from utils.logger import logger
+from db_utils import log_audit, execute
 from blueprints.auth.utils import login_required, role_required
+
 # ============================================================
 # DEACTIVATE EMPLOYEE (SOFT DELETE)
 # ============================================================
@@ -30,7 +45,6 @@ def deactivate_employee(emp_id):
 
     return jsonify({"success": True})
 
-
 # ============================================================
 # ACTIVATE EMPLOYEE
 # ============================================================
@@ -57,19 +71,7 @@ def activate_employee(emp_id):
     )
 
     return jsonify({"success": True})
-from flask import (
-    render_template, request, redirect,
-    url_for, flash, session, jsonify
-)
-import os
-import cv2
-import numpy as np
-from werkzeug.utils import secure_filename
-from utils.db import get_db
-from blueprints.auth.utils import login_required, role_required
-from utils.face_encoder import face_encoder, invalidate_embeddings_cache
-from utils.logger import logger
-from db_utils import log_audit, execute
+
 
 
 # ============================================================
@@ -96,7 +98,7 @@ def list_employees():
     sort = request.args.get("sort", "newest")
 
     # STEP 3: Status filter (default active)
-    status_filter = request.args.get("status", "active")
+    status_filter = request.args.get("status", "all")
 
     # 🔧 FIX 2: Pagination optimization for employee role
     if role == "employee":
