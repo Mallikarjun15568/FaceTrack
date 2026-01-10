@@ -30,29 +30,45 @@ function initScrollReveal() {
 function initMobileMenu() {
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const sidebar = document.getElementById('sidebar');
-    const backdrop = document.createElement('div');
-    
-    backdrop.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden hidden';
-    backdrop.id = 'sidebarBackdrop';
-    document.body.appendChild(backdrop);
-    
-    const toggleMenu = () => {
-        sidebar.classList.toggle('-translate-x-full');
-        backdrop.classList.toggle('hidden');
-        document.body.classList.toggle('overflow-hidden');
-    };
-    
-    if (mobileMenuBtn) {
-        mobileMenuBtn.addEventListener('click', toggleMenu);
+    const overlay = document.getElementById('sidebarOverlay');
+
+    console.log('Mobile menu elements:', { mobileMenuBtn, sidebar, overlay });
+
+    if (!mobileMenuBtn || !sidebar || !overlay) {
+        console.error('Mobile menu elements not found!');
+        return;
     }
-    
-    backdrop.addEventListener('click', toggleMenu);
-    
-    // Close on escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !sidebar.classList.contains('-translate-x-full')) {
-            toggleMenu();
+
+    console.log('Mobile menu initialized successfully');
+
+    mobileMenuBtn.addEventListener('click', () => {
+        console.log('Mobile menu button clicked');
+        const isOpen = sidebar.classList.contains('translate-x-0');
+
+        if (isOpen) {
+            // Close sidebar
+            sidebar.classList.remove('translate-x-0');
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+            console.log('Sidebar closed');
+        } else {
+            // Open sidebar
+            sidebar.classList.remove('-translate-x-full');
+            sidebar.classList.add('translate-x-0');
+            overlay.classList.remove('hidden');
+            console.log('Sidebar opened');
         }
+
+        const willBeOpen = !isOpen;
+        mobileMenuBtn.querySelector('i').className =
+            willBeOpen ? 'fas fa-times' : 'fas fa-bars';
+    });
+
+    overlay.addEventListener('click', () => {
+        sidebar.classList.remove('translate-x-0');
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+        mobileMenuBtn.querySelector('i').className = 'fas fa-bars';
     });
 }
 
