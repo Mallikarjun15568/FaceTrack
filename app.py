@@ -130,19 +130,9 @@ app.register_blueprint(reports_bp)
 app.register_blueprint(leave_bp)
 app.register_blueprint(charts_bp)
 
-# Selective CSRF exemptions for specific endpoints only
-# Auth: Only exempt face login API (uses token-based auth)
-from blueprints.auth.routes import face_login_api
-csrf.exempt(face_login_api)
-
-# Kiosk: Exempt recognition endpoints (operates in fullscreen kiosk mode)
-from blueprints.kiosk.routes import kiosk_recognize, liveness_check, verify_pin, kiosk_exit, set_kiosk_pin, force_unlock
-csrf.exempt(kiosk_recognize)
-csrf.exempt(liveness_check)
-csrf.exempt(verify_pin)
-csrf.exempt(kiosk_exit)
-csrf.exempt(set_kiosk_pin)
-csrf.exempt(force_unlock)
+# Setup selective CSRF exemptions
+from utils.csrf_exemptions import setup_csrf_exemptions
+setup_csrf_exemptions(app, csrf)
 
 
 # --------------------------
@@ -156,8 +146,65 @@ def index():
 def about():
     return render_template("about.html")
 
-@app.route("/contact")
+@app.route("/contact", methods=["GET", "POST"])
 def contact():
+    if request.method == "POST":
+        # CSRF check
+        from flask_wtf.csrf import validate_csrf
+        try:
+            validate_csrf(request.form.get('csrf_token'))
+        except Exception as e:
+            flash("CSRF token validation failed", "error")
+            return redirect(url_for("contact"))
+        
+        # Handle contact form submission
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        message = request.form.get("message", "").strip()
+        
+        # Basic validation
+        if not name or not email or not message:
+            flash("All fields are required", "error")
+            return redirect(url_for("contact"))
+        
+        # Email validation
+        from utils.validators import validate_email
+        is_valid, error_msg = validate_email(email)
+        if not is_valid:
+            flash("Invalid email format", "error")
+            return redirect(url_for("contact"))
+        
+        # Send email to support
+        try:
+            from utils.email_service import email_service
+            subject = f"Contact Form: {name}"
+            body = f"""
+New contact form submission:
+
+Name: {name}
+Email: {email}
+
+Message:
+{message}
+
+---
+Sent from FaceTrack Pro contact form
+"""
+            # Send to support email (using the same email configured for the system)
+            support_email = app.config.get('SENDER_EMAIL', 'support@facetrackpro.com')
+            email_service.send_email(
+                to_email=support_email,
+                subject=subject,
+                body=body
+            )
+            flash("Thank you for your message! We'll get back to you soon.", "success")
+        except Exception as e:
+            from utils.logger import logger
+            logger.error(f"Failed to send contact form email: {e}")
+            flash("Sorry, there was an error sending your message. Please try again later.", "error")
+        
+        return redirect(url_for("contact"))
+    
     return render_template("contact.html")
 
 @app.route("/help")

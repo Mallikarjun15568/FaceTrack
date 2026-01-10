@@ -242,13 +242,18 @@
 </body>
 
 <!-- Status Modal (Global) -->
-<div id="statusModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
-  <div class="bg-white rounded-xl shadow-xl w-[360px] p-6 text-center">
-    <div id="modalIcon" class="text-4xl mb-3">✅</div>
-    <h3 id="modalTitle" class="text-lg font-semibold mb-2">Success</h3>
-    <p id="modalMessage" class="text-sm text-gray-600"></p>
+<div id="statusModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl w-[400px] max-w-[90vw] p-8 text-center transform transition-all duration-300 scale-95 opacity-0"
+       style="transition: all 0.3s ease;">
+    <div class="flex justify-center mb-4">
+      <div id="modalIcon" class="w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-lg">
+        ✅
+      </div>
+    </div>
+    <h3 id="modalTitle" class="text-xl font-bold text-gray-900 mb-3">Success</h3>
+    <p id="modalMessage" class="text-gray-600 leading-relaxed mb-6"></p>
     <button onclick="closeStatusModal()"
-      class="mt-5 px-5 py-2 bg-indigo-600 text-white rounded-lg">
+      class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors duration-200 shadow-md hover:shadow-lg">
       OK
     </button>
   </div>
@@ -257,24 +262,51 @@
 <script>
 function showStatusModal(type, message) {
   const modal = document.getElementById("statusModal");
+  const modalContent = modal.querySelector("div");
   const icon = document.getElementById("modalIcon");
   const title = document.getElementById("modalTitle");
   const msg = document.getElementById("modalMessage");
+  
   if (type === "success") {
-    icon.textContent = "✅";
+    icon.innerHTML = "✅";
+    icon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-lg bg-green-100 text-green-600";
     title.textContent = "Success";
+    title.className = "text-xl font-bold text-gray-900 mb-3";
+  } else if (type === "warning") {
+    icon.innerHTML = "⚠️";
+    icon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-lg bg-yellow-100 text-yellow-600";
+    title.textContent = "Warning";
+    title.className = "text-xl font-bold text-gray-900 mb-3";
   } else {
-    icon.textContent = "❌";
+    icon.innerHTML = "❌";
+    icon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-lg bg-red-100 text-red-600";
     title.textContent = "Error";
+    title.className = "text-xl font-bold text-gray-900 mb-3";
   }
+  
   msg.textContent = message;
+  
   modal.classList.remove("hidden");
   modal.classList.add("flex");
+  
+  // Trigger animation
+  setTimeout(() => {
+    modalContent.classList.remove("scale-95", "opacity-0");
+    modalContent.classList.add("scale-100", "opacity-100");
+  }, 10);
 }
+
 function closeStatusModal() {
   const modal = document.getElementById("statusModal");
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
+  const modalContent = modal.querySelector("div");
+  
+  modalContent.classList.remove("scale-100", "opacity-100");
+  modalContent.classList.add("scale-95", "opacity-0");
+  
+  setTimeout(() => {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  }, 300);
 }
 </script>
 </html>

@@ -29,6 +29,7 @@ let lastDetectState = null;
 let faceDetected = false;
 let isCaptured = false; // 🔒 GLOBAL STATE for capture lock
 let detectSessionId = 0; // 🔒 SESSION GUARD
+let isProcessing = false; // 🚨 COOLDOWN FLAG
 
 // CSRF helper for AJAX
 function getCSRFToken() {
@@ -36,7 +37,7 @@ function getCSRFToken() {
 }
 
 // PURE UI FUNCTION
-function drawGreenBox(isFaceDetected = false) {
+function drawDetectionBox(color = "#ef4444") {
     if (!video || !faceCanvas) return;
     const rect = video.getBoundingClientRect();
     faceCanvas.width = rect.width;
@@ -46,9 +47,9 @@ function drawGreenBox(isFaceDetected = false) {
     const size = Math.min(rect.width, rect.height) * 0.55;
     const x = (rect.width - size) / 2;
     const y = (rect.height - size) / 2;
-    ctx.strokeStyle = isFaceDetected ? "#10b981" : "#ef4444";
+    ctx.strokeStyle = color;
     ctx.lineWidth = 3;
-    ctx.shadowColor = ctx.strokeStyle;
+    ctx.shadowColor = color;
     ctx.shadowBlur = 8;
     ctx.strokeRect(x, y, size, size);
 }
@@ -71,10 +72,11 @@ function startCamera() {
             startCameraBtn.classList.add("hidden");
             stopCameraBtn.classList.remove("hidden");
             previewImg.classList.add("hidden");
+            actionBtns.classList.add("hidden");
             saveBtn.classList.add("hidden");
             retakeBtn.classList.add("hidden");
             video.onloadeddata = () => {
-                setTimeout(() => drawGreenBox(false), 100);
+                setTimeout(() => drawDetectionBox("#ef4444"), 100);
             };
             if (detectInterval) {
                 clearInterval(detectInterval);
@@ -86,7 +88,7 @@ function startCamera() {
             video.classList.add("hidden");
             faceCanvas.classList.add("hidden");
             guidanceText.classList.add("hidden");
-            alert("Camera not accessible!");
+            showStatusModal("error", "Camera not accessible! Please check permissions.");
             console.error(err);
         });
 }
@@ -121,6 +123,7 @@ function stopCamera() {
     startCameraBtn.classList.remove("hidden");
     stopCameraBtn.classList.add("hidden");
     captureBtn.classList.add("hidden");
+    actionBtns.classList.add("hidden");
     guidanceText.classList.add("hidden");
 }
 
@@ -169,6 +172,7 @@ captureBtn.onclick = () => {
     lastImage = canvas.toDataURL("image/jpeg");
     previewImg.src = lastImage;
     previewImg.classList.remove("hidden");
+    actionBtns.classList.remove("hidden");
     saveBtn.classList.remove("hidden");
     retakeBtn.classList.remove("hidden");
     captureBtn.classList.add("hidden");
@@ -189,33 +193,81 @@ retakeBtn.onclick = () => {
     isCaptured = false;   // 🔓 UNLOCK
     lastImage = null;
     previewImg.classList.add("hidden");
+    actionBtns.classList.add("hidden");
     saveBtn.classList.add("hidden");
     retakeBtn.classList.add("hidden");
     startCamera();
 };
 
 saveBtn.onclick = async () => {
-    if (!lastImage) return;
+    if (!lastImage || isProcessing) return;
+
+    // 🚨 IMMEDIATE COOLDOWN
+    isProcessing = true;
+    saveBtn.disabled = true;
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = "Processing...";
+
     const employeeId = window.location.pathname.split("/").pop();
     const csrfToken = getCSRFToken();
-    let res = await fetch("/enroll/update_capture", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": csrfToken
-        },
-        body: JSON.stringify({
-            employee_id: employeeId,
-            image: lastImage
-        })
-    });
-    let data = await res.json();
-    if (data.status === "success") {
-        alert("Face updated successfully!");
-        window.location.href = "/enroll";
-    } else {
-        alert(data.message || "Update failed");
+
+    try {
+        let res = await fetch("/enroll/update_capture", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken
+            },
+            body: JSON.stringify({
+                employee_id: employeeId,
+                image: lastImage
+            })
+        });
+        let data = await res.json();
+
+        if (data.status === "success") {
+            showStatusModal("success", data.message || "Face updated successfully!");
+            // 🚨 SUCCESS: LOCK UI PERMANENTLY
+            setTimeout(() => {
+                closeStatusModal();
+                window.location.href = "/enroll";
+            }, 2000);
+        } else if (data.status === "quality_failed") {
+            showStatusModal("warning", data.feedback || "Face quality issues detected");
+            // 🚨 RE-ENABLE ON QUALITY FAIL
+            isProcessing = false;
+            saveBtn.disabled = false;
+            saveBtn.textContent = originalText;
+        } else if (data.status === "no_face") {
+            showStatusModal("error", "No face detected");
+            // 🚨 RE-ENABLE ON NO FACE
+            isProcessing = false;
+            saveBtn.disabled = false;
+            saveBtn.textContent = originalText;
+        } else {
+            // Covers "error" and any other cases
+            showStatusModal("error", data.message || "Update failed");
+            // 🚨 RE-ENABLE ON ERROR
+            isProcessing = false;
+            saveBtn.disabled = false;
+            saveBtn.textContent = originalText;
+        }
+    } catch (error) {
+        console.error("Update error:", error);
+        showStatusModal("error", "Network error occurred");
+        // 🚨 RE-ENABLE ON ERROR
+        isProcessing = false;
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalText;
     }
+
+    // Stop any ongoing detection
+    if (detectInterval) {
+        clearInterval(detectInterval);
+        detectInterval = null;
+    }
+    // Stop camera and reset to initial state
+    stopCamera();
     startCameraBtn.classList.remove("hidden");
     stopCameraBtn.classList.add("hidden");
     captureBtn.classList.add("hidden");
@@ -228,7 +280,11 @@ saveBtn.onclick = async () => {
 async function detectFaceOnce() {
     const sessionAtStart = detectSessionId;
     if (isCaptured || !detectInterval) return;
-    if (!currentStream || !video.videoWidth) return;
+    if (!currentStream || !video.videoWidth) {
+        guidanceText.classList.add("hidden");
+        captureBtn.classList.add("hidden"); // Ensure button is hidden when no stream
+        return;
+    }
 
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
@@ -248,22 +304,41 @@ async function detectFaceOnce() {
         // 🔒 HARD GUARD — OLD RESPONSE
         if (sessionAtStart !== detectSessionId) return;
 
-        let allowCapture = (face_count === 1);
-        faceDetected = allowCapture;
-        drawGreenBox(allowCapture);
-        if (!isCaptured && allowCapture) {
-            captureBtn.classList.remove("hidden");
-        } else {
-            captureBtn.classList.add("hidden");
+        let borderColor = "#ef4444"; // Default: red
+        let message = "";
+        let allowCapture = false;
+
+        if (face_count === 0) {
+            // 🔴 STATE-1: No Face
+            borderColor = "#ef4444"; // Red
+            message = "No face detected";
+            allowCapture = false;
+        } else if (face_count > 1) {
+            // 🟠 STATE-2: Multiple Faces
+            borderColor = "#f97316"; // Orange
+            message = "Multiple faces detected. Only one person allowed";
+            allowCapture = false;
+        } else if (face_count === 1) {
+            // 🟢 STATE-3: Exactly One Face
+            borderColor = "#10b981"; // Green
+            message = "Face detected – hold still & capture";
+            allowCapture = true;
         }
 
-        showGuidance(
-            face_count === 1
-                ? "Face detected – hold still & capture"
-                : face_count > 1
-                    ? "Multiple faces detected. Only one person allowed"
-                    : "Align your face inside the box"
-        );
+        faceDetected = allowCapture;
+        drawDetectionBox(borderColor);
+        
+        // Update UI based on detection state
+        guidanceText.textContent = message;
+        guidanceText.classList.remove("hidden");
+        
+        // Always hide button first, then show only if capture is allowed
+        captureBtn.classList.add("hidden");
+        if (!isCaptured && allowCapture) {
+            captureBtn.classList.remove("hidden");
+        }
+
+        showGuidance(message);
         lastDetectState = face_count;
     } catch (err) {
         if (sessionAtStart !== detectSessionId) return;

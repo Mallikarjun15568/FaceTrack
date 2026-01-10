@@ -120,6 +120,18 @@ class EmailService:
             return False
 
     # -----------------------------
+    # Generic Email Method
+    # -----------------------------
+    def send_email(self, to_email, subject, body):
+        """Send a generic email"""
+        if not self.enabled:
+            logger.warning("Email service disabled, cannot send email")
+            return False
+
+        html_body = self._html_template("FaceTrack Pro", f"<pre style='white-space: pre-wrap;'>{body}</pre>")
+        return self._send(to_email, subject, html_body)
+
+    # -----------------------------
     # Leave Management Emails
     # -----------------------------
     # -----------------------------

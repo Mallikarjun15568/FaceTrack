@@ -16,6 +16,10 @@ import cv2
 import face_recognition
 
 
+# Duplicate face threshold for preventing same person enrolling multiple times
+DUPLICATE_FACE_THRESHOLD = 0.75
+
+
 # -----------------------------------------------------
 # 1. Load enrollment page (New Enrollment)
 # -----------------------------------------------------
@@ -134,8 +138,40 @@ def capture_face():
                 pass
             return jsonify({"status": "no_face", "message": "No Face Detected"})
 
+        if len(faces) > 1:
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+            return jsonify({
+                "status": "error",
+                "message": "Multiple faces detected. Only one face allowed during enrollment."
+            }), 400
+
         face = faces[0]
         embedding = face.normed_embedding.astype("float32")
+
+        # Check for duplicate faces across employees
+        db_check = get_db()
+        cursor_check = db_check.cursor(dictionary=True)
+        cursor_check.execute("SELECT emp_id, embedding FROM face_data WHERE emp_id != %s", (employee_id,))
+        existing_faces = cursor_check.fetchall()
+        cursor_check.close()
+
+        for face_row in existing_faces:
+            existing_emb = face_encoder._decode_embedding(face_row['embedding'])
+            # Compute cosine similarity (both are normalized)
+            sim = np.dot(embedding, existing_emb)
+            if sim >= DUPLICATE_FACE_THRESHOLD:  # Prevent duplicate enrollment
+                # Log duplicate detection for audit
+                user_id = session.get('user_id', 'unknown')
+                logger.warning(f"DUPLICATE FACE DETECTED: User {user_id} tried to enroll employee {employee_id}, matched with existing employee {face_row['emp_id']}, similarity {sim:.3f}")
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
+                return jsonify({"status": "error", "message": f"Face already enrolled for employee ID {face_row['emp_id']}"}), 400
+
         emb_bytes = embedding.astype(np.float32).tobytes()
 
         # Save face image in per-employee folder
@@ -149,15 +185,27 @@ def capture_face():
         # Save to DB
         db = get_db()
         cursor = db.cursor()
-        cursor.execute("DELETE FROM face_data WHERE emp_id = %s", (employee_id,))
-        cursor.execute(
-            """
-            INSERT INTO face_data (emp_id, embedding, image_path, created_at)
-            VALUES (%s, %s, %s, %s)
-            """,
-            (employee_id, emb_bytes, file_path, datetime.now())
-        )
-        db.commit()
+        try:
+            cursor.execute("DELETE FROM face_data WHERE emp_id = %s", (employee_id,))
+            cursor.execute(
+                """
+                INSERT INTO face_data (emp_id, embedding, image_path, created_at)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (employee_id, emb_bytes, file_path, datetime.now())
+            )
+            db.commit()
+            # Update enrollment flag in employees table
+            cursor.execute("UPDATE employees SET face_enrolled = 1 WHERE id = %s", (employee_id,))
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            # Cleanup saved file on DB failure
+            try:
+                os.remove(file_path)
+            except Exception:
+                pass
+            return jsonify({"status": "error", "message": f"Database error: {str(e)}"}), 500
         try:
             kiosk_utils.reload_embeddings(force=True)
         except TypeError:
@@ -259,6 +307,21 @@ def update_capture_face():
 
         # BGR → RGB
         rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        # Check for faces before embedding
+        faces_check = face_encoder.app.get(rgb)
+        if len(faces_check) == 0:
+            return jsonify({
+                "status": "error",
+                "message": "No face detected"
+            }), 400
+
+        if len(faces_check) > 1:
+            return jsonify({
+                "status": "error",
+                "message": "Multiple faces detected. Only one face allowed during enrollment."
+            }), 400
+
         embedding = face_encoder.get_embedding(rgb)
 
         if embedding is None:
@@ -266,6 +329,23 @@ def update_capture_face():
                 "status": "error",
                 "message": "No face detected"
             }), 400
+
+        # Check for duplicate faces across other employees
+        db_check = get_db()
+        cursor_check = db_check.cursor(dictionary=True)
+        cursor_check.execute("SELECT emp_id, embedding FROM face_data WHERE emp_id != %s", (employee_id,))
+        existing_faces = cursor_check.fetchall()
+        cursor_check.close()
+
+        for face_row in existing_faces:
+            existing_emb = face_encoder._decode_embedding(face_row['embedding'])
+            # Compute cosine similarity (both are normalized)
+            sim = np.dot(embedding, existing_emb)
+            if sim >= DUPLICATE_FACE_THRESHOLD:  # Prevent duplicate enrollment
+                # Log duplicate detection for audit
+                user_id = session.get('user_id', 'unknown')
+                logger.warning(f"DUPLICATE FACE DETECTED: User {user_id} tried to update enrollment for employee {employee_id}, matched with existing employee {face_row['emp_id']}, similarity {sim:.3f}")
+                return jsonify({"status": "error", "message": f"Face already enrolled for employee ID {face_row['emp_id']}"}), 400
 
         embedding_bytes = embedding.astype(np.float32).tobytes()
 
@@ -283,19 +363,31 @@ def update_capture_face():
         db = get_db()
         cursor = db.cursor()
 
-        # Always delete old face_data for this employee to prevent duplicates
-        cursor.execute("DELETE FROM face_data WHERE emp_id = %s", (employee_id,))
+        try:
+            # Always delete old face_data for this employee to prevent duplicates
+            cursor.execute("DELETE FROM face_data WHERE emp_id = %s", (employee_id,))
 
-        cursor.execute("""
-INSERT INTO face_data (emp_id, embedding, image_path, created_at)
-VALUES (%s, %s, %s, %s)
-ON DUPLICATE KEY UPDATE
-    embedding = VALUES(embedding),
-    image_path = VALUES(image_path),
-    created_at = VALUES(created_at)
-""", (employee_id, embedding_bytes, image_path, datetime.now()))
+            cursor.execute("""
+    INSERT INTO face_data (emp_id, embedding, image_path, created_at)
+    VALUES (%s, %s, %s, %s)
+    ON DUPLICATE KEY UPDATE
+        embedding = VALUES(embedding),
+        image_path = VALUES(image_path),
+        created_at = VALUES(created_at)
+    """, (employee_id, embedding_bytes, image_path, datetime.now()))
 
-        db.commit()
+            db.commit()
+            # Update enrollment flag in employees table
+            cursor.execute("UPDATE employees SET face_enrolled = 1 WHERE id = %s", (employee_id,))
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            # Cleanup saved file on DB failure
+            try:
+                os.remove(image_path)
+            except Exception:
+                pass
+            return jsonify({"status": "error", "message": f"Database error: {str(e)}"}), 500
 
         # Reload embeddings
         try:

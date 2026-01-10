@@ -31,7 +31,7 @@ def admin_dashboard():
     total_departments = cursor.fetchone()["total"]
 
     # 3) Present today
-    cursor.execute("SELECT COUNT(*) AS present FROM attendance WHERE date = CURDATE()")
+    cursor.execute("SELECT COUNT(DISTINCT employee_id) AS present FROM attendance WHERE DATE(check_in_time) = CURDATE() AND check_in_time IS NOT NULL")
     today_present = cursor.fetchone()["present"]
 
     # 4) Recognition Today

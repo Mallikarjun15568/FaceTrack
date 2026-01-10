@@ -1,24 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Update Face - {{ employee.full_name }}</title>
-    <link rel="stylesheet" href="/static/css/output.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-        .card { transition: all 0.3s ease; }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-        .btn { transition: all 0.2s ease; }
-        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-        .btn:active { transform: translateY(0); }
-        img { transition: all 0.3s ease; }
-        video { transition: all 0.3s ease; }
-    </style>
-</head>
-
-<body class="bg-gray-100 min-h-screen p-6">
-
+{% extends "base.html" %}
+{% block head %}
+<style>
+    .card { transition: all 0.3s ease; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+    .btn { transition: all 0.2s ease; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+    .btn:active { transform: translateY(0); }
+    img, video { transition: all 0.3s ease; }
+</style>
+{% endblock %}
+{% block content %}
 
 <div class="max-w-6xl mx-auto px-2 md:px-0">
 
@@ -124,16 +115,15 @@
                 </button>
             </div>
 
-            <button id="retakeBtn"
-                    class="hidden w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg shadow transition mt-0 mb-3">
-                <i class="fas fa-redo-alt"></i>
-                Retake Face
-            </button>
-            <button id="saveBtn"
-                    class="hidden w-full btn btn-success mt-4">
-                <i class="fas fa-check-circle"></i>
-                Save Updated Face
-            </button>
+            <!-- DSLR Action Buttons -->
+            <div class="flex justify-center gap-3 mt-4 hidden" id="actionBtns">
+              <button id="retakeBtn" class="btn btn-warning">
+                <i class="fas fa-redo"></i> Retake
+              </button>
+              <button id="saveBtn" class="btn btn-success">
+                <i class="fas fa-save"></i> Save Updated Face
+              </button>
+            </div>
         </div>
 
     </div>
@@ -142,5 +132,4 @@
 
 <script src="/static/js/employees_face_enroll_update.js"></script>
 
-</body>
-</html>
+{% endblock %}
