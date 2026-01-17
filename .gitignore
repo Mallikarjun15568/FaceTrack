@@ -88,3 +88,18 @@ demo_data.sql
 static/uploads/
 static/faces/
 static/snapshots/
+
+scripts/
+# design/docs to ignore
+docs/diagrams/
+
+# DFD and mobile testing documents
+DFD_Documentation.md
+MOBILE_CAMERA_TESTING.md
+
+# images and temp folders
+static/images/
+static/temp/
+
+# template backups
+templates/backups/
