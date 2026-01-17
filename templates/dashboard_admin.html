@@ -66,14 +66,17 @@
           Quick Actions
         </h3>
         <div class="space-y-3">
-          <a href="/employees" class="block text-center w-full py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition">
-            Manage Employees
+          <a href="/employees" class="group flex items-center justify-center gap-3 w-full py-3 px-4 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            <i class="fas fa-users text-sm opacity-90 group-hover:opacity-100 transition-opacity"></i>
+            <span>Manage Employees</span>
           </a>
-          <a href="/enroll" class="block text-center w-full py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition">
-            Enroll Face
+          <a href="/enroll" class="group flex items-center justify-center gap-3 w-full py-3 px-4 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+            <i class="fas fa-camera text-sm opacity-90 group-hover:opacity-100 transition-opacity"></i>
+            <span>Enroll Face</span>
           </a>
-          <a href="/reports" class="block text-center w-full py-2 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition">
-            Reports
+          <a href="/reports" class="group flex items-center justify-center gap-3 w-full py-3 px-4 rounded-xl bg-orange-500 text-white font-medium hover:bg-orange-600 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+            <i class="fas fa-chart-bar text-sm opacity-90 group-hover:opacity-100 transition-opacity"></i>
+            <span>Reports</span>
           </a>
         </div>
       </div>
@@ -81,10 +84,10 @@
   </div>
  
   <!-- MAIN DASHBOARD GRID -->
-  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+  <div class="grid grid-cols-1 gap-6 mb-8">
 
-    <!-- LEFT: Charts -->
-    <div class="xl:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Weekly Attendance -->
       <div class="card">
         <div class="flex items-center justify-between mb-5">
@@ -103,6 +106,8 @@
         <canvas id="departmentChart" height="200"></canvas>
       </div>
     </div>
+
+  </div>
 
   <!-- Recent Attendance Table -->
   <div class="card">
@@ -138,14 +143,22 @@
     </div>
   </div>
 
-</div>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
     window.WEEKLY_DATA = {{ weekly_data | tojson | safe }};
     window.DEPARTMENT_DATA = {{ department_data | tojson | safe }};
+</script>
+<script>
+  // Debug: show weekly data coming from server
+  try {
+    console.log('WEEKLY_DATA (server):', window.WEEKLY_DATA);
+    console.log('weekly labels:', window.WEEKLY_DATA.labels);
+    console.log('weekly counts:', window.WEEKLY_DATA.data);
+  } catch (e) {
+    console.warn('No WEEKLY_DATA available yet', e);
+  }
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>

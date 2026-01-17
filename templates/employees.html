@@ -2,6 +2,27 @@
 {% block page_title %}Employees{% endblock %}
 {% block extra_head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<style>
+.employees-table-container::-webkit-scrollbar {
+  width: 12px !important;
+  height: 12px !important;
+}
+.employees-table-container::-webkit-scrollbar-track {
+  background: #f1f1f1 !important;
+  border-radius: 6px !important;
+}
+.employees-table-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1 !important;
+  border-radius: 6px !important;
+}
+.employees-table-container::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1 !important;
+}
+.employees-table-container {
+  scrollbar-width: auto !important;
+  -ms-overflow-style: auto !important;
+}
+</style>
 {% endblock %}
 {% block content %}
 
@@ -75,8 +96,8 @@
   </div>
 
   <!-- TABLE -->
-  <div class="card overflow-x-auto">
-    <table class="table w-full">
+  <div class="card" style="max-height: 600px; overflow: scroll; overflow-x: scroll; overflow-y: scroll; scrollbar-width: thin; -ms-overflow-style: scrollbar;">
+    <table class="table w-full" style="min-width: 1000px;">
       <thead>
         <tr>
           <th class="rounded-tl-lg"></th>
@@ -145,6 +166,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </div>
 
   <!-- PAGINATION -->

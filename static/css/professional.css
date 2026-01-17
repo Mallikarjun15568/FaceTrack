@@ -657,23 +657,31 @@ textarea::placeholder {
 /* ==================================================
    PROFESSIONAL SCROLLBAR
    ================================================== */
+/* Visually hide native scrollbars while preserving scroll behavior
+   - Firefox: `scrollbar-width: none`
+   - IE/Edge (legacy): `-ms-overflow-style: none`
+   - WebKit: set scrollbar size to 0 and make track/thumb transparent */
+html, body, #app {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 0;
+  height: 0;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--gray-100);
-  border-radius: 10px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background: transparent;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, var(--primary-dark), var(--secondary-dark));
+  background: transparent;
 }
 
 /* ==================================================

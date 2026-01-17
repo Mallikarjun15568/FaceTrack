@@ -10,12 +10,21 @@ const weeklyCounts = Array.isArray(weeklyData.data) ? weeklyData.data : [];
 const weeklyCtx = document.getElementById("weeklyAttendanceChart");
 
 if (weeklyCtx && typeof Chart !== "undefined" && weeklyLabels.length > 0) {
+    console.log('Chart data:', weeklyLabels, weeklyCounts);
+    // compute a friendly upper bound for the Y axis so small counts (like 0/1)
+    // don't make the chart look like it's 'stuck' at 1. Keep beginAtZero true.
+    const maxVal = weeklyCounts.length ? Math.max(...weeklyCounts) : 0;
+    // Ensure integer suggestedMax and provide some headroom; keep it small for low counts
+    const suggestedMax = Math.max(10, Math.ceil(maxVal + 1));
+
+    console.log('maxVal:', maxVal, 'suggestedMax:', suggestedMax);
+
     new Chart(weeklyCtx, {
         type: "line",
         data: {
             labels: weeklyLabels,
             datasets: [{
-                label: "Attendance",
+                label: "Recognitions",
                 data: weeklyCounts,
                 borderWidth: 3,
                 borderColor: "#2563eb",
@@ -27,7 +36,22 @@ if (weeklyCtx && typeof Chart !== "undefined" && weeklyLabels.length > 0) {
         options: {
             responsive: true,
             plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
+            scales: { 
+                y: { 
+                    beginAtZero: true, 
+                    min: 0,
+                    suggestedMax: suggestedMax,
+                    ticks: {
+                        // force integer ticks (0,1,2...)
+                        stepSize: 1,
+                        callback: function(value) {
+                            if (value % 1 === 0) {
+                                return value;
+                            }
+                        }
+                    }
+                } 
+            }
         }
     });
 }

@@ -347,7 +347,7 @@ function initFeatherIcons() {
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
     initScrollReveal();
-    initMobileMenu();
+    // initMobileMenu();
     initPageTransitions();
     initTooltips();
     animateCounters();

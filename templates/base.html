@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}FaceTrack {% endblock %}</title>
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <link rel="icon" type="image/png" href="{{ url_for('favicon') }}">
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -31,22 +31,22 @@
 <body class="bg-gray-50 text-gray-900 antialiased">
 
 <!-- Mobile Menu Toggle -->
-<button id="mobileMenuBtn" class="lg:hidden fixed top-4 left-4 z-50 w-11 h-11 bg-indigo-600 rounded-lg shadow-lg flex items-center justify-center text-white hover:bg-indigo-700 transition-colors">
+<!-- <button id="mobileMenuBtn" class="lg:hidden fixed top-4 left-4 z-50 w-11 h-11 bg-indigo-600 rounded-lg shadow-lg flex items-center justify-center text-white hover:bg-indigo-700 transition-colors">
   <i class="fas fa-bars text-lg"></i>
-</button>
+</button> -->
 
 <div id="app" class="flex h-screen">
 
   <!-- SIDEBAR -->
-  <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 shadow-sm fixed lg:static inset-y-0 left-0 z-40 transform -translate-x-full transition-transform duration-300 ease-in-out">
-    <div class="p-6 border-b border-gray-200">
-      <a href="/" class="flex items-center gap-3 group">
-        <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-          <i class="fas fa-fingerprint text-white text-xl"></i>
-        </div>
-        <div>
-          <div class="font-bold text-lg text-gray-900">FaceTrack</div>
-          <div class="text-xs text-gray-500">AI Attendance</div>
+  <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 shadow-sm static inset-y-0 left-0 z-40 transform translate-x-0 transition-transform duration-300 ease-in-out">
+    <div class="p-4 border-b border-gray-200">
+      <a href="/" class="block group">
+        <div class="text-center">
+          <img src="{{ url_for('static', filename='images/FaceTrack_logo.png') }}" alt="FaceTrack Logo" class="mx-auto h-44 w-auto group-hover:opacity-80 transition-opacity duration-300">
+          <p class="text-xs text-gray-500 mt-4 group-hover:text-indigo-600 transition-colors duration-300">
+            AI Attendance
+          </p>
+          <div class="w-12 h-0.5 bg-indigo-600 mx-auto mt-2 group-hover:w-16 transition-all duration-300"></div>
         </div>
       </a>
     </div>
@@ -133,11 +133,11 @@
     </nav>
   </aside>
 
-  <div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-30 hidden lg:hidden"></div>
+  <!-- <div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-30 hidden lg:hidden"></div> -->
 
-  <div class="flex-1 flex flex-col overflow-auto lg:ml-64">
+  <div class="flex-1 flex flex-col overflow-auto ml-64">
 
-    <header class="hidden lg:flex items-center justify-between bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+    <header class="flex items-center justify-between bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
       <div>
         <h1 class="text-xl font-bold text-gray-900">{% block page_title %}Dashboard{% endblock %}</h1>
         <!-- Breadcrumbs -->

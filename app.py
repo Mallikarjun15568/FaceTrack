@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, flash, session, jsonify, send_from_directory, request
+from flask import Flask, render_template, redirect, url_for, flash, session, jsonify, send_from_directory, request, abort
 import logging
 import time
 import os
@@ -214,11 +214,13 @@ def help_page():
 
 @app.route("/favicon.ico", endpoint="favicon")
 def favicon():
-    return send_from_directory(
-        os.path.join(app.root_path, "static", "images"),
-        "facetrack_pro.png",
-        mimetype="image/png"
-    )
+    # Serve only the static/favicon.ico file. This project relies solely on that file.
+    static_dir = os.path.join(app.root_path, "static")
+    favicon_path = os.path.join(static_dir, "favicon.ico")
+    if os.path.exists(favicon_path):
+        return send_from_directory(static_dir, "favicon.ico", mimetype="image/x-icon")
+    # If missing, return 404 so issues are visible during development
+    abort(404)
 
 
 # --------------------------

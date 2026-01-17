@@ -584,24 +584,29 @@
 }
 
 /* Premium Scrollbar */
+/* Visually hide native scrollbars while preserving scroll behavior */
+html, body, #app {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
 ::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: 0;
+  height: 0;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--gray-100);
-  border-radius: var(--border-radius-full);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--primary-400) 0%, var(--primary-600) 100%);
+  background: transparent;
   border-radius: var(--border-radius-full);
-  border: 3px solid var(--gray-100);
+  border: 0 solid transparent;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-700) 100%);
+  background: transparent;
 }
 
 /* Premium Focus States */

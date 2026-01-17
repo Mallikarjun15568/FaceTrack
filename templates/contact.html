@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Contact — FaceTrack Pro</title>
-<link rel="icon" type="image/png" href="{{ url_for('favicon') }}">
+<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
 <link rel="stylesheet" href="/static/css/output.css">
 <link rel="stylesheet" href="/static/css/professional.css">
@@ -21,26 +21,22 @@
 </div>
 
 <!-- NAVBAR -->
-<nav class="w-full backdrop-blur-xl bg-white/80 border-b border-white/20 shadow-lg py-4 px-6 flex justify-between items-center sticky top-0 z-50">
-  <div class="flex items-center gap-3">
-    <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-      <span class="text-white text-xl font-bold">F</span>
-    </div>
-    <span class="text-2xl font-extrabold">
-      <span class="gradient-text">FaceTrack</span>
-      <span class="text-gray-800"> Pro</span>
-    </span>
+<header class="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+  <div class="flex items-center gap-0">
+    <img src="{{ url_for('static', filename='images/FaceTrack_logo.png') }}" alt="FaceTrack Logo" class="h-16 w-auto">
   </div>
-  <div class="flex items-center gap-8 text-sm font-medium">
+  <div class="flex items-center gap-6 text-sm font-medium">
     <a href="/" class="text-gray-600 hover:text-blue-600 transition">Home</a>
     <a href="/about" class="text-gray-600 hover:text-blue-600 transition">About</a>
     <a href="/contact" class="text-blue-600 pb-1 border-b-2 border-blue-600">Contact</a>
     <a href="/help" class="text-gray-600 hover:text-blue-600 transition">Help</a>
-    <a href="/auth/login" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+    <a href="/auth/login" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm">
       Login
     </a>
   </div>
-</nav>
+  </div>
+</header>
 
 <style>
   .gradient-text {

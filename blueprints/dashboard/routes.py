@@ -1,7 +1,8 @@
 from . import bp
-from flask import render_template, session, redirect, url_for
+from flask import render_template, session, redirect, url_for, jsonify
 from utils.db import get_db
 from blueprints.auth.utils import login_required
+from datetime import date, timedelta
 
 
 # ================================
@@ -66,19 +67,29 @@ def admin_dashboard():
     """)
     recent_recognitions = cursor.fetchall()
 
-    # 7) Weekly Attendance Chart Data
-    cursor.execute("""
-        SELECT DATE(date) AS day, COUNT(*) AS count
-        FROM attendance
-        WHERE date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-        GROUP BY DATE(date)
-    """)
-    weekly_rows = cursor.fetchall()
+    # 7) Weekly Recognition Chart Data (last 7 days)
+    def _fetch_weekly_recognitions(cur, lookback_days=6):
+        cur.execute(f"""
+            SELECT DATE(timestamp) AS day, COUNT(*) AS count
+            FROM recognition_logs
+            WHERE timestamp >= DATE_SUB(CURDATE(), INTERVAL {lookback_days} DAY)
+            GROUP BY DATE(timestamp)
+        """)
+        rows = cur.fetchall()
 
-    weekly_data = {
-        "labels": [str(row["day"]) for row in weekly_rows],
-        "data": [row["count"] for row in weekly_rows]
-    }
+        counts = {str(r['day']): r['count'] for r in rows}
+        labels = []
+        data = []
+        for i in range(lookback_days, -1, -1):
+            d = date.today() - timedelta(days=i)
+            s = d.isoformat()
+            labels.append(s)
+            data.append(counts.get(s, 0))
+
+        return labels, data
+
+    labels, data = _fetch_weekly_recognitions(cursor)
+    weekly_data = {"labels": labels, "data": data}
 
     # 8) Department Employee Distribution
     cursor.execute("""
@@ -105,3 +116,29 @@ def admin_dashboard():
         weekly_data=weekly_data,
         department_data=department_data
     )
+
+
+@bp.route('/debug/weekly-recognitions')
+def debug_weekly_recognitions():
+    """Return JSON of last 7 days recognition counts for debugging."""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT DATE(timestamp) AS day, COUNT(*) AS count
+        FROM recognition_logs
+        WHERE timestamp >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+        GROUP BY DATE(timestamp)
+    """)
+    rows = cursor.fetchall()
+
+    counts = {str(r['day']): r['count'] for r in rows}
+    labels = []
+    data = []
+    for i in range(6, -1, -1):
+        d = date.today() - timedelta(days=i)
+        s = d.isoformat()
+        labels.append(s)
+        data.append(counts.get(s, 0))
+
+    return jsonify({"labels": labels, "data": data})
