@@ -67,13 +67,14 @@ def admin_dashboard():
     """)
     recent_recognitions = cursor.fetchall()
 
-    # 7) Weekly Recognition Chart Data (last 7 days)
-    def _fetch_weekly_recognitions(cur, lookback_days=6):
+    # 7) Weekly Attendance Chart Data (last 7 days)
+    def _fetch_weekly_attendance(cur, lookback_days=6):
         cur.execute(f"""
-            SELECT DATE(timestamp) AS day, COUNT(*) AS count
-            FROM recognition_logs
-            WHERE timestamp >= DATE_SUB(CURDATE(), INTERVAL {lookback_days} DAY)
-            GROUP BY DATE(timestamp)
+            SELECT DATE(date) AS day, COUNT(*) AS count
+            FROM attendance
+            WHERE date >= DATE_SUB(CURDATE(), INTERVAL {lookback_days} DAY)
+              AND check_in_time IS NOT NULL
+            GROUP BY DATE(date)
         """)
         rows = cur.fetchall()
 
@@ -88,7 +89,7 @@ def admin_dashboard():
 
         return labels, data
 
-    labels, data = _fetch_weekly_recognitions(cursor)
+    labels, data = _fetch_weekly_attendance(cursor)
     weekly_data = {"labels": labels, "data": data}
 
     # 8) Department Employee Distribution
@@ -118,17 +119,18 @@ def admin_dashboard():
     )
 
 
-@bp.route('/debug/weekly-recognitions')
-def debug_weekly_recognitions():
-    """Return JSON of last 7 days recognition counts for debugging."""
+@bp.route('/debug/weekly-attendance')
+def debug_weekly_attendance():
+    """Return JSON of last 7 days attendance counts for debugging."""
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
     cursor.execute("""
-        SELECT DATE(timestamp) AS day, COUNT(*) AS count
-        FROM recognition_logs
-        WHERE timestamp >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-        GROUP BY DATE(timestamp)
+        SELECT DATE(date) AS day, COUNT(*) AS count
+        FROM attendance
+        WHERE date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+          AND check_in_time IS NOT NULL
+        GROUP BY DATE(date)
     """)
     rows = cursor.fetchall()
 

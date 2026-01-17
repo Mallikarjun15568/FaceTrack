@@ -24,7 +24,7 @@ if (weeklyCtx && typeof Chart !== "undefined" && weeklyLabels.length > 0) {
         data: {
             labels: weeklyLabels,
             datasets: [{
-                label: "Recognitions",
+                label: "Attendance",
                 data: weeklyCounts,
                 borderWidth: 3,
                 borderColor: "#2563eb",
