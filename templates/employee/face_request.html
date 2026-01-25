@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face Request - FaceTrack Employee</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/professional.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/premium.css') }}">
+
+  <!-- Icons: prefer local copy (if available), otherwise use CDN -->
+  {% if FA_LOCAL_AVAILABLE %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+  {% else %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  {% endif %}
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .admin-bg {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      background-image:
+        radial-gradient(circle at 25% 25%, rgba(37, 99, 235, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(37, 99, 235, 0.02) 0%, transparent 50%);
+    }
+    .premium-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .premium-card:hover {
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      transform: translateY(-2px);
+    }
+    .stat-icon {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+    }
+    .action-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      color: white;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    }
+    .action-btn-secondary {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    /* Ensure fixed header height is accounted for so page content isn't overlapped */
+    :root { --header-height: 5rem; }
+    header { height: var(--header-height); }
+    /* Add slightly more padding to account for shadows/margins */
+    body { padding-top: calc(var(--header-height) + 0.5rem); }
+  </style>
+</head>
+<body class="m-0 admin-bg min-h-screen">
+
+  <!-- Premium Header -->
+    <header class="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-lg">
+      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <!-- Logo and Brand -->
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+            <i class="fas fa-user-check text-white text-lg"></i>
+          </div>
+          <h1 class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">FaceTrack Pro</h1>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="flex items-center gap-6">
+          <a href="{{ url_for('employee.dashboard') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.dashboard' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-home mr-2"></i>Dashboard
+          </a>
+          <a href="{{ url_for('employee.attendance') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.attendance' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-clipboard-list mr-2"></i>Attendance
+          </a>
+          <a href="{{ url_for('employee.face_request') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.face_request' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-camera mr-2"></i>Face Request
+          </a>
+          <a href="{{ url_for('employee.leave') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.leave' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-calendar-plus mr-2"></i>Leave
+          </a>
+          <a href="{{ url_for('employee.summary') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.summary' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-chart-bar mr-2"></i>Summary
+          </a>
+        </nav>
+
+        <!-- User Section (compact dropdown) -->
+        <div class="relative">
+          <button id="userMenuBtn" onclick="toggleUserMenu(event)" class="flex items-center gap-3 focus:outline-none">
+            <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-sm">
+              <i class="fas fa-user text-white text-sm"></i>
+            </div>
+            <span class="ml-2 hidden sm:inline text-sm font-medium text-gray-800">{{ session.get('full_name', 'Employee') }}</span>
+            <i class="fas fa-caret-down ml-1 text-gray-500"></i>
+          </button>
+          <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-md py-2 z-50">
+            <a href="{{ url_for('employee.profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-user mr-2"></i>Profile</a>
+            <a href="{{ url_for('employee.settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-cog mr-2"></i>Settings</a>
+            <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <script>
+      function toggleUserMenu(e){ e.stopPropagation(); const m=document.getElementById('userMenu'); if(m) m.classList.toggle('hidden'); }
+      document.addEventListener('click', function(){ const m=document.getElementById('userMenu'); if(m && !m.classList.contains('hidden')) m.classList.add('hidden'); });
+    </script>
+
+  <!-- Main Content -->
+  <div class="pt-36 pb-8">
+    <div class="max-w-4xl mx-auto px-6">
+
+      <!-- Page Header -->
+      <div class="premium-card p-6 mb-8 scroll-reveal">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <i class="fas fa-camera text-blue-600"></i>
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900">Face Recognition Request</h1>
+            <p class="text-gray-600 mt-1">Request to enroll or update your face data for attendance system</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Face Status -->
+      <div class="premium-card p-6 mb-8 scroll-reveal">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Current Status</h3>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            {% if pending_request %}
+              {% if pending_request.status == 'pending' %}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                  <i class="fas fa-clock mr-2"></i> Request Pending Approval
+                </span>
+              {% elif pending_request.status == 'approved' %}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  <i class="fas fa-check mr-2"></i> Face Approved
+                </span>
+              {% elif pending_request.status == 'rejected' %}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                  <i class="fas fa-times mr-2"></i> Request Rejected
+                </span>
+              {% endif %}
+            {% elif has_face %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                <i class="fas fa-check mr-2"></i> Face Enrolled
+              </span>
+            {% else %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                <i class="fas fa-times mr-2"></i> Not Enrolled
+              </span>
+            {% endif %}
+          </div>
+          {% if pending_request and pending_request.status == 'pending' %}
+            <button id="cancelRequestBtn" class="btn btn-outline-danger">
+              <i class="fas fa-times mr-2"></i>
+              Cancel Request
+            </button>
+          {% endif %}
+        </div>
+        {% if pending_request and pending_request.status == 'rejected' and pending_request.rejection_reason %}
+          <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p class="text-sm text-red-800">
+              <strong>Rejection Reason:</strong> {{ pending_request.rejection_reason }}
+            </p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Face Request Form -->
+      {% if not pending_request %}
+      <div id="faceRequestSection" class="premium-card p-6 scroll-reveal">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Request Face Enrollment/Update</h3>
+        <div class="space-y-6">
+          <div class="flex gap-4">
+            <button id="enrollBtn" class="action-btn {{ 'bg-gray-400 cursor-not-allowed' if has_face else '' }}" {{ 'disabled' if has_face else '' }}>
+              <i class="fas fa-plus"></i>
+              New Enrollment
+            </button>
+            <button id="updateBtn" class="action-btn action-btn-secondary {{ 'bg-gray-400 cursor-not-allowed' if not has_face else '' }}" {{ 'disabled' if not has_face else '' }}>
+              <i class="fas fa-edit"></i>
+              Update Face
+            </button>
+          </div>
+
+          {% if has_face %}
+            <div class="p-4 bg-green-50 border border-green-200 rounded-md">
+              <p class="text-sm text-green-800">
+                <i class="fas fa-info-circle mr-2"></i>
+                Your face is already enrolled. You can request an update if your appearance has changed significantly.
+              </p>
+            </div>
+          {% else %}
+            <div class="p-4 bg-blue-50 border border-blue-200 rounded-md">
+              <p class="text-sm text-blue-800">
+                <i class="fas fa-info-circle mr-2"></i>
+                No face data found. Choose "New Enrollment" to add your face to the attendance system.
+              </p>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Camera Section -->
+        <div id="cameraSection" class="hidden mt-8">
+          <div class="bg-gray-50 rounded-lg p-6">
+            <h4 class="text-md font-medium text-gray-900 mb-4">Capture Your Face</h4>
+
+            <div class="flex flex-col items-center w-full">
+              <div class="relative mb-6 w-full max-w-md">
+                <video id="video" width="400" height="300" autoplay muted class="w-full rounded-lg border-2 border-gray-300"></video>
+                <canvas id="faceCanvas" class="absolute inset-0 w-full h-full pointer-events-none hidden" style="z-index: 10;"></canvas>
+                <div id="guidanceText" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-lg text-sm font-medium hidden" style="z-index: 20;">
+                  Center your face
+                </div>
+              </div>
+
+              <!-- Camera Controls -->
+              <div id="cameraControls" class="flex justify-center gap-4 mb-4 w-full max-w-md">
+                <button id="startCameraBtn" class="btn btn-success">
+                  <i class="fas fa-video mr-2"></i>
+                  Start Camera
+                </button>
+                <button id="stopCameraBtn" class="btn btn-danger hidden">
+                  <i class="fas fa-stop mr-2"></i>
+                  Stop Camera
+                </button>
+                <button id="captureBtn" class="btn btn-primary hidden">
+                  <i class="fas fa-camera mr-2"></i>
+                  Capture Face
+                </button>
+              </div>
+
+              <div class="text-center w-full max-w-md">
+                <p class="text-sm text-gray-600">Ensure good lighting and position your face clearly in the center.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview Section -->
+        <div id="previewSection" class="hidden mt-8">
+          <div class="bg-gray-50 rounded-lg p-6">
+            <h4 class="text-md font-medium text-gray-900 mb-4">Preview & Submit Request</h4>
+            <div class="text-center mb-6">
+              <img id="previewImg" class="max-w-md mx-auto block rounded-lg shadow-md border-2 border-green-400" />
+            </div>
+            <div class="text-center">
+              <button id="submitBtn" class="action-btn mr-4">
+                <i class="fas fa-paper-plane"></i>
+                Submit Request
+              </button>
+              <button id="retakeBtn" class="btn btn-secondary">
+                <i class="fas fa-redo mr-2"></i>
+                Retake
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loadingBox" class="hidden text-center py-6 mt-8">
+          <div class="inline-flex items-center gap-3 bg-blue-50 px-6 py-4 rounded-lg border border-blue-200">
+            <div class="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <span class="text-base text-blue-700 font-semibold">Processing your request...</span>
+          </div>
+        </div>
+
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  <script>
+    // =====================
+    // DOM REFERENCES
+    // =====================
+    const video = document.getElementById('video');
+    const faceCanvas = document.getElementById('faceCanvas');
+    const previewImg = document.getElementById('previewImg');
+    const captureBtn = document.getElementById('captureBtn');
+    const startCameraBtn = document.getElementById('startCameraBtn');
+    const stopCameraBtn = document.getElementById('stopCameraBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const retakeBtn = document.getElementById('retakeBtn');
+    const enrollBtn = document.getElementById('enrollBtn');
+    const updateBtn = document.getElementById('updateBtn');
+    const cancelRequestBtn = document.getElementById('cancelRequestBtn');
+    const cameraSection = document.getElementById('cameraSection');
+    const previewSection = document.getElementById('previewSection');
+    const loadingBox = document.getElementById('loadingBox');
+    const guidanceText = document.getElementById('guidanceText');
+    const cameraControls = document.getElementById('cameraControls');
+
+    // =====================
+    // GLOBAL STATE
+    // =====================
+    let currentStream = null;
+    let lastCapturedImage = null;
+    let faceDetected = false;
+    let detectInterval = null;
+    let lastDetectState = null;
+    let detectSessionId = 0; // Session guard
+    let isProcessing = false; // Cooldown flag
+    let requestType = '';
+
+    // =====================
+    // UTILITY FUNCTIONS
+    // =====================
+    function getCSRFToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.content;
+    }
+
+    function drawDetectionBox(color = "#ef4444") {
+        if (!video || !faceCanvas) return;
+
+        const rect = video.getBoundingClientRect();
+        faceCanvas.width = rect.width;
+        faceCanvas.height = rect.height;
+
+        const ctx = faceCanvas.getContext("2d");
+        ctx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
+
+        const size = Math.min(rect.width, rect.height) * 0.55;
+        const x = (rect.width - size) / 2;
+        const y = (rect.height - size) / 2;
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+
+        ctx.strokeRect(x, y, size, size);
+    }
+
+    // =====================
+    // FACE DETECTION
+    // =====================
+    async function detectFaceOnce() {
+        const sessionAtStart = detectSessionId;
+        if (!currentStream || !video.videoWidth) {
+            guidanceText.classList.add("hidden");
+            captureBtn.classList.add("hidden");
+            return;
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+
+        try {
+            const res = await fetch("/enroll/detect_face", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCSRFToken()
+                },
+                body: JSON.stringify({ image: canvas.toDataURL("image/jpeg") })
+            });
+
+            if (sessionAtStart !== detectSessionId) return;
+
+            const { face_detected, face_count } = await res.json();
+
+            let borderColor = "#ef4444";
+            let message = "";
+            let allowCapture = false;
+
+            if (face_count === 0) {
+                borderColor = "#ef4444";
+                message = "No face detected";
+                allowCapture = false;
+            } else if (face_count > 1) {
+                borderColor = "#f97316";
+                message = "Multiple faces detected. Only one person allowed";
+                allowCapture = false;
+            } else if (face_count === 1) {
+                borderColor = "#10b981";
+                message = "Face detected – hold still & capture";
+                allowCapture = true;
+            }
+
+            faceDetected = allowCapture;
+            drawDetectionBox(borderColor);
+
+            guidanceText.textContent = message;
+            guidanceText.classList.remove("hidden");
+
+            captureBtn.classList.add("hidden");
+            if (allowCapture) {
+                captureBtn.classList.remove("hidden");
+            }
+
+        } catch (err) {
+            if (sessionAtStart !== detectSessionId) return;
+            captureBtn.classList.add("hidden");
+            guidanceText.classList.add("hidden");
+            console.error("Face detection error:", err);
+        }
+    }
+
+    // =====================
+    // CAMERA FUNCTIONS
+    // =====================
+    function startCamera(type) {
+        requestType = type;
+        detectSessionId++;
+        lastDetectState = null;
+        faceDetected = false;
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                currentStream = stream;
+                video.srcObject = stream;
+                cameraSection.classList.remove("hidden");
+                previewSection.classList.add("hidden");
+                loadingBox.classList.add("hidden");
+                faceCanvas.classList.remove("hidden");
+                guidanceText.classList.remove("hidden");
+                cameraControls.classList.remove("hidden");
+                startCameraBtn.classList.add("hidden");
+                stopCameraBtn.classList.remove("hidden");
+                captureBtn.classList.add("hidden");
+                video.onloadeddata = () => drawDetectionBox("#ef4444");
+                if (detectInterval) clearInterval(detectInterval);
+                detectInterval = setInterval(detectFaceOnce, 600);
+            })
+            .catch(err => {
+                alert('Camera access denied or not available. Please check permissions.');
+                console.error(err);
+            });
+    }
+
+    function stopCamera() {
+        detectSessionId++;
+        if (detectInterval) {
+            clearInterval(detectInterval);
+            detectInterval = null;
+        }
+        lastDetectState = null;
+        faceDetected = false;
+        if (!currentStream) return;
+
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+        video.srcObject = null;
+
+        cameraSection.classList.add("hidden");
+        previewSection.classList.add("hidden");
+        loadingBox.classList.add("hidden");
+        faceCanvas.classList.add("hidden");
+        guidanceText.classList.add("hidden");
+        cameraControls.classList.remove("hidden");
+        startCameraBtn.classList.remove("hidden");
+        stopCameraBtn.classList.add("hidden");
+        captureBtn.classList.add("hidden");
+    }
+
+    // =====================
+    // EVENT LISTENERS
+    // =====================
+    enrollBtn?.addEventListener('click', () => startCamera('enroll'));
+    updateBtn?.addEventListener('click', () => startCamera('update'));
+    startCameraBtn?.addEventListener('click', () => startCamera(requestType || 'enroll'));
+    stopCameraBtn?.addEventListener('click', stopCamera);
+
+    captureBtn?.addEventListener('click', () => {
+        detectSessionId++;
+        if (!currentStream || !faceDetected) return;
+
+        if (detectInterval) {
+            clearInterval(detectInterval);
+            detectInterval = null;
+        }
+
+        faceDetected = false;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+        lastCapturedImage = canvas.toDataURL("image/jpeg");
+
+        if (currentStream) {
+            currentStream.getTracks().forEach(t => t.stop());
+            currentStream = null;
+            video.srcObject = null;
+        }
+
+        startCameraBtn.classList.add("hidden");
+        stopCameraBtn.classList.add("hidden");
+        captureBtn.classList.add("hidden");
+        guidanceText.classList.add("hidden");
+        cameraSection.classList.add("hidden");
+        faceCanvas.classList.add("hidden");
+
+        previewImg.src = lastCapturedImage;
+        previewSection.classList.remove("hidden");
+        cameraControls.classList.add("hidden");
+    });
+
+    retakeBtn?.addEventListener('click', () => {
+        lastCapturedImage = null;
+        previewSection.classList.add("hidden");
+        startCamera(requestType);
+    });
+
+    submitBtn?.addEventListener('click', async () => {
+        if (!lastCapturedImage || isProcessing) return;
+
+        isProcessing = true;
+        submitBtn.disabled = true;
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+
+        if (loadingBox) loadingBox.classList.remove("hidden");
+
+        try {
+            const res = await fetch('/employee/submit_face_request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    request_type: requestType,
+                    image: lastCapturedImage
+                })
+            });
+
+            const data = await res.json();
+
+            if (loadingBox) loadingBox.classList.add("hidden");
+
+            if (data.status === "success") {
+                alert(data.message || "Your request has been submitted for admin approval.");
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Request failed'));
+                isProcessing = false;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        } catch (error) {
+            console.error('Submit error:', error);
+            alert('Network error occurred. Please try again.');
+            isProcessing = false;
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            if (loadingBox) loadingBox.classList.add("hidden");
+        }
+    });
+
+    cancelRequestBtn?.addEventListener('click', async () => {
+        showFaceRequestCancelModal();
+    });
+
+    // =====================
+    // INITIALIZATION
+    // =====================
+    cameraControls.classList.remove("hidden");
+    startCameraBtn.classList.remove("hidden");
+    stopCameraBtn.classList.add("hidden");
+    captureBtn.classList.add("hidden");
+    previewSection.classList.add("hidden");
+    loadingBox.classList.add("hidden");
+    if (faceCanvas) faceCanvas.classList.add("hidden");
+    if (guidanceText) guidanceText.classList.add("hidden");
+
+    // Add scroll reveal animations
+    document.addEventListener('DOMContentLoaded', function() {
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      };
+
+      const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.style.animationDelay = entry.target.style.getPropertyValue('--delay') || '0s';
+            entry.target.classList.add('animate-in');
+          }
+        });
+      }, observerOptions);
+
+      document.querySelectorAll('.scroll-reveal').forEach(el => {
+        observer.observe(el);
+      });
+    });
+  </script>
+
+<!-- Face Request Cancellation Confirmation Modal -->
+<div id="faceRequestCancelModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" onclick="if(event.target === this) hideFaceRequestCancelModal()">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-times-circle text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900">Cancel Face Request</h3>
+        </div>
+
+        <div class="mb-6">
+            <p class="text-gray-600">Are you sure you want to cancel your pending face request? This action cannot be undone.</p>
+        </div>
+
+        <div class="flex gap-3">
+            <button type="button" onclick="confirmFaceRequestCancellation()"
+                class="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
+                <i class="fas fa-times mr-2"></i>
+                Cancel Request
+            </button>
+            <button type="button" onclick="hideFaceRequestCancelModal()"
+                class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all">
+                Keep Request
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showFaceRequestCancelModal() {
+    document.getElementById('faceRequestCancelModal').classList.remove('hidden');
+}
+
+function hideFaceRequestCancelModal() {
+    document.getElementById('faceRequestCancelModal').classList.add('hidden');
+}
+
+async function confirmFaceRequestCancellation() {
+    try {
+        const res = await fetch('/employee/cancel_face_request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+
+        const data = await res.json();
+
+        if (data.status === "success") {
+            alert(data.message || "Request cancelled successfully.");
+            location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'Cancellation failed'));
+        }
+    } catch (error) {
+        console.error('Cancel error:', error);
+        alert('Network error occurred. Please try again.');
+    }
+    hideFaceRequestCancelModal();
+}
+</script>
+
+</body>
+</html>

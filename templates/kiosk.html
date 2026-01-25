@@ -1,9 +1,54 @@
 {% extends "base_kiosk.html" %} {% block title %}Kiosk Mode - FaceTrack{% endblock %} {% block head %}
-<meta name="csrf-token" content="{{ csrf_token() }}"> {% endblock %} {% block content %} <!-- TOP BAR -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<style>
+/* Glow effect for face detection canvas */
+#kioskFaceCanvas {
+  border: 2px solid #22c55e;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.8), 0 0 40px rgba(34, 197, 94, 0.5);
+  animation: pulse-glow 1s infinite alternate;
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.8), 0 0 40px rgba(34, 197, 94, 0.5); }
+  100% { box-shadow: 0 0 30px rgba(34, 197, 94, 1), 0 0 60px rgba(34, 197, 94, 0.7); }
+}
+
+/* Animate guidance text */
+#guidanceText {
+  animation: gentle-fade 4s ease-in-out infinite;
+  color: #ffffff; /* White for better contrast */
+  font-size: 1rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+@keyframes gentle-fade {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.9; }
+}
+
+/* Confetti animation for recognized card */
+.recognized-animation {
+  animation: bounce-in 0.8s ease-out, rainbow 2s ease-in-out infinite 0.8s;
+}
+
+@keyframes bounce-in {
+  0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+  50% { transform: scale(1.1) rotate(5deg); }
+  70% { transform: scale(0.95) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes rainbow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+</style>
+{% endblock %} {% block content %} <!-- TOP BAR -->
 <div class="h-16 px-6 flex items-center justify-between bg-white border-b border-gray-200 shadow-sm">
   <div class="flex items-center gap-3">
-    <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center"> <i
-        class="fas fa-fingerprint text-white text-lg"></i> </div>
+    <div class="w-10 h-10 rounded-lg overflow-hidden bg-white flex items-center justify-center shadow-sm">
+      <img src="{{ url_for('static', filename='images/favicon.ico') }}" alt="FaceTrack Logo" class="w-10 h-10 object-cover">
+    </div>
     <div>
       <h1 class="text-gray-900 font-bold text-lg">FaceTrack</h1>
       <p class="text-xs text-gray-500">Kiosk Mode</p>
@@ -111,9 +156,9 @@
         </div>
       </div> <!-- Employee Card -->
       <div id="employee-card"
-        class="hidden card mb-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 shadow-lg transition-all duration-500 transform">
+        class="hidden card mb-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 shadow-lg transition-all duration-500 transform recognized-animation">
         <div class="flex items-center gap-4"> <img id="emp-photo"
-            src="{{ url_for('static', filename='default_user.png') }}"
+            src="{{ url_for('static', filename='images/default-avatar.png') }}"
             class="w-16 h-16 rounded-xl object-cover border-3 border-green-400 shadow-md">
           <div class="flex-1">
             <p id="emp-name" class="font-bold text-lg text-gray-900">Employee Name</p>

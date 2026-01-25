@@ -2,7 +2,7 @@
         // ACTIVATE EMPLOYEE LOGIC
         // =======================
         window.activateEmployee = function (empId) {
-            fetch(`/employees/activate/${empId}`, {
+            fetch(`/admin/employees/activate/${empId}`, {
                 method: "POST",
                 headers: {
                     "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content
@@ -14,88 +14,55 @@
                 else alert("Failed to activate employee");
             });
         };
+        
+        // Toggle helper used by inline buttons in the template
+        window.toggleEmployee = function(empId, action) {
+            if (!empId || !action) return;
+            action = String(action).toLowerCase();
+            if (action === 'activate') {
+                if (typeof window.activateEmployee === 'function') {
+                    window.activateEmployee(empId);
+                } else {
+                    // fallback: do direct fetch
+                    fetch(`/admin/employees/activate/${empId}`, { method: 'POST', headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content } })
+                        .then(r => r.json()).then(d => { if (d.success) location.reload(); else alert('Failed to activate employee'); });
+                }
+            } else if (action === 'deactivate') {
+                if (typeof window.openDeactivateModal === 'function') {
+                    window.openDeactivateModal(empId);
+                } else {
+                    // fallback: perform direct deactivate (without confirmation)
+                    if (!confirm('Deactivate employee?')) return;
+                    fetch(`/admin/employees/deactivate/${empId}`, { method: 'POST', headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content } })
+                        .then(r => r.json()).then(d => { if (d.success) location.reload(); else alert('Failed to deactivate employee'); });
+                }
+            }
+        };
+
 document.addEventListener("DOMContentLoaded", function () {
 
     // =======================
-    // ELEMENTS
+    // SEARCH LOADING STATE
     // =======================
-    const globalSearch = document.getElementById("globalSearch");
-    const clearSearch = document.getElementById("clearSearch");
+    const searchForm = document.querySelector('form[method="GET"]');
+    const searchBtn = document.getElementById('searchBtn');
+    const searchText = document.getElementById('searchText');
 
 
-    // =======================
-    // UPDATE SELECTED COUNT
-    // =======================
-    // Bulk delete and selected count logic removed
+    if (searchForm && searchBtn) {
+        const hideLoading = () => {
+            try {
+                searchBtn.disabled = false;
+                searchBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                if (searchText) searchText.textContent = 'Search & Filter';
+            } catch (e) { console.error(e); }
+        };
 
+        searchForm.addEventListener('submit', function (e) {
+            const isAjax = searchForm.dataset.ajax === 'true';
 
-    // =======================
-    // SELECT ALL CHECKBOX
-    // =======================
-    // Select all and row checkbox logic removed
-
-
-    // =======================
-    // GLOBAL SEARCH
-    // =======================
-    globalSearch?.addEventListener("input", () => {
-        const q = globalSearch.value.toLowerCase().trim();
-
-        document.querySelectorAll("#employeesTbody tr").forEach(row => {
-            const text = row.innerText.toLowerCase();
-            row.style.display = text.includes(q) ? "" : "none";
-        });
-    });
-
-    clearSearch?.addEventListener("click", () => {
-        globalSearch.value = "";
-        document.querySelector("#globalSearch").dispatchEvent(new Event("input"));
-    });
-
-
-    // =======================
-    // Bulk delete and single delete logic removed
-
-
-    // =======================
-    // FILTER APPLY / RESET
-    // =======================
-    document.getElementById("applyFilters")?.addEventListener("click", () => {
-        const params = new URLSearchParams(window.location.search);
-
-        const dept = document.getElementById("filterDept")?.value || "";
-        const enroll = document.getElementById("filterEnroll")?.value || "";
-        const sort = document.getElementById("sortBy")?.value || "";
-
-        if (dept) params.set("department_id", dept); else params.delete("department_id");
-        if (enroll) params.set("enrolled", enroll); else params.delete("enrolled");
-        if (sort) params.set("sort", sort); else params.delete("sort");
-
-        params.set("page", "1");
-
-        window.location.search = params.toString();
-    });
-
-    document.getElementById("resetFilters")?.addEventListener("click", () => {
-        window.location.search = "";
-    });
-
-
-        // =======================
-        // DEACTIVATE MODAL LOGIC
-        // =======================
-        let deactivateEmpId = null;
-        const deactivateModal = document.getElementById("deactivateModal");
-        const confirmDeactivateBtn = document.getElementById("confirmDeactivateBtn");
-        // CSRF token
-        const csrfToken = document
-            .querySelector('meta[name="csrf-token"]')
-            ?.getAttribute("content");
-
-        // Open modal (called from button)
-            window.openDeactivateModal = function (empId) {
-                deactivateEmpId = empId;
-                deactivateModal.classList.remove("hidden");
+            // Show loading state
+            // No client-side loading state: rely on normal form submission and server response.
             };
 
         // Close modal
@@ -110,7 +77,7 @@ document.addEventListener("DOMContentLoaded", function () {
         confirmDeactivateBtn?.addEventListener("click", () => {
             if (!deactivateEmpId) return;
 
-            fetch(`/employees/deactivate/${deactivateEmpId}`, {
+            fetch(`/admin/employees/deactivate/${deactivateEmpId}`, {
                 method: "POST",
                 headers: {
                     "X-CSRFToken": csrfToken

@@ -48,7 +48,9 @@
           <select name="department_id" required class="w-full p-2 border rounded-lg">
             <option value="">Select Department</option>
             {% for d in departments %}
+            {% if d.name != 'Admin' and d.name != 'Administration' %}
               <option value="{{ d.id }}">{{ d.name }}</option>
+            {% endif %}
             {% endfor %}
           </select>
         </div>
@@ -60,7 +62,7 @@
 
         <div>
           <label class="block text-sm mb-1">Join Date</label>
-          <input type="date" name="joining_date" required class="w-full p-2 border rounded-lg">
+          <input type="date" name="join_date" required class="w-full p-2 border rounded-lg">
         </div>
 
         <div>

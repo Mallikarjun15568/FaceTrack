@@ -5,10 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}FaceTrack {% endblock %}</title>
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/static/css/output.css">
   <link rel="stylesheet" href="/static/css/professional.css">
@@ -21,6 +26,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   {% endif %}
   <script src="https://unpkg.com/feather-icons"></script>
+  <script src="{{ url_for('static', filename='js/feather-fallback.js') }}"></script>
 
   <!-- Alerts -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -38,7 +44,7 @@
 <div id="app" class="flex h-screen">
 
   <!-- SIDEBAR -->
-  <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 shadow-sm static inset-y-0 left-0 z-40 transform translate-x-0 transition-transform duration-300 ease-in-out">
+  <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 shadow-sm static inset-y-0 left-0 z-40 transform translate-x-0 transition-transform duration-300 ease-in-out flex flex-col">
     <div class="p-4 border-b border-gray-200">
       <a href="/" class="block group">
         <div class="text-center">
@@ -51,12 +57,12 @@
       </a>
     </div>
 
-    <nav class="px-3 pb-6 pt-4 overflow-y-auto h-[calc(100vh-88px)]">
-      <ul class="space-y-1">
+    <nav class="px-3 pb-6 pt-4 overflow-y-auto flex-1">
+      <ul class="space-y-1 flex flex-col justify-between h-full">
 
         {% if session.role in ['admin', 'hr'] %}
         <li>
-          <a href="/dashboard/" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+          <a href="{{ url_for('admin.dashboard.admin_dashboard') }}" class="nav-link {% if request.endpoint == 'admin.dashboard.admin_dashboard' %}active{% endif %}">
             <i data-feather="grid"></i>
             <span class="text-sm font-medium">Dashboard</span>
           </a>
@@ -66,9 +72,16 @@
         <!-- Admin & HR only -->
         {% if session.role in ['admin', 'hr'] %}
         <li>
-          <a href="/employees/" class="nav-link {% if 'employees' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.employees.list_employees') }}" class="nav-link {% if request.endpoint == 'admin.employees.list_employees' %}active{% endif %}">
             <i data-feather="users"></i>
             <span class="text-sm font-medium">Employees</span>
+          </a>
+        </li>
+
+        <li>
+          <a href="{{ url_for('admin.employees.face_requests') }}" class="nav-link {% if request.endpoint == 'admin.employees.face_requests' %}active{% endif %}">
+            <i data-feather="user-plus"></i>
+            <span class="text-sm font-medium">Face Requests</span>
           </a>
         </li>
 
@@ -80,7 +93,7 @@
         </li>
         {% endif %}
 
-        {% if session.role in ['admin', 'hr'] %}
+        {% if session.role in ['admin'] %}
         <li>
           <a href="/kiosk/" class="nav-link {% if 'kiosk' in request.endpoint or 'recognition' in request.endpoint %}active{% endif %}">
           <i data-feather="monitor"></i>
@@ -89,6 +102,7 @@
         </li>
         {% endif %}
 
+        {% if session.role in ['admin', 'hr'] %}
         <li>
           <a href="/attendance/" class="nav-link {% if 'attendance' in request.endpoint %}active{% endif %}">
             <i data-feather="check-circle"></i>
@@ -104,20 +118,28 @@
           </a>
         </li>
 
-        <!-- Reports - All roles can view their own reports -->
+        <!-- Reports - Admin & HR only -->
         <li>
-          <a href="/reports/" class="nav-link {% if 'reports' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.reports.reports_page') }}" class="nav-link {% if 'reports' in request.endpoint %}active{% endif %}">
             <i data-feather="bar-chart-2"></i>
             <span class="text-sm font-medium">Reports</span>
           </a>
         </li>
+        {% endif %}
 
         <!-- Admin only -->
         {% if session.role == 'admin' %}
         <li>
-          <a href="/settings/" class="nav-link {% if 'settings' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.settings.settings_page') }}" class="nav-link {% if 'settings' in request.endpoint %}active{% endif %}">
           <i data-feather="settings"></i>
           <span class="text-sm font-medium">Settings</span>
+          </a>
+        </li>
+
+        <li>
+          <a href="{{ url_for('admin.employees.user_management') }}" class="nav-link {% if 'user_management' in request.endpoint %}active{% endif %}">
+          <i data-feather="user-check"></i>
+          <span class="text-sm font-medium">User Management</span>
           </a>
         </li>
         {% endif %}
@@ -142,7 +164,7 @@
         <h1 class="text-xl font-bold text-gray-900">{% block page_title %}Dashboard{% endblock %}</h1>
         <!-- Breadcrumbs -->
         <nav class="flex items-center gap-2 text-sm text-gray-500 mt-1">
-          <a href="/dashboard/" class="hover:text-indigo-600 transition-colors">Home</a>
+          <a href="{{ url_for('admin.dashboard.admin_dashboard') }}" class="hover:text-indigo-600 transition-colors">Home</a>
           <span>/</span>
           <span class="text-gray-900">{% block breadcrumb %}Dashboard{% endblock %}</span>
         </nav>
@@ -183,7 +205,11 @@
   </div>
 </div>
 
-<script>feather.replace();</script>
+<script>
+  if (typeof feather !== 'undefined' && typeof feather.replace === 'function') {
+    try { feather.replace(); } catch (e) { console.warn('feather.replace() failed:', e); }
+  }
+</script>
 <script src="/static/js/modal.js"></script>
 <script src="/static/js/ui-enhancements.js"></script>
 

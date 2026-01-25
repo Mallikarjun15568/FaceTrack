@@ -11,6 +11,10 @@ def setup_csrf_exemptions(app, csrf):
     from blueprints.auth.routes import face_login_api
     csrf.exempt(face_login_api)
 
+    # Settings: Exempt settings API (handles CSRF in form data)
+    from blueprints.admin.settings.routes import settings_api
+    csrf.exempt(settings_api)
+
     # Kiosk: Exempt recognition endpoints (operates in fullscreen kiosk mode)
     from blueprints.kiosk.routes import (
         kiosk_recognize, liveness_check, verify_pin,
@@ -22,9 +26,3 @@ def setup_csrf_exemptions(app, csrf):
     csrf.exempt(kiosk_exit)
     csrf.exempt(set_kiosk_pin)
     csrf.exempt(force_unlock)
-
-    # Enroll: Exempt AJAX endpoints for face capture (requires camera access)
-    from blueprints.enroll.routes import capture_face, detect_face, update_capture_face
-    csrf.exempt(capture_face)
-    csrf.exempt(detect_face)
-    csrf.exempt(update_capture_face)

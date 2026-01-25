@@ -46,6 +46,10 @@ def login_required(f):
     def wrapper(*args, **kwargs):
         if not session.get("logged_in"):
             flash("Please login first", "error")
+            # Check if this is an employee route, redirect accordingly
+            from flask import request
+            if request.endpoint and request.endpoint.startswith("employee."):
+                return redirect(url_for("auth.user_login"))
             return redirect(url_for("auth.login"))
         return f(*args, **kwargs)
     return wrapper
@@ -67,6 +71,10 @@ def role_required(*roles):
             # First check if user is logged in
             if not session.get("logged_in"):
                 flash("Please login first", "error")
+                # Check if this is an employee route, redirect accordingly
+                from flask import request
+                if request.endpoint and request.endpoint.startswith("employee."):
+                    return redirect(url_for("auth.user_login"))
                 return redirect(url_for("auth.login"))
             
             user_role = session.get("role")
@@ -75,7 +83,7 @@ def role_required(*roles):
                 flash("⛔ Access Denied: You don't have permission to access this page", "error")
                 # Redirect based on role
                 if user_role == "employee":
-                    return redirect(url_for("dashboard.index"))
+                    return redirect(url_for("employee.dashboard"))
                 return redirect(url_for("auth.login"))
 
             return f(*args, **kwargs)

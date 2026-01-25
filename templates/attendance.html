@@ -76,6 +76,9 @@
                     <th class="py-3 px-4 text-left text-sm font-medium">Check-Out</th>
                     <th class="py-3 px-4 text-left text-sm font-medium">Working Hours</th>
                     <th class="py-3 px-4 text-right text-sm font-medium">Status</th>
+                    {% if session.role in ['admin', 'hr'] %}
+                    <th class="py-3 px-4 text-center text-sm font-medium">Actions</th>
+                    {% endif %}
                 </tr>
             </thead>
 
@@ -85,6 +88,31 @@
 
         </table>
 
+    </div>
+     
+    <!-- Checkout Confirmation Modal -->
+    <div id="checkoutModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-[400px] max-w-[90vw] p-6 text-center transform transition-all duration-300 scale-95 opacity-0">
+            <div class="flex justify-center mb-6">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-lg bg-blue-100 text-blue-600">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">Complete Check-Out</h3>
+            <p class="text-gray-600 leading-relaxed mb-6">
+                Are you sure you want to complete this check-out? This will set the check-out time to now and calculate the working hours.
+            </p>
+            <div class="flex gap-4 justify-center">
+                <button id="cancelCheckout" onclick="closeCheckoutModal()"
+                    class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors duration-200">
+                    Cancel
+                </button>
+                <button id="confirmCheckout" onclick="confirmCheckout()"
+                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors duration-200 shadow-md hover:shadow-lg">
+                    <i class="fas fa-check-circle mr-2"></i>Complete Check-Out
+                </button>
+            </div>
+        </div>
     </div>
      
      <div id="attendance-popup"

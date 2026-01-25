@@ -1,16 +1,22 @@
 import os
 import csv
 import io
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import render_template, request, jsonify, send_file, session, redirect, url_for, flash, current_app
 from utils.db import get_connection, close_db
 from blueprints.auth.utils import login_required, role_required
 from . import bp
 from werkzeug.utils import secure_filename
 from PIL import Image
+import cv2
 
 UPLOAD_FOLDER = "static/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Global cache for camera detection
+_camera_cache = None
+_camera_cache_timestamp = None
+CAMERA_CACHE_TTL = 300  # 5 minutes
 
 # DEFAULT SETTINGS
 DEFAULTS = {
@@ -18,12 +24,14 @@ DEFAULTS = {
     "duplicate_interval": "5",
     "snapshot_mode": "off",
     "late_time": "09:30",
+    "checkout_time": "18:00",
     "min_confidence": "85",
     "company_name": "",
-    "company_logo": "/static/uploads/logo.png",
-    "camera_index": "0",
+    "company_logo": "/static/images/FaceTrack_logo.png",
+    "camera_device": "0",
     "session_timeout": "30",
-    "login_alert": "off"
+    "login_alerts": "off",
+    "exit_pin": ""
 }
 
 
@@ -36,24 +44,65 @@ def require_admin():
         }), 403
     return None
 
-# ---------------------------------------------------------
-# Admin-only protection - All settings routes require admin
-# ---------------------------------------------------------
-@bp.before_request
-def restrict_to_admin():
-    # Skip auth check for static files
-    if request.endpoint and 'static' in request.endpoint:
-        return None
+
+# Helper: detect available camera devices (with caching)
+def detect_cameras():
+    """Detect available camera devices on the system (cached for 5 minutes)"""
+    global _camera_cache, _camera_cache_timestamp
     
-    # Check login
-    if not session.get("logged_in"):
-        flash("Please login first", "error")
-        return redirect(url_for("auth.login"))
+    # Check if we have valid cached data
+    now = datetime.now()
+    if (_camera_cache is not None and _camera_cache_timestamp is not None and 
+        now - _camera_cache_timestamp < timedelta(seconds=CAMERA_CACHE_TTL)):
+        return _camera_cache
     
-    # Check admin role
-    if session.get("role") != "admin":
-        flash("⛔ Only admins can access Settings", "error")
-        return redirect(url_for("dashboard.index"))
+    # Detect cameras (quick check without reading frames)
+    cameras = []
+    for i in range(10):  # Check first 10 camera indices
+        try:
+            # Quick check: just try to open camera without reading frames
+            cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)
+            available = cap.isOpened()
+            
+            if available:
+                # Get basic camera info without reading frames
+                camera_name = f"Camera {i}"
+                try:
+                    # Try to get camera properties (this is usually fast)
+                    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                    if width > 0 and height > 0:
+                        camera_name = f"Camera {i} ({width}x{height})"
+                except:
+                    pass
+                
+                cameras.append({
+                    "index": i,
+                    "name": camera_name,
+                    "available": True
+                })
+            else:
+                cameras.append({
+                    "index": i,
+                    "name": f"Camera {i}",
+                    "available": False
+                })
+            
+            # Always release the camera immediately
+            cap.release()
+            
+        except Exception as e:
+            cameras.append({
+                "index": i,
+                "name": f"Camera {i}",
+                "available": False
+            })
+    
+    # Cache the results
+    _camera_cache = cameras
+    _camera_cache_timestamp = now
+    
+    return cameras
 
 
 # ---------------------------------------------------------
@@ -123,55 +172,58 @@ def _validate_time_hhmm(value):
 def _validate_settings_payload(data):
     # Ensure dict
     if not isinstance(data, dict):
-        return False, "Invalid JSON payload"
+        return False, "Invalid payload"
+
+    # Filter out CSRF token and other non-setting keys
+    settings_data = {k: v for k, v in data.items() if k != 'csrf_token'}
 
     # Reject unknown keys
-    for k in data.keys():
+    for k in settings_data.keys():
         if k not in DEFAULTS:
             return False, f"Unknown setting key: {k}"
 
     # Per-key validation
     # recognition_threshold: float between 0.30 and 0.80
-    if 'recognition_threshold' in data:
+    if 'recognition_threshold' in settings_data:
         try:
-            v = float(data.get('recognition_threshold'))
+            v = float(settings_data.get('recognition_threshold'))
         except Exception:
             return False, "recognition_threshold must be a float"
         if not (0.30 <= v <= 0.80):
             return False, "recognition_threshold out of allowed range (0.30-0.80)"
 
     # duplicate_interval: numeric minutes, 0 <= v <= 1440
-    if 'duplicate_interval' in data:
+    if 'duplicate_interval' in settings_data:
         try:
-            v = float(data.get('duplicate_interval'))
+            v = float(settings_data.get('duplicate_interval'))
         except Exception:
             return False, "duplicate_interval must be a number"
         if v < 0 or v > 1440:
             return False, "duplicate_interval out of range (0-1440 minutes)"
 
     # snapshot_mode: enum
-    if 'snapshot_mode' in data:
-        v = str(data.get('snapshot_mode')).lower()
+    if 'snapshot_mode' in settings_data:
+        v = str(settings_data.get('snapshot_mode')).lower()
         if v not in ('on', 'off'):
             return False, "snapshot_mode must be 'on' or 'off'"
 
     # late_time: HH:MM
-    if 'late_time' in data:
-        if not _validate_time_hhmm(data.get('late_time')):
+    if 'late_time' in settings_data:
+        if not _validate_time_hhmm(settings_data.get('late_time')):
             return False, "late_time must be in HH:MM 24-hour format"
 
     # min_confidence: 0-100
-    if 'min_confidence' in data:
+    if 'min_confidence' in settings_data:
         try:
-            v = float(data.get('min_confidence'))
+            v = float(settings_data.get('min_confidence'))
         except Exception:
             return False, "min_confidence must be a number"
         if v < 0 or v > 100:
             return False, "min_confidence must be between 0 and 100"
 
     # company_name: string <=255
-    if 'company_name' in data:
-        v = data.get('company_name')
+    if 'company_name' in settings_data:
+        v = settings_data.get('company_name')
         if v is None:
             return False, "company_name cannot be null"
         if not isinstance(v, str):
@@ -180,8 +232,8 @@ def _validate_settings_payload(data):
             return False, "company_name too long"
 
     # company_logo: string path (optional)
-    if 'company_logo' in data:
-        v = data.get('company_logo')
+    if 'company_logo' in settings_data:
+        v = settings_data.get('company_logo')
         if v is None:
             return False, "company_logo cannot be null"
         if not isinstance(v, str):
@@ -189,31 +241,39 @@ def _validate_settings_payload(data):
         if len(v) > 1024:
             return False, "company_logo path too long"
 
-    # camera_index: int 0-10
-    if 'camera_index' in data:
+    # camera_device: int 0-10
+    if 'camera_device' in settings_data:
         try:
-            v = int(data.get('camera_index'))
+            v = int(settings_data.get('camera_device'))
         except Exception:
-            return False, "camera_index must be an integer"
+            return False, "camera_device must be an integer"
         if v < 0 or v > 10:
-            return False, "camera_index out of allowed range (0-10)"
+            return False, "camera_device out of allowed range (0-10)"
 
-    # session_timeout: allowed values 15,30,60
-    if 'session_timeout' in data:
+    # session_timeout: int 5-480
+    if 'session_timeout' in settings_data:
         try:
-            v = int(data.get('session_timeout'))
+            v = int(settings_data.get('session_timeout'))
         except Exception:
             return False, "session_timeout must be an integer"
-        if v not in (15, 30, 60):
-            return False, "session_timeout must be one of 15, 30, 60"
+        if v < 5 or v > 480:
+            return False, "session_timeout out of allowed range (5-480 minutes)"
 
-    # login_alert: 'off' or a non-empty string (e.g., 'email')
-    if 'login_alert' in data:
-        v = data.get('login_alert')
+    # login_alerts: 'on' or 'off'
+    if 'login_alerts' in settings_data:
+        v = str(settings_data.get('login_alerts')).lower()
+        if v not in ('on', 'off'):
+            return False, "login_alerts must be 'on' or 'off'"
+
+    # exit_pin: empty string or 4 digits
+    if 'exit_pin' in settings_data:
+        v = settings_data.get('exit_pin')
+        if v is None:
+            return False, "exit_pin cannot be null"
         if not isinstance(v, str):
-            return False, "login_alert must be a string"
-        if v != 'off' and len(v.strip()) == 0:
-            return False, "login_alert invalid"
+            return False, "exit_pin must be a string"
+        if v != "" and (len(v) != 4 or not v.isdigit()):
+            return False, "exit_pin must be empty or exactly 4 digits"
 
     return True, None
 
@@ -260,7 +320,39 @@ def log_setting_change(cursor, user_id, key, old, new, ip):
 def settings_page():
     saved = load_settings()
     merged = {k: saved.get(k, DEFAULTS[k]) for k in DEFAULTS.keys()}
-    return render_template("settings.html", settings=merged)
+    
+    # Detect available cameras (cached, won't trigger camera every time)
+    available_cameras = detect_cameras()
+    
+    return render_template("settings.html", settings=merged, available_cameras=available_cameras)
+
+
+# API endpoint to refresh camera detection
+# ---------------------------------------------------------
+@bp.route("/api/detect-cameras")
+def detect_cameras_api():
+    """API endpoint to manually refresh camera detection"""
+    admin_check = require_admin()
+    if admin_check:
+        return admin_check
+    
+    try:
+        # Force refresh by clearing cache
+        global _camera_cache, _camera_cache_timestamp
+        _camera_cache = None
+        _camera_cache_timestamp = None
+        
+        cameras = detect_cameras()
+        return jsonify({
+            "success": True,
+            "cameras": cameras,
+            "message": f"Detected {len([c for c in cameras if c['available']])} available cameras"
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 
 # ---------------------------------------------------------
@@ -273,7 +365,7 @@ def settings_api():
     if admin_check:
         return admin_check
 
-    data = request.get_json()
+    data = request.form
 
     # Validate payload strictly (all-or-nothing)
     ok, err = _validate_settings_payload(data)
@@ -344,10 +436,10 @@ def settings_api():
             except Exception:
                 pass
 
-        # Camera index (runtime default)
-        if 'camera_index' in data:
+        # Camera device (runtime default)
+        if 'camera_device' in data:
             try:
-                current_app.config['DEFAULT_CAMERA_INDEX'] = int(data.get('camera_index'))
+                current_app.config['DEFAULT_CAMERA_INDEX'] = int(data.get('camera_device'))
             except Exception:
                 pass
 
@@ -359,15 +451,18 @@ def settings_api():
             except Exception:
                 pass
 
-        # Misc: login_alert, company_name, company_logo, late_time saved already; optionally mirror to config
-        if 'login_alert' in data:
-            current_app.config['LOGIN_ALERT'] = data.get('login_alert')
+        # Misc: login_alerts, company_name, company_logo, late_time saved already; optionally mirror to config
+        if 'login_alerts' in data:
+            current_app.config['LOGIN_ALERT'] = data.get('login_alerts')
         if 'company_name' in data:
             current_app.config['COMPANY_NAME'] = data.get('company_name')
         if 'company_logo' in data:
             current_app.config['COMPANY_LOGO'] = data.get('company_logo')
         if 'late_time' in data:
             current_app.config['LATE_TIME'] = data.get('late_time')
+        # Company-wide checkout time (HH:MM) -> CHECKOUT_TIME
+        if 'checkout_time' in data:
+            current_app.config['CHECKOUT_TIME'] = data.get('checkout_time')
     except Exception:
         # don't fail saving if runtime sync has a problem
         pass

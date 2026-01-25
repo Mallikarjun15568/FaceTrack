@@ -9,34 +9,36 @@
 
 > Production-grade facial recognition attendance system powered by InsightFace ArcFace. Features real-time kiosk mode with mobile camera support, smooth animations, liveness detection, and enterprise-level security.
 
-> **🎉 Version 2.2** - Ultra-fast face login (instant match), enhanced UI with animations, enriched content pages, and 5x faster liveness detection!
+> **🎉 Version 2.4** - Contact form database storage, enhanced security middleware, custom error pages, face request approval system, and improved admin workflows!
 
 ---
 
-## 📱 Latest Updates (v2.2)
+## 📱 Latest Updates (v2.4)
 
-### ⚡ Performance Enhancements
-- **Instant Face Login**: Single match triggers immediate login (REQUIRED_MATCHES = 1)
-- **5x Faster Liveness**: Reduced from 150 to 30 frames for rapid anti-spoofing
-- **Optimized Detection**: 30% confidence ratio, 5-frame intervals for speed
+### 💬 Contact Form Enhancement
+- **Database Storage**: Contact form messages now stored in database instead of email-only
+- **Message Management**: Admin can track and manage contact form submissions
+- **Status Tracking**: New/Read/Replied status for message management
 
-### 🎨 UI/UX Improvements
-- **Home Page Animations**: Fade-in effects, hover lifts, floating icons, scale-in stats
-- **Enhanced About Page**: Technology stack showcase, Why Choose section with 6 feature cards
-- **Smooth Transitions**: Button hover effects, gradient animations, pulse effects
-- **Professional Design**: Clean system interface replacing marketing-style homepage
+### 🔒 Security Enhancements
+- **Centralized Security Middleware**: Unified role-based access control across all blueprints
+- **Custom Error Pages**: Professional 403 Forbidden and 404 Not Found pages
+- **Standardized Guards**: Consistent security checks with abort(403) responses
 
-### 📦 New Features
-- **Help Page**: Comprehensive FAQ with 6 sections (enrollment, kiosk, reports, security, troubleshooting, settings)
-- **Green Face Box**: Canvas-based detection box on kiosk with corner markers (z-40 layering)
-- **Live Detection Feedback**: Distance meter, lighting meter, confidence score (hidden for clean UI)
-- **Unified Navigation**: Consistent navbar across all public pages
+### 👥 Admin Workflow Improvements
+- **Face Request Management**: Dedicated admin page for approving/rejecting face enrollment requests
+- **Streamlined Navigation**: "Face Requests" button added to employee management page
+- **Request Status Tracking**: Pending, Approved, Rejected states with timestamps
 
-### 🐛 Bug Fixes
-- Fixed duplicate content sections across multiple pages
-- Removed empty spacing issues on about page
-- Fixed face box visibility on kiosk mode
-- Resolved text visibility on about page
+### 🧹 Code Quality
+- **Blueprint Security**: Added middleware to attendance, leave, enroll, and kiosk blueprints
+- **Template Cleanup**: Removed unused enroll.html template
+- **Consistent Error Handling**: Standardized 403 responses across all protected routes
+
+### ⚡ Performance & UX
+- **Faster Route Protection**: Middleware-based security checks
+- **Improved Admin UX**: Centralized face request management workflow
+- **Clean Codebase**: Removed redundant templates and standardized security
 
 ---
 
@@ -81,6 +83,7 @@
 - [Database Schema](#-database-schema)
 - [Configuration](#-configuration)
 - [Troubleshooting](#-troubleshooting)
+- [Testing](#-testing)
 - [Roadmap](#-roadmap)
 
 ---
@@ -90,6 +93,8 @@
 ### 🔐 Authentication & Security
 - **Face + Password Login**: Multi-factor authentication with live facial verification
 - **Role-Based Access Control (RBAC)**: Admin, HR, and Employee roles
+- **Centralized Security Middleware**: Unified access control across all blueprints
+- **Custom Error Pages**: Professional 403/404 pages with consistent branding
 - **Session Management**: Secure Flask sessions with encrypted cookies
 - **Password Encryption**: Werkzeug PBKDF2 SHA-256 hashing
 - **Anti-CSRF Protection**: Token-based request validation
@@ -100,6 +105,33 @@
 - **Status Tracking**: Active, Inactive, On Leave
 - **Profile Photos**: Upload and manage employee images
 - **Face Enrollment**: Single high-quality capture with 512-dim embedding storage
+- **Face Request Management**: Admin approval system for enrollment requests
+- **Request Workflow**: Pending → Approved/Rejected with admin oversight
+- **Employee Self-Service**: Profile management, face enrollment requests
+
+### 📋 Leave Management System
+- **Leave Types**: Annual, Sick, Personal, Maternity, Paternity, Emergency, Casual
+- **Leave Application**: Employee self-service leave requests
+- **Admin Approval**: HR/Admin approval workflow with status tracking
+- **Leave Balance Tracking**: Automatic balance management per employee per year
+- **Leave Calendar**: Integration with attendance system
+- **Leave History**: Complete audit trail of leave applications
+
+### 🏖️ Holiday Management
+- **Company Holidays**: Configurable company holidays
+- **Weekend Tracking**: Automatic weekend detection
+- **Calendar Integration**: Attendance calculations exclude holidays/weekends
+- **Holiday Types**: Distinguish between weekends and company holidays
+
+### 🔍 Audit & Security
+- **Audit Logging**: Complete system audit trail
+- **Login Tracking**: Authentication attempt logging with IP addresses
+- **Recognition Logging**: Face recognition event tracking with confidence scores
+- **Password Reset**: Secure token-based password recovery
+- **Session Security**: Encrypted sessions with configurable timeouts
+- **Centralized Middleware**: Unified security checks across all blueprints
+- **Face Request Management**: Admin approval system for enrollment requests
+- **Request Workflow**: Pending → Approved/Rejected with admin oversight
 
 ### 🎭 Advanced Face Recognition
 - **AI Engine**: InsightFace buffalo_l (ArcFace ResNet-100)
@@ -144,6 +176,15 @@
 - **Settings Panel**: Configure thresholds, working hours
 - **Department Management**: CRUD for departments
 - **Profile Management**: Update personal information
+- **Face Request Approval**: Admin dashboard for managing enrollment requests
+- **Custom Error Handling**: Professional error pages with navigation
+- **Charts & Analytics**: Visual data representation and insights
+- **Email Notifications**: Automated email alerts for various events
+- **Audit Trail**: Complete system activity logging
+- **Password Recovery**: Secure password reset functionality
+- **Holiday Calendar**: Company holiday and weekend management
+- **Leave Management**: Complete leave application and approval system
+- **Contact Form**: Database-backed contact form with message storage and admin management
 
 ---
 
@@ -325,63 +366,78 @@ FaceTrack/
 │
 ├── app.py                      # Main Flask application
 ├── config.py                   # Configuration settings
-├── db_utils.py                 # Database initialization
+├── db_utils.py                 # Database initialization & helpers
 ├── requirements.txt            # Python dependencies
 ├── README.md                   # Documentation
 ├── WIREFRAMES.md               # UI/UX wireframes
 │
 ├── blueprints/                 # Feature modules
-│   ├── auth/                   # Authentication (login/logout)
-│   ├── dashboard/              # Role-based dashboards
-│   ├── employees/              # Employee CRUD operations
-│   ├── enroll/                 # Face enrollment
-│   ├── attendance/             # Attendance kiosk + records
-│   ├── recognition/            # Face recognition logic
-│   ├── reports/                # Report generation
-│   ├── settings/               # System settings
-│   ├── profile/                # User profile management
-│   └── timeline/               # Attendance timeline
+│   ├── auth/                   # Authentication (login/logout/signup)
+│   │   ├── routes.py           # Login, logout, password reset
+│   │   └── utils.py            # Auth helpers & decorators
+│   ├── admin/                  # Admin panel (/admin)
+│   │   ├── __init__.py         # Admin middleware & sub-blueprints
+│   │   ├── dashboard/          # Admin dashboard (/admin/dashboard)
+│   │   ├── employees/          # Employee management (/admin/employees)
+│   │   ├── reports/            # Reports & analytics (/admin/reports)
+│   │   └── settings/           # System settings (/admin/settings)
+│   ├── attendance/             # Attendance records (/attendance)
+│   ├── enroll/                 # Face enrollment (/enroll)
+│   ├── kiosk/                  # Kiosk mode (/kiosk)
+│   ├── leave/                  # Leave management (/leave)
+│   ├── charts/                 # Charts & analytics (/charts)
+│   └── employee/               # Employee panel (/employee)
 │
 ├── utils/                      # Helper utilities
 │   ├── face_encoder.py         # Face embedding generation + recognition
 │   ├── db.py                   # Database connection pool
-│   └── helpers.py              # Utility functions
+│   ├── helpers.py              # Utility functions
+│   ├── email_service.py        # Email notifications
+│   ├── logger.py               # Logging utilities
+│   └── extensions.py           # Flask extensions
 │
 ├── models/                     # AI models
-│   ├── users.py                # User model (future ORM)
+│   ├── users.py                # User model
 │   └── buffalo_l/              # InsightFace model files
 │
 ├── templates/                  # Jinja2 HTML templates
 │   ├── base.html               # Base layout with sidebar
-│   ├── login.html
-│   ├── dashboard_*.html        # Role-specific dashboards
-│   ├── employees.html
-│   ├── enroll.html
-│   ├── attendance.html
-│   ├── attendance_recognize.html  # Kiosk mode
-│   ├── reports.html
-│   ├── settings.html
-│   ├── timeline.html
-│   └── profile.html
+│   ├── home.html               # Public homepage
+│   ├── login.html              # Login page
+│   ├── 403.html                # Custom forbidden page
+│   ├── 404.html                # Custom not found page
+│   ├── 500.html                # Custom error page
+│   ├── admin/
+│   │   └── face_requests.html  # Face request approval
+│   ├── employee/               # Employee panel templates
+│   │   ├── dashboard.html      # Employee dashboard
+│   │   ├── attendance.html     # Employee attendance view
+│   │   ├── leave.html          # Leave application
+│   │   ├── profile.html        # Profile management
+│   │   └── face_request.html   # Face enrollment request
+│   ├── leave/                  # Leave management templates
+│   │   ├── apply_leave.html    # Leave application form
+│   │   └── leave_list.html     # Leave history
+│   ├── attendance.html         # Admin attendance view
+│   ├── kiosk.html              # Kiosk interface
+│   ├── enroll_face_list.html   # Enrollment management
+│   ├── employees_face_enroll.html    # Face enrollment form
+│   ├── employees_face_enroll_update.html  # Update enrollment
+│   └── [other admin templates]
 │
 ├── static/                     # Static assets
-│   ├── css/
-│   │   ├── input.css           # Tailwind source
-│   │   └── output.css          # Compiled CSS
-│   ├── js/
-│   │   ├── attendance_recognize.js  # Kiosk logic
-│   │   ├── enroll.js           # Enrollment logic
-│   │   ├── employees.js
-│   │   ├── dashboard.js
-│   │   ├── reports.js
-│   │   └── ...
+│   ├── css/                    # Compiled CSS
+│   ├── js/                     # JavaScript files
 │   ├── faces/                  # Enrolled face images
-│   │   ├── emp123_timestamp.jpg
-│   │   ├── emp456_timestamp.jpg
-│   │   └── ...
 │   ├── snapshots/              # Attendance photos
-│   ├── recognized/             # Recognition cache
+│   ├── pending_faces/          # Pending face requests
 │   └── images/                 # UI assets
+│
+├── scripts/                    # Database scripts & utilities
+│   ├── create_*.sql            # Table creation scripts
+│   ├── add_*.sql               # Column addition scripts
+│   ├── migrate_*.sql           # Migration scripts
+│   └── *.py                    # Utility scripts
 │
 ├── logs/                       # Application logs
 │   ├── attendance.csv
@@ -423,8 +479,7 @@ CREATE TABLE employees (
     department_id INT,
     join_date DATE,
     status VARCHAR(20) DEFAULT 'Active',
-    photo_path TEXT,
-    profile_photo VARCHAR(255),
+    photo VARCHAR(255),                    -- Consolidated photo column (admin + employee photos)
     face_embedding LONGBLOB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
@@ -433,6 +488,8 @@ CREATE TABLE employees (
     INDEX idx_department (department_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
+
+**Note**: The `photo` column consolidates both admin-uploaded photos and employee self-uploaded profile photos into a single, unified column. This simplifies the schema and eliminates confusion between `photo_path` and `profile_photo` columns that existed in earlier versions.
 
 ### Attendance Table (Single-Row Architecture)
 
@@ -471,18 +528,177 @@ CREATE TABLE face_data (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-### Departments Table
+### Settings Table (System Configuration)
 
 ```sql
-CREATE TABLE departments (
+CREATE TABLE IF NOT EXISTS settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    setting_key VARCHAR(100) NOT NULL UNIQUE,
+    setting_value TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_key (setting_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
+### Leaves Table (Leave Management)
+
+```sql
+CREATE TABLE IF NOT EXISTS leaves (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id INT NOT NULL,
+    leave_type ENUM('annual', 'sick', 'personal', 'maternity', 'paternity', 'emergency', 'casual_leave') NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    reason TEXT,
+    status ENUM('pending', 'approved', 'rejected', 'cancelled') DEFAULT 'pending',
+    approved_by INT NULL,
+    approved_at TIMESTAMP NULL,
+    applied_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+    FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_employee_id (employee_id),
+    INDEX idx_status (status),
+    INDEX idx_dates (start_date, end_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### Holidays Table (Company Holidays & Weekends)
+
+```sql
+CREATE TABLE IF NOT EXISTS holidays (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    holiday_date DATE NOT NULL UNIQUE,
+    holiday_name VARCHAR(255) NOT NULL,
+    holiday_type ENUM('weekend', 'company_holiday') DEFAULT 'company_holiday',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_date (holiday_date),
+    INDEX idx_type (holiday_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+### Pending Face Requests Table (Face Enrollment Approval)
+
+```sql
+CREATE TABLE IF NOT EXISTS pending_face_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    emp_id INT NOT NULL,
+    request_type ENUM('enroll', 'update') NOT NULL,
+    image_path VARCHAR(255) NOT NULL,
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    approved_at TIMESTAMP NULL,
+    approved_by INT NULL,
+    rejection_reason TEXT NULL,
+    FOREIGN KEY (emp_id) REFERENCES employees(id) ON DELETE CASCADE,
+    FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_status (status),
+    INDEX idx_emp_id (emp_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### Audit Logs Table (System Audit Trail)
+
+```sql
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    action VARCHAR(100) NOT NULL,
+    module VARCHAR(100) NULL,
+    details TEXT NULL,
+    ip_address VARCHAR(45) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user (user_id),
+    INDEX idx_action (action),
+    INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### Password Reset Tokens Table (Password Recovery)
+
+```sql
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    expires_at DATETIME NOT NULL,
+    used TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ip_address VARCHAR(45),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_token (token),
+    INDEX idx_expires (expires_at),
+    INDEX idx_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+### Leave Balance Table (Leave Entitlements)
+
+```sql
+CREATE TABLE IF NOT EXISTS leave_balance (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id INT NOT NULL,
+    casual_leave INT DEFAULT 0,
+    sick_leave INT DEFAULT 0,
+    vacation_leave INT DEFAULT 0,
+    work_from_home INT DEFAULT 0,
+    year INT NOT NULL,
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_employee_year (employee_id, year)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### Login Logs Table (Authentication Audit)
+
+```sql
+CREATE TABLE IF NOT EXISTS login_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('success', 'failed') NOT NULL,
+    ip_address VARCHAR(100),
+    user_agent TEXT,
+    INDEX idx_user (user_id),
+    INDEX idx_timestamp (timestamp),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### Recognition Logs Table (Face Recognition Audit)
+
+```sql
+CREATE TABLE IF NOT EXISTS recognition_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id INT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    confidence FLOAT,
+    action ENUM('enroll', 'recognize', 'unknown') DEFAULT 'unknown',
+    image_path TEXT,
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL,
+    INDEX idx_employee (employee_id),
+    INDEX idx_timestamp (timestamp),
+    INDEX idx_action (action)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### Contact Messages Table (Contact Form Storage)
+
+```sql
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('new', 'read', 'replied') DEFAULT 'new'
+);
+```
+
 ---
+
+## ⚙️ Configuration
 
 ## ⚙️ Configuration
 
@@ -595,14 +811,11 @@ DB_POOL_SIZE = 10
 ### Version 2.0 (Planned Q1 2026)
 
 **Phase 1: Anti-Spoof Detection**
-- [ ] Liveness detection (blink, smile)
 - [ ] Depth sensing (if hardware available)
 - [ ] Challenge-response verification
 
 **Phase 2: Advanced Features**
 - [ ] Mobile app (React Native)
-- [ ] SMS/Email notifications
-- [ ] Leave management system
 - [ ] Shift scheduling
 - [ ] Geofencing for remote attendance
 - [ ] Multi-camera support
@@ -648,12 +861,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Project Stats
 
-- **Lines of Code**: ~8,500+
-- **Python Files**: 45+
-- **HTML Templates**: 20+
-- **JavaScript Files**: 15+
-- **Database Tables**: 4
-- **API Endpoints**: 35+
+- **Lines of Code**: ~12,000+
+- **Python Files**: 55+
+- **HTML Templates**: 25+
+- **JavaScript Files**: 20+
+- **Database Tables**: 14
+- **API Endpoints**: 50+
+- **Blueprints**: 8
 - **Recognition Accuracy**: 98%+
 - **Avg Response Time**: <300ms
 

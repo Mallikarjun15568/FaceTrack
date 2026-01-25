@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initFeatherIcons();
     
     // Flash messages from backend
-    if (window.flashMessages) {
+    if (window.flashMessages && Array.isArray(window.flashMessages)) {
         window.flashMessages.forEach(msg => {
             showNotification(msg.message, msg.type);
         });

@@ -14,6 +14,11 @@
 
     <!-- Export Buttons -->
     <div class="flex items-center gap-3">
+      <button id="refreshData" class="btn btn-primary">
+        <i class="fa-solid fa-refresh"></i>
+        Refresh Data
+      </button>
+
       <button id="exportCsv" class="btn btn-secondary">
         <i class="fa-solid fa-file-csv"></i>
         Export CSV
@@ -26,7 +31,8 @@
     </div>
   </div>
 
-  <!-- Summary Cards -->
+  <!-- Summary Cards - Only for Admin/HR -->
+  {% if not employee_view %}
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 
     <!-- Present -->
@@ -68,7 +74,7 @@
           <i class="fa-solid fa-clock text-purple-600 text-xl"></i>
         </div>
       </div>
-      <p class="text-xs text-gray-500">After schedule</p>
+      <p class="text-xs text-gray-500">After 9:30 AM</p>
     </div>
 
     <!-- Attendance % -->
@@ -82,10 +88,11 @@
           <i class="fa-solid fa-chart-simple text-indigo-600 text-xl"></i>
         </div>
       </div>
-      <p class="text-xs text-gray-500">Overall rate</p>
+      <p class="text-xs text-gray-500">Today's rate</p>
     </div>
 
   </div>
+  {% endif %}
 
   <!-- Charts Row - Only for Admin/HR -->
   {% if not employee_view %}
@@ -94,10 +101,10 @@
     <!-- Daily Attendance Chart -->
     <div class="card">
       <div class="flex items-center justify-between mb-6">
-        <h3 class="font-bold text-lg text-gray-900">Daily Attendance</h3>
-        <span class="badge badge-primary">Range view</span>
+        <h3 class="font-bold text-lg text-gray-900">Attendance Overview</h3>
+        <span class="badge badge-primary">Last 7 Days</span>
       </div>
-      <div class="h-64 md:h-80">
+      <div class="h-64 md:h-80 flex items-center justify-center">
         <canvas id="lineChart"></canvas>
       </div>
     </div>
@@ -105,11 +112,14 @@
     <!-- Department-wise Chart -->
     <div class="card">
       <div class="flex items-center justify-between mb-6">
-        <h3 class="font-bold text-lg text-gray-900">Department-wise</h3>
-        <span class="badge badge-success">By department</span>
+        <div>
+          <h3 class="font-bold text-lg text-gray-900">Department-wise Attendance</h3>
+          <p class="text-sm text-gray-500 mt-1">Last 7 Days (Weekly Summary)</p>
+        </div>
+        <span class="badge badge-success">Aggregated Data</span>
       </div>
       <div class="h-64 md:h-80">
-        <canvas id="barChart"></canvas>
+        <canvas id="barChart" style="width: 100%; height: 100%;"></canvas>
       </div>
     </div>
 
@@ -323,8 +333,8 @@
 
 <script>
 // Pass employee view flag to JavaScript
-window.isEmployeeView = {% if employee_view %}true{% else %}false{% endif %};
-window.currentUserRole = "{{ session.role }}";
+window.isEmployeeView = "{{ 'true' if employee_view else 'false' }}" === "true";
+window.currentUserRole = "{{ session.role or '' }}";
 
 // Count-up animation for stat cards
 document.addEventListener('DOMContentLoaded', function() {
@@ -349,6 +359,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<script type="module" src="{{ url_for('static', filename='js/reports.js') }}"></script>
+<script src="{{ url_for('static', filename='js/reports.js') }}?v=3"></script>
 
 {% endblock %}

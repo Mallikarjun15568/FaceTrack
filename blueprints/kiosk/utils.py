@@ -12,7 +12,7 @@ from db_utils import fetchall, fetchone, execute
 from utils.face_encoder import face_encoder
 from utils.logger import logger
 
-from blueprints.settings.routes import load_settings
+from blueprints.admin.settings.routes import load_settings
 
 # Toggle saving snapshots globally. Default from environment variable
 # Use app.config['SAVE_SNAPSHOTS'] to override at runtime (True/False)
@@ -263,6 +263,27 @@ def recognize_and_mark(frame_b64, app):
                 "recognized": False,
                 "face_detected": False,
                 "name": "Unknown",
+                "dept": "",
+                "photoUrl": url_for("static", filename="default_user.png"),
+                "time": now_str,
+                "snapshot": snap
+            }
+
+        # Filter faces by minimum confidence
+        min_confidence = float(app.config.get("MIN_CONFIDENCE", 85)) / 100.0
+        faces = [f for f in faces if getattr(f, 'det_score', 1.0) >= min_confidence]
+        
+        logger.info(f"Kiosk: After confidence filter ({min_confidence:.2f}): {len(faces)} face(s)")
+
+        if not faces:
+            snap = save_snapshot(
+                pil_img, app, f"low_conf_{datetime.now().strftime('%H%M%S')}.jpg")
+            session["kiosk_last_unknown"] = now.isoformat()
+            return {
+                "status": "unknown",
+                "recognized": False,
+                "face_detected": False,
+                "name": "Low Confidence",
                 "dept": "",
                 "photoUrl": url_for("static", filename="default_user.png"),
                 "time": now_str,

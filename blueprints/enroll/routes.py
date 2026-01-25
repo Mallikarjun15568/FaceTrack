@@ -13,7 +13,7 @@ from utils.face_encoder import invalidate_embeddings_cache, face_encoder
 from utils.logger import logger
 import numpy as np
 import cv2
-import face_recognition
+# import face_recognition  # Moved to local import to avoid startup issues
 
 
 # Duplicate face threshold for preventing same person enrolling multiple times
@@ -131,12 +131,18 @@ def capture_face():
 
         # Quality OK - proceed to detect face and store embedding
         faces = face_encoder.app.get(frame)
+        
+        # Filter faces by minimum confidence
+        from flask import current_app
+        min_confidence = float(current_app.config.get("MIN_CONFIDENCE", 85)) / 100.0
+        faces = [f for f in faces if getattr(f, 'det_score', 1.0) >= min_confidence]
+        
         if len(faces) == 0:
             try:
                 os.remove(temp_path)
             except Exception:
                 pass
-            return jsonify({"status": "no_face", "message": "No Face Detected"})
+            return jsonify({"status": "low_confidence", "message": f"No face detected with sufficient confidence (min: {min_confidence:.0%})"})
 
         if len(faces) > 1:
             try:
@@ -261,7 +267,8 @@ def detect_face():
         # Convert BGR to RGB
         rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
-        # Detect faces
+        # Detect faces (import face_recognition locally to avoid startup issues)
+        import face_recognition
         face_locations = face_recognition.face_locations(rgb, model="hog")
         face_count = len(face_locations)
         return jsonify({
@@ -419,7 +426,6 @@ def update_capture_face():
 # 3. Enrollment list page
 # -----------------------------------------------------
 @bp.route("/")
-@login_required
 def enroll_home():
     db = get_db()
     cursor = db.cursor(dictionary=True)

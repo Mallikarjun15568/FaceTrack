@@ -97,7 +97,7 @@ if (window.__settingsLoaded) {
 
         // Attach dirty listeners to inputs
         const inputs = document.querySelectorAll(
-            "#recognition_threshold, #duplicate_interval, #snapshot_mode, #late_time, #min_confidence, #company_name, #camera_index, #session_timeout, #login_alert"
+            "#recognition_threshold, #duplicate_interval, #snapshot_mode, #late_time, #checkout_time, #min_confidence, #company_name, #camera_index, #session_timeout, #login_alert"
         );
         inputs.forEach(el => {
             if (!el) return;
@@ -123,6 +123,7 @@ if (window.__settingsLoaded) {
                 duplicate_interval: document.getElementById("duplicate_interval").value,
                 snapshot_mode: document.getElementById("snapshot_mode").checked ? "on" : "off",
                 late_time: document.getElementById("late_time").value,
+                checkout_time: document.getElementById("checkout_time").value,
                 min_confidence: document.getElementById("min_confidence").value,
                 company_name: document.getElementById("company_name").value,
                 camera_index: document.getElementById("camera_index").value,
@@ -130,7 +131,7 @@ if (window.__settingsLoaded) {
                 login_alert: document.getElementById("login_alert").value
             };
 
-            fetch("/settings/api", {
+            fetch("/admin/settings/api", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data)
@@ -178,7 +179,7 @@ if (window.__settingsLoaded) {
         const fd = new FormData();
         fd.append("company_logo", file);
 
-        fetch("/settings/upload-logo", {
+        fetch("/admin/settings/upload-logo", {
             method: "POST",
             body: fd
         })
@@ -196,11 +197,11 @@ if (window.__settingsLoaded) {
 
     // EXPORT BUTTONS
     document.getElementById("exportAttendance").onclick = () => {
-        window.location.href = "/settings/export/attendance";
+        window.location.href = "/admin/settings/export/attendance";
     };
 
     document.getElementById("exportEmployees").onclick = () => {
-        window.location.href = "/settings/export/employees";
+        window.location.href = "/admin/settings/export/employees";
     };
 
 
@@ -340,7 +341,7 @@ if (window.__settingsLoaded) {
             formData.append("confirm_password", confirmPassword);
 
             try {
-                const response = await fetch("/settings/change-password", {
+                const response = await fetch("/admin/settings/change-password", {
                     method: "POST",
                     body: formData
                 });

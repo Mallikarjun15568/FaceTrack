@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - FaceTrack Employee</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/professional.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/premium.css') }}">
+
+  <!-- Icons: prefer local copy (if available), otherwise use CDN -->
+  {% if FA_LOCAL_AVAILABLE %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+  {% else %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  {% endif %}
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .admin-bg {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      background-image:
+        radial-gradient(circle at 25% 25%, rgba(37, 99, 235, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(37, 99, 235, 0.02) 0%, transparent 50%);
+    }
+    .premium-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .premium-card:hover {
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+    .stat-icon {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+    }
+    .action-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      color: white;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    }
+    .action-btn-secondary {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+    header { box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .leave-progress-bar {
+      width: 0%;
+      transition: width 0.8s ease-out;
+    }
+  </style>
+</head>
+<body class="m-0 admin-bg min-h-screen">
+
+  <!-- Premium Header -->
+  <header class="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-lg">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <!-- Logo and Brand -->
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+          <i class="fas fa-user-check text-white text-lg"></i>
+        </div>
+        <h1 class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">FaceTrack Pro</h1>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="flex items-center gap-6">
+        <a href="{{ url_for('employee.dashboard') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.dashboard' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+          <i class="fas fa-home mr-2"></i>Dashboard
+        </a>
+        <a href="{{ url_for('employee.attendance') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.attendance' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+          <i class="fas fa-clipboard-list mr-2"></i>Attendance
+        </a>
+        <a href="{{ url_for('employee.face_request') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.face_request' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+          <i class="fas fa-camera mr-2"></i>Face Request
+        </a>
+        <a href="{{ url_for('employee.leave') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.leave' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+          <i class="fas fa-calendar-plus mr-2"></i>Leave
+        </a>
+        <a href="{{ url_for('employee.summary') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.summary' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+          <i class="fas fa-chart-bar mr-2"></i>Summary
+        </a>
+      </nav>
+
+      <!-- User Section (compact dropdown) -->
+      <div class="relative">
+        <button id="userMenuBtn" onclick="toggleUserMenu(event)" class="flex items-center gap-3 focus:outline-none">
+          <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-sm">
+            <i class="fas fa-user text-white text-sm"></i>
+          </div>
+          <span class="ml-2 hidden sm:inline text-sm font-medium text-gray-800">{{ session.get('full_name', 'Employee') }}</span>
+          <i class="fas fa-caret-down ml-1 text-gray-500"></i>
+        </button>
+        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-md py-2 z-50">
+          <a href="{{ url_for('employee.profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-user mr-2"></i>Profile</a>
+          <a href="{{ url_for('employee.settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-cog mr-2"></i>Settings</a>
+          <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <script>
+    function toggleUserMenu(e){ e.stopPropagation(); const m=document.getElementById('userMenu'); if(m) m.classList.toggle('hidden'); }
+    document.addEventListener('click', function(){ const m=document.getElementById('userMenu'); if(m && !m.classList.contains('hidden')) m.classList.add('hidden'); });
+  </script>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-6 py-8 pt-24">
+
+    <!-- Welcome Section -->
+    <div class="mb-6 scroll-reveal">
+      <div class="flex items-center gap-4 mb-2">
+        <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center">
+          <i class="fas fa-sun text-white text-lg"></i>
+        </div>
+        <div>
+          <h2 class="text-3xl font-bold text-gray-900">Good {{ greeting }}, {{ user_name }}! 👋</h2>
+          <p class="text-gray-600 text-lg">Welcome back to your FaceTrack dashboard</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+      <!-- Today's Status -->
+      <div class="premium-card p-6 scroll-reveal">
+        <div class="flex items-start justify-between mb-4">
+          <div class="stat-icon">
+            <i class="fas fa-calendar-check text-white text-lg"></i>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Today's Status</p>
+          </div>
+        </div>
+        <div class="space-y-2">
+          {% if today_attendance %}
+            <p class="text-2xl font-bold text-gray-900">
+              {{ today_attendance.check_in_time.strftime('%H:%M') if today_attendance.check_in_time else 'N/A' }}
+            </p>
+            <p class="text-sm font-medium {% if today_attendance.status == 'present' %}text-emerald-600{% elif today_attendance.status == 'late' %}text-amber-600{% else %}text-gray-600{% endif %}">
+              {{ today_attendance.status.title() }}
+            </p>
+            {% if today_attendance.check_out_time %}
+              <p class="text-xs text-gray-500">
+                Check-out: {{ today_attendance.check_out_time.strftime('%H:%M') }}
+              </p>
+            {% endif %}
+          {% else %}
+            <p class="text-2xl font-bold text-gray-400">Not Checked In</p>
+            <p class="text-sm text-gray-500">Ready for attendance</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Leave Balance -->
+      <div class="premium-card p-6 scroll-reveal" style="animation-delay: 0.1s">
+        <div class="flex items-start justify-between mb-4">
+          <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            <i class="fas fa-calendar-alt text-white text-lg"></i>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Leave Balance</p>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <p class="text-3xl font-bold text-gray-900">{{ leave_balance or 0 }}</p>
+          <p class="text-sm text-gray-600">days remaining</p>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="leave-progress-bar bg-gradient-to-r from-emerald-500 to-teal-600 h-2 rounded-full" data-percentage="{{ leave_balance_percentage }}"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Working Hours Today -->
+      <div class="premium-card p-6 scroll-reveal" style="animation-delay: 0.2s">
+        <div class="flex items-start justify-between mb-4">
+          <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+            <i class="fas fa-clock text-white text-lg"></i>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Today's Hours</p>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <p class="text-3xl font-bold text-gray-900">{{ working_hours_today or '0h 0m' }}</p>
+          <p class="text-sm text-gray-600">logged today</p>
+          {% if working_hours_today %}
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span class="text-xs text-green-600 font-medium">Active</span>
+            </div>
+          {% else %}
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+              <span class="text-xs text-gray-500">Not started</span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="premium-card p-6 mb-8 scroll-reveal" style="animation-delay: 0.3s">
+      <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+          <i class="fas fa-bolt text-white text-sm"></i>
+        </div>
+        Quick Actions
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-2">
+        <a href="{{ url_for('employee.attendance') }}" class="action-btn group">
+          <i class="fas fa-clipboard-list group-hover:scale-110 transition-transform"></i>
+          <span>View Attendance</span>
+        </a>
+
+        <a href="{{ url_for('employee.leave') }}" class="action-btn action-btn-secondary group">
+          <i class="fas fa-calendar-plus group-hover:scale-110 transition-transform"></i>
+          <span>Request Leave</span>
+        </a>
+
+        <a href="{{ url_for('employee.summary') }}" class="action-btn group" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+          <i class="fas fa-chart-bar group-hover:scale-110 transition-transform"></i>
+          <span>My Summary</span>
+        </a>
+
+        <a href="{{ url_for('employee.profile') }}" class="action-btn group" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);">
+          <i class="fas fa-user-edit group-hover:scale-110 transition-transform"></i>
+          <span>Update Profile</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Recent Attendance -->
+    <div class="premium-card p-6 scroll-reveal" style="animation-delay: 0.4s">
+      <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+        <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-lg flex items-center justify-center">
+          <i class="fas fa-history text-white text-sm"></i>
+        </div>
+        Recent Attendance
+      </h3>
+
+      {% if recent_attendance %}
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Date</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Check-in</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Check-out</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Duration</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              {% for record in recent_attendance %}
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {{ record.date.strftime('%b %d, %Y') if record.date else 'N/A' }}
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                  {{ record.check_in }}
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                  {{ record.check_out or '-' }}
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                  <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                    {% if record.status == 'present' %}bg-green-100 text-green-800
+                    {% elif record.status == 'late' %}bg-yellow-100 text-yellow-800
+                    {% elif record.status == 'absent' %}bg-red-100 text-red-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ record.status.title() }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                  {{ record.duration or '-' }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-center py-12">
+          <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-calendar-times text-gray-400 text-2xl"></i>
+          </div>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">No attendance records yet</h3>
+          <p class="text-gray-600">Your attendance history will appear here once you start checking in.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <script>
+    // Initialize leave progress bar
+    document.addEventListener('DOMContentLoaded', function() {
+      const progressBar = document.querySelector('.leave-progress-bar');
+      if (progressBar) {
+        const percentage = progressBar.getAttribute('data-percentage') || 0;
+        setTimeout(() => {
+          progressBar.style.width = percentage + '%';
+        }, 500);
+      }
+    });
+  </script>
+
+</body>
+</html>

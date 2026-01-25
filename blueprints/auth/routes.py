@@ -1,5 +1,6 @@
 from . import bp
-from flask import render_template, request, redirect, url_for, session, flash, jsonify
+from flask import render_template, request, redirect, url_for, session, flash, jsonify, current_app
+from flask_wtf.csrf import generate_csrf
 from utils.extensions import limiter
 from .utils import get_user_by_username, verify_password
 from db_utils import get_connection
@@ -7,17 +8,18 @@ from db_utils import execute, log_audit
 from utils.db import get_db
 import base64, io, json
 from PIL import Image
+from datetime import datetime
 import numpy as np
 from utils.face_encoder import face_encoder
 
 
 # ============================================================
-# LOGIN (Clean – No roles)
+# ADMIN LOGIN (Admin/HR only)
 # ============================================================
-@bp.route("/login", methods=["GET", "POST"])
+@bp.route("/admin/login", methods=["GET", "POST"])
 @limiter.limit("5 per minute", methods=["POST"])
 def login():
-    """Username/password authentication - redirects to unified dashboard"""
+    """Admin/HR login only"""
     if request.method == "POST":
         try:
             username = request.form.get("username")
@@ -32,11 +34,62 @@ def login():
             if not user or not verify_password(user["password"], password):
                 flash("Invalid username or password", "error")
                 try:
+                    # Log failed login to login_logs table
+                    db = get_db()
+                    cur = db.cursor()
+                    cur.execute("""
+                        INSERT INTO login_logs (user_id, status, ip_address, user_agent)
+                        VALUES (%s, 'failed', %s, %s)
+                    """, (user["id"] if user else None, request.remote_addr, request.user_agent.string))
+                    db.commit()
+
+                    # Check for brute force attack (5+ failed attempts in last hour)
+                    cur.execute("""
+                        SELECT COUNT(*) as failed_count FROM login_logs
+                        WHERE ip_address = %s AND status = 'failed'
+                        AND timestamp > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+                    """, (request.remote_addr,))
+                    failed_count = cur.fetchone()["failed_count"]
+
+                    # Send alert if login_alert is enabled and suspicious activity detected
+                    login_alert_setting = current_app.config.get('LOGIN_ALERT', 'off')
+                    if login_alert_setting != 'off' and failed_count >= 5:
+                        # Get admin emails for alerts
+                        cur.execute("SELECT email FROM users WHERE role = 'admin'")
+                        admin_emails = [row["email"] for row in cur.fetchall()]
+
+                        if admin_emails:
+                            from utils.email_service import email_service
+                            alert_message = f"""
+                            🚨 SECURITY ALERT: Multiple Failed Login Attempts
+
+                            IP Address: {request.remote_addr}
+                            Failed Attempts: {failed_count}
+                            Last Attempt: {username}
+                            Time: {datetime.now()}
+
+                            This may indicate a brute force attack. Please review security logs.
+                            """
+
+                            for admin_email in admin_emails:
+                                try:
+                                    email_service.send_email(
+                                        admin_email,
+                                        "🚨 FaceTrack Security Alert - Failed Login Attempts",
+                                        alert_message
+                                    )
+                                except Exception as e:
+                                    logger.error(f"Failed to send security alert: {e}")
+
                     log_audit(user_id=None, action='FAILED_LOGIN', module='auth', details=f'username={username}', ip_address=request.remote_addr)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.error(f"Failed login logging error: {e}")
                 return redirect(url_for("auth.login"))
 
+            # Check if user has admin/hr role
+            if user.get("role") not in ["admin", "hr"]:
+                flash("Access denied. This login is for administrators only.", "error")
+                return redirect(url_for("auth.login"))
 
             # Fetch linked employee row (if any)
             db = get_db()
@@ -74,12 +127,22 @@ def login():
 
             # Audit successful login
             try:
+                # Log successful login to login_logs table
+                db = get_db()
+                cur = db.cursor()
+                cur.execute("""
+                    INSERT INTO login_logs (user_id, status, ip_address, user_agent)
+                    VALUES (%s, 'success', %s, %s)
+                """, (user['id'], request.remote_addr, request.user_agent.string))
+                db.commit()
+
                 log_audit(user_id=user['id'], action='LOGIN', module='auth', details=f'username={username}', ip_address=request.remote_addr)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Login logging error: {e}")
 
             # Single unified dashboard
-            return redirect("/dashboard")
+            redirect_url = "/employee/dashboard" if session.get("role") == "employee" else "/admin/dashboard"
+            return redirect(redirect_url)
 
         except Exception as e:
             from utils.logger import logger
@@ -88,6 +151,141 @@ def login():
             return redirect(url_for('auth.login'))
 
     return render_template("login.html")
+
+
+# ============================================================
+# USER LOGIN (Employee only)
+# ============================================================
+@bp.route("/user_login", methods=["GET", "POST"])
+@limiter.limit("5 per minute", methods=["POST"])
+def user_login():
+    """Employee login only"""
+    if request.method == "POST":
+        try:
+            username = request.form.get("username")
+            password = request.form.get("password")
+
+            if not username or not password:
+                flash("Username and password required", "error")
+                return redirect(url_for("auth.user_login"))
+
+            user = get_user_by_username(username)
+
+            if not user or not verify_password(user["password"], password):
+                flash("Invalid username or password", "error")
+                try:
+                    # Log failed login to login_logs table
+                    db = get_db()
+                    cur = db.cursor()
+                    cur.execute("""
+                        INSERT INTO login_logs (user_id, status, ip_address, user_agent)
+                        VALUES (%s, 'failed', %s, %s)
+                    """, (user["id"] if user else None, request.remote_addr, request.user_agent.string))
+                    db.commit()
+
+                    # Check for brute force attack (5+ failed attempts in last hour)
+                    cur.execute("""
+                        SELECT COUNT(*) as failed_count FROM login_logs
+                        WHERE ip_address = %s AND status = 'failed'
+                        AND timestamp > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+                    """, (request.remote_addr,))
+                    failed_count = cur.fetchone()["failed_count"]
+
+                    # Send alert if login_alert is enabled and suspicious activity detected
+                    login_alert_setting = current_app.config.get('LOGIN_ALERT', 'off')
+                    if login_alert_setting != 'off' and failed_count >= 5:
+                        # Get admin emails for alerts
+                        cur.execute("SELECT email FROM users WHERE role = 'admin'")
+                        admin_emails = [row["email"] for row in cur.fetchall()]
+
+                        if admin_emails:
+                            from utils.email_service import email_service
+                            alert_message = f"""
+                            🚨 SECURITY ALERT: Multiple Failed Login Attempts
+
+                            IP Address: {request.remote_addr}
+                            Failed Attempts: {failed_count}
+                            Last Attempt: {username}
+                            Time: {datetime.now()}
+
+                            This may indicate a brute force attack. Please review security logs.
+                            """
+
+                            for admin_email in admin_emails:
+                                try:
+                                    email_service.send_email(
+                                        admin_email,
+                                        "🚨 FaceTrack Security Alert - Failed Login Attempts",
+                                        alert_message
+                                    )
+                                except Exception as e:
+                                    logger.error(f"Failed to send security alert: {e}")
+
+                    log_audit(user_id=None, action='FAILED_LOGIN', module='auth', details=f'username={username}', ip_address=request.remote_addr)
+                except Exception as e:
+                    logger.error(f"Failed login logging error: {e}")
+                return redirect(url_for("auth.user_login"))
+
+            # Check if user has employee, admin, or HR role (all can use employee login)
+            if user.get("role") not in ["employee", "admin", "hr"]:
+                flash("Access denied. Invalid user role.", "error")
+                return redirect(url_for("auth.user_login"))
+
+            # Fetch linked employee row (required for employees)
+            db = get_db()
+            cur = db.cursor(dictionary=True)
+            cur.execute("SELECT * FROM employees WHERE user_id=%s", (user["id"],))
+            employee = cur.fetchone()
+
+            if not employee:
+                flash("Your employee profile is not created yet. Contact admin.", "error")
+                return redirect(url_for('auth.user_login'))
+
+            # Check if employee is active
+            if employee.get("status") != "active":
+                flash("Your account is inactive. Contact admin.", "danger")
+                return redirect(url_for("auth.user_login"))
+
+            # Clear old session and regenerate session ID (prevent session fixation)
+            old_session_data = dict(session)  # Preserve any needed data
+            session.clear()
+
+            # Set new session data
+            session["logged_in"] = True
+            session["user_id"] = user["id"]
+            session["username"] = user["username"]
+            session["role"] = user.get("role")
+            session['employee_id'] = employee['id']
+            session['full_name'] = employee.get('full_name') or user.get('username')
+
+            # Force session ID regeneration
+            session.modified = True
+
+            # Audit successful login
+            try:
+                # Log successful login to login_logs table
+                db = get_db()
+                cur = db.cursor()
+                cur.execute("""
+                    INSERT INTO login_logs (user_id, status, ip_address, user_agent)
+                    VALUES (%s, 'success', %s, %s)
+                """, (user['id'], request.remote_addr, request.user_agent.string))
+                db.commit()
+
+                log_audit(user_id=user['id'], action='LOGIN', module='auth', details=f'username={username}', ip_address=request.remote_addr)
+            except Exception as e:
+                logger.error(f"Login logging error: {e}")
+
+            # Redirect to employee dashboard
+            return redirect(url_for("employee.dashboard"))
+
+        except Exception as e:
+            from utils.logger import logger
+            logger.error(f"User login handler error: {e}", exc_info=True)
+            flash('Login failed. Please try again.', 'error')
+            return redirect(url_for('auth.user_login'))
+
+    return render_template("user_login.html")
 
 
 # During blueprint registration, exempt the specific `login` view from CSRF
@@ -115,8 +313,6 @@ def signup():
         full_name = request.form.get("full_name")
         email = request.form.get("email")
         username = request.form.get("username")
-        phone = request.form.get("phone")
-        gender = request.form.get("gender")
         password = request.form.get("password")
         confirm = request.form.get("confirm_password")
 
@@ -343,11 +539,12 @@ def face_login_api():
         pass
 
     # Clean unified redirect
+    redirect_url = "/employee/dashboard"
     return jsonify({
         "matched": True,
         "name": full_name,
         "distance": distance,
-        "redirect_url": "/dashboard"
+        "redirect_url": redirect_url
     })
 
 
@@ -363,21 +560,21 @@ def forgot_password():
         
         if not email:
             flash("Please enter your email address", "error")
-            return redirect(url_for("auth.forgot_password"))
+            return render_template("forgot_password.html")
         
         # Validate email format
         from utils.validators import validate_email
         is_valid, error_msg = validate_email(email)
         if not is_valid:
             flash("Invalid email format", "error")
-            return redirect(url_for("auth.forgot_password"))
+            return render_template("forgot_password.html")
         
         db = get_db()
         cur = db.cursor(dictionary=True)
         
         # Find user by email
         cur.execute("""
-            SELECT u.id, u.username, e.full_name, u.email
+            SELECT u.id, u.username, u.role, e.full_name, u.email
             FROM users u
             LEFT JOIN employees e ON e.user_id = u.id
             WHERE u.email = %s
@@ -385,7 +582,7 @@ def forgot_password():
         """, (email,))
         user = cur.fetchone()
         
-        # Security: Always show success message (don't reveal if email exists)
+        # Security: Always show success message (don't reveal if email exists or user type)
         flash("If this email is registered, you will receive a password reset link shortly.", "success")
         
         if not user:
@@ -394,7 +591,21 @@ def forgot_password():
                 log_audit(None, 'PASSWORD_RESET_INVALID_EMAIL', 'auth', f'email={email}', request.remote_addr)
             except:
                 pass
-            return redirect(url_for("auth.login"))
+            # Stay on forgot password page with success message (don't reveal if email exists)
+            return render_template("forgot_password.html")
+        
+        # SECURITY: Block admin and HR password resets (prevent attack surface)
+        if user['role'] in ['admin', 'hr']:
+            # Log admin/HR reset attempt for security monitoring
+            try:
+                log_audit(user['id'], 'PASSWORD_RESET_BLOCKED_ADMIN_HR', 'auth', f'email={email}', request.remote_addr)
+            except:
+                pass
+            # Show same generic message on forgot password page, don't reveal admin/HR status
+            return render_template("forgot_password.html")
+        
+        # Determine redirect based on user role (only for non-admin users)
+        redirect_target = "auth.user_login" if user['role'] == 'employee' else "auth.login"
         
         # Generate secure token
         import secrets
@@ -423,7 +634,8 @@ def forgot_password():
             logger.error(f"Failed to send password reset email: {e}")
             # Don't reveal error to user for security
         
-        return redirect(url_for("auth.login"))
+        # Stay on forgot password page with success message
+        return render_template("forgot_password.html")
     
     return render_template("forgot_password.html")
 

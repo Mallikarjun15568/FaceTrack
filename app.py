@@ -17,14 +17,11 @@ from utils.face_encoder import face_encoder
 # BLUEPRINT IMPORTS
 # --------------------------
 from blueprints.auth import bp as auth_bp
-from blueprints.employees import bp as employees_bp
+from blueprints.admin import admin_bp
 from blueprints.attendance import bp as attendance_bp
 from blueprints.enroll import bp as enroll_bp
 from blueprints.kiosk import bp as kiosk_bp
-from blueprints.dashboard import bp as dashboard_bp
-from blueprints.settings import bp as settings_bp
-from blueprints.settings.routes import load_settings
-from blueprints.reports import bp as reports_bp
+from blueprints.admin.settings.routes import load_settings
 from blueprints.leave import bp as leave_bp
 from blueprints.charts import bp as charts_bp
 from utils.email_service import email_service
@@ -120,15 +117,14 @@ logger = logging.getLogger("app")
 # 
 # --------------------------
 app.register_blueprint(auth_bp)
-app.register_blueprint(employees_bp)
+app.register_blueprint(admin_bp)
 app.register_blueprint(attendance_bp)
 app.register_blueprint(enroll_bp)
 app.register_blueprint(kiosk_bp)
-app.register_blueprint(dashboard_bp)
-app.register_blueprint(settings_bp)
-app.register_blueprint(reports_bp)
 app.register_blueprint(leave_bp)
 app.register_blueprint(charts_bp)
+from blueprints.employee import bp as employee_bp
+app.register_blueprint(employee_bp)
 
 # Setup selective CSRF exemptions
 from utils.csrf_exemptions import setup_csrf_exemptions
@@ -140,6 +136,16 @@ setup_csrf_exemptions(app, csrf)
 # --------------------------
 @app.route("/")
 def index():
+    # If user already logged in → go to their panel
+    if session.get("user_id"):
+        role = session.get("role")
+        if role == "employee" and session.get("employee_id"):
+            return redirect(url_for("employee.dashboard"))
+        elif role in ["admin", "hr"]:
+            return redirect(url_for("admin.dashboard.admin_dashboard"))
+        # Fallback for other roles or incomplete profiles
+        return redirect(url_for("auth.login"))
+    # Not logged in → show public home page
     return render_template("home.html")
 
 @app.route("/about")
@@ -174,34 +180,22 @@ def contact():
             flash("Invalid email format", "error")
             return redirect(url_for("contact"))
         
-        # Send email to support
+        # Store contact message in database
         try:
-            from utils.email_service import email_service
-            subject = f"Contact Form: {name}"
-            body = f"""
-New contact form submission:
+            from db_utils import execute
 
-Name: {name}
-Email: {email}
+            # Insert into database
+            execute("""
+                INSERT INTO contact_messages (name, email, message)
+                VALUES (%s, %s, %s)
+            """, (name, email, message))
 
-Message:
-{message}
-
----
-Sent from FaceTrack Pro contact form
-"""
-            # Send to support email (using the same email configured for the system)
-            support_email = app.config.get('SENDER_EMAIL', 'support@facetrackpro.com')
-            email_service.send_email(
-                to_email=support_email,
-                subject=subject,
-                body=body
-            )
             flash("Thank you for your message! We'll get back to you soon.", "success")
+
         except Exception as e:
             from utils.logger import logger
-            logger.error(f"Failed to send contact form email: {e}")
-            flash("Sorry, there was an error sending your message. Please try again later.", "error")
+            logger.error(f"Failed to save contact form message: {e}")
+            flash("Sorry, there was an error saving your message. Please try again later.", "error")
         
         return redirect(url_for("contact"))
     
@@ -234,6 +228,12 @@ def login_redirect():
 # --------------------------
 # ERROR HANDLERS
 # --------------------------
+@app.errorhandler(403)
+def forbidden(error):
+    logger.warning(f"403 Forbidden: {request.url} - {str(error)}")
+    return render_template('403.html'), 403
+
+
 @app.errorhandler(404)
 def not_found(error):
     logger.warning(f"404 Error: {request.url}")
@@ -333,6 +333,9 @@ with app.app_context():
                     app.config['COMPANY_LOGO'] = saved_settings.get('company_logo')
                 if 'late_time' in saved_settings:
                     app.config['LATE_TIME'] = saved_settings.get('late_time')
+                # Company check-out time (HH:MM)
+                if 'checkout_time' in saved_settings:
+                    app.config['CHECKOUT_TIME'] = saved_settings.get('checkout_time')
             except Exception:
                 pass
 

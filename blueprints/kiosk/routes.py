@@ -1,7 +1,7 @@
 from flask import render_template, request, jsonify, current_app, session, redirect, url_for, flash
 from werkzeug.security import check_password_hash, generate_password_hash
 from markupsafe import escape
-from blueprints.auth.utils import role_required
+from blueprints.auth.utils import login_required, role_required
 from . import bp
 from .utils import recognize_and_mark, decode_frame
 from utils.liveness_detector import LivenessDetector
@@ -238,15 +238,11 @@ def kiosk_exit():
         session["pin_attempts"] = 0
         session.pop("pin_lockout_until", None)
         
-        # Audit successful PIN verification
-        try:
-            from db_utils import log_audit
-            admin_id = session.get("user_id")
-            log_audit(admin_id, 'KIOSK_PIN_SUCCESS', 'kiosk', f'admin_id={admin_id} ip={request.remote_addr}', request.remote_addr)
-        except:
-            pass
+        # For security: Force re-login after kiosk exit to prevent PIN abuse
+        from blueprints.auth.routes import logout
+        logout()
         
-        return jsonify({"success": True, "redirect": "/dashboard"})
+        return jsonify({"success": True, "redirect": "/auth/admin/login"})
     else:
         attempts = session.get("pin_attempts", 0) + 1
         session["pin_attempts"] = attempts

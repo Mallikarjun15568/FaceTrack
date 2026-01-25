@@ -11,6 +11,10 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("exportCsv")?.addEventListener("click", exportCSV);
     document.getElementById("exportPdf")?.addEventListener("click", exportPDF);
     document.getElementById("loadEmployeeData")?.addEventListener("click", loadEmployeeAnalysis);
+    document.getElementById("refreshData")?.addEventListener("click", () => {
+        loadSummary();
+        loadCharts();
+    });
     
     // Calendar navigation buttons
     document.getElementById("prevMonth")?.addEventListener("click", () => {
@@ -29,6 +33,14 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // Initialize
     initReports();
+    
+    // Auto-refresh for admin/HR every 30 seconds
+    if (!window.isEmployeeView) {
+        setInterval(() => {
+            loadSummary();
+            loadCharts();
+        }, 30000); // 30 seconds
+    }
 });
 
 async function initReports() {
@@ -47,6 +59,7 @@ async function initReports() {
         await loadEmployeeDropdown();
         await loadTable();
     }
+
     
     // Set default month to current
     const now = new Date();
@@ -97,7 +110,7 @@ async function loadEmployeeSelfData() {
 // SUMMARY API
 // =====================================
 async function loadSummary() {
-    fetch("/reports/api/summary")
+    fetch("/admin/reports/api/summary")
         .then(res => res.json())
         .then(data => {
             if (data.status !== "ok") return;
@@ -105,14 +118,48 @@ async function loadSummary() {
             const presentCount = document.getElementById("presentCount");
             const absentCount = document.getElementById("absentCount");
             const lateCount = document.getElementById("lateCount");
-            const attendancePercent = document.getElementById("attendancePercent");
+            // Accept either 'attendancePercent' or 'attendancePercentage' id used in templates
+            const attendancePercent = document.getElementById("attendancePercent") || document.getElementById("attendancePercentage");
 
-            if (presentCount) presentCount.textContent = data.summary.present;
-            if (absentCount) absentCount.textContent = data.summary.absent;
-            if (lateCount) lateCount.textContent = data.summary.late;
-            if (attendancePercent) attendancePercent.textContent = data.summary.attendance_percent + "%";
+            const setText = (el, val) => { if (!el) return; el.textContent = val; el.setAttribute('data-target', val); };
+
+            setText(presentCount, data.summary.present ?? 0);
+            setText(absentCount, data.summary.absent ?? 0);
+            setText(lateCount, data.summary.late ?? 0);
+            if (attendancePercent) setText(attendancePercent, (data.summary.attendance_percent !== undefined && data.summary.attendance_percent !== null) ? data.summary.attendance_percent + "%" : "-");
+
+            // Re-run countup animation for updated elements
+            runCountups();
         })
         .catch(err => console.error("Summary load error:", err));
+}
+
+// Helper to animate number/countup elements after dynamic update
+function runCountups() {
+    document.querySelectorAll('.countup').forEach(function(el) {
+        const targetRaw = el.getAttribute('data-target');
+        if (!targetRaw || targetRaw === '-') return;
+        // Remove any non-numeric characters (like %)
+        const numeric = parseFloat(String(targetRaw).replace(/[^0-9.\-]/g, ''));
+        if (isNaN(numeric)) return;
+        const target = numeric;
+        let start = 0;
+        const duration = 800;
+        let current = start;
+        const steps = 40;
+        const step = (target - start) / steps;
+        let i = 0;
+        const timer = setInterval(() => {
+            i++;
+            current += step;
+            if ((target > start && current >= target) || (target < start && current <= target) || i >= steps) {
+                el.textContent = (String(targetRaw).includes('%')) ? `${target}%` : Math.round(target);
+                clearInterval(timer);
+            } else {
+                el.textContent = Math.round(current);
+            }
+        }, duration / steps);
+    });
 }
 
 
@@ -124,12 +171,17 @@ let lineChartRef = null;
 let barChartRef = null;
 
 async function loadCharts() {
-    fetch("/reports/api/chart-data")
+    fetch("/admin/reports/api/chart-data")
         .then(res => res.json())
         .then(data => {
             if (data.status !== "ok") return;
 
-            renderLineChart(data.chart.daily);
+            // Use summary data for doughnut chart if available, otherwise fall back to daily calculation
+            if (data.chart.summary) {
+                renderLineChart(data.chart.summary);
+            } else {
+                renderLineChart(data.chart.daily);
+            }
             renderBarChart(data.chart.departments);
         })
         .catch(err => console.error("Chart load error:", err));
@@ -138,58 +190,173 @@ async function loadCharts() {
 
 
 // =====================================
-// LINE CHART (DAILY ATTENDANCE)
+// PIE CHART (ATTENDANCE OVERVIEW)
 // =====================================
 function renderLineChart(chartData) {
-    if (!chartData || chartData.length === 0) return;
+    const canvas = document.getElementById("lineChart");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
 
-    const ctx = document.getElementById("lineChart").getContext("2d");
+    let totalPresent, totalAbsent, totalLate;
+
+    // Check if chartData is summary object or daily array
+    if (chartData.present !== undefined && chartData.absent !== undefined && chartData.late !== undefined) {
+        // New format: summary object with unique employee counts
+        totalPresent = chartData.present || 0;
+        totalAbsent = chartData.absent || 0;
+        totalLate = chartData.late || 0;
+    } else {
+        // Old format: daily array - sum the values (inflated numbers)
+        totalPresent = chartData.reduce((sum, d) => sum + (d.present || 0), 0);
+        totalAbsent = chartData.reduce((sum, d) => sum + (d.absent || 0), 0);
+        totalLate = chartData.reduce((sum, d) => sum + (d.late || 0), 0);
+    }
+
+    if (totalPresent === 0 && totalAbsent === 0 && totalLate === 0) {
+        drawNoDataOnCanvas(canvas, 'No attendance data available');
+        if (lineChartRef) { lineChartRef.destroy(); lineChartRef = null; }
+        return;
+    }
 
     if (lineChartRef) lineChartRef.destroy();
 
-    const labels  = chartData.map(d => d.date);
-    const present = chartData.map(d => d.present);
-    const absent  = chartData.map(d => d.absent);
-    const late    = chartData.map(d => d.late);
+    // Center text plugin for doughnut chart
+    const centerTextPlugin = {
+        id: 'doughnutCenterText',
+        beforeDraw: function(chart) {
+            const { width, height, ctx } = chart;
+            const { text, subtext, color, fontSize, subFontSize } = chart.options.plugins.doughnutCenterText;
+            
+            ctx.restore();
+            ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+            ctx.fillStyle = color;
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center';
+            
+            const textX = width / 2;
+            const textY = height / 2 - 10;
+            
+            ctx.fillText(text, textX, textY);
+            
+            if (subtext) {
+                ctx.font = `600 ${subFontSize}px Inter, sans-serif`;
+                ctx.fillStyle = '#6b7280';
+                ctx.fillText(subtext, textX, textY + 20);
+            }
+            
+            ctx.save();
+        }
+    };
+
+    // Create modern gradients for each segment
+    const presentGradient = ctx.createRadialGradient(150, 150, 50, 150, 150, 150);
+    presentGradient.addColorStop(0, '#22C55E'); // Fresh green
+    presentGradient.addColorStop(1, '#16A34A'); // Darker green
+
+    const absentGradient = ctx.createRadialGradient(150, 150, 50, 150, 150, 150);
+    absentGradient.addColorStop(0, '#EF4444'); // Clean red
+    absentGradient.addColorStop(1, '#DC2626'); // Darker red
+
+    const lateGradient = ctx.createRadialGradient(150, 150, 50, 150, 150, 150);
+    lateGradient.addColorStop(0, '#F59E0B'); // Amber
+    lateGradient.addColorStop(1, '#D97706'); // Darker amber
 
     lineChartRef = new Chart(ctx, {
-        type: "line",
+        type: "doughnut",
+        plugins: [centerTextPlugin],
         data: {
-            labels,
-            datasets: [
-                {
-                    label: "Present",
-                    data: present,
-                    borderColor: "#2563eb",
-                    backgroundColor: "rgba(37, 99, 235, 0.15)",
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.35
-                },
-                {
-                    label: "Absent",
-                    data: absent,
-                    borderColor: "#ef4444",
-                    backgroundColor: "rgba(239, 68, 68, 0.15)",
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.35
-                },
-                {
-                    label: "Late",
-                    data: late,
-                    borderColor: "#eab308",
-                    backgroundColor: "rgba(234, 179, 8, 0.15)",
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.35
-                }
-            ]
+            labels: ["Present", "Absent", "Late"],
+            datasets: [{
+                data: [totalPresent, totalAbsent, totalLate],
+                backgroundColor: [
+                    presentGradient,
+                    absentGradient,
+                    lateGradient
+                ],
+                borderColor: [
+                    '#ffffff', // White borders for contrast
+                    '#ffffff',
+                    '#ffffff'
+                ],
+                borderWidth: 4,
+                hoverBorderWidth: 6,
+                hoverBorderColor: [
+                    '#ffffff',
+                    '#ffffff',
+                    '#ffffff'
+                ],
+                hoverOffset: 12,
+                shadowOffsetX: 0,
+                shadowOffsetY: 4,
+                shadowBlur: 8,
+                shadowColor: 'rgba(0, 0, 0, 0.1)'
+            }]
         },
         options: {
             responsive: true,
-            plugins: { legend: { display: true } },
-            scales: { y: { beginAtZero: true } }
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: {
+                            size: 14,
+                            weight: '700',
+                            family: 'Inter, sans-serif'
+                        },
+                        color: '#374151'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    cornerRadius: 12,
+                    padding: 16,
+                    titleFont: {
+                        size: 16,
+                        weight: '700'
+                    },
+                    bodyFont: {
+                        size: 14,
+                        weight: '500'
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? Math.round((context.parsed / total) * 100) : 0;
+                            return `${context.label} – ${context.parsed} (${percentage}%)`;
+                        }
+                    },
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 4,
+                    shadowBlur: 8,
+                    shadowColor: 'rgba(0, 0, 0, 0.1)'
+                },
+                // Center text plugin
+                doughnutCenterText: {
+                    text: `${totalPresent + totalAbsent + totalLate}`,
+                    subtext: 'Total Employees',
+                    color: '#374151',
+                    fontSize: 24,
+                    subFontSize: 12
+                }
+            },
+            cutout: '72%',
+            animation: {
+                animateScale: true,
+                animateRotate: true,
+                duration: 1800,
+                easing: 'easeOutCubic'
+            },
+            elements: {
+                arc: {
+                    borderRadius: 8
+                }
+            }
         }
     });
 }
@@ -197,39 +364,235 @@ function renderLineChart(chartData) {
 
 
 // =====================================
-// BAR CHART (DEPARTMENT-WISE)
+// BAR CHART (DEPARTMENT-WISE) - MODERN CARDS STYLE
 // =====================================
 function renderBarChart(chartData) {
-    if (!chartData || chartData.length === 0) return;
+    const canvas = document.getElementById("barChart");
+    if (!canvas) {
+        console.error('Bar chart canvas not found');
+        return;
+    }
+    const ctx = canvas.getContext("2d");
+    
+    // Clear canvas first
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const ctx = document.getElementById("barChart").getContext("2d");
+    if (!chartData || chartData.length === 0) {
+        drawNoDataOnCanvas(canvas, 'No department data');
+        if (barChartRef) { barChartRef.destroy(); barChartRef = null; }
+        return;
+    }
 
     if (barChartRef) barChartRef.destroy();
 
     const labels  = chartData.map(d => d.department);
-    const present = chartData.map(d => d.present);
+    const attendancePercentages = chartData.map(d => d.attendance_percentage || 0);
 
-    barChartRef = new Chart(ctx, {
+    // Create beautiful gradient for bars (green family to match donut)
+    const barGradient = ctx.createLinearGradient(0, 0, 0, 50);
+    barGradient.addColorStop(0, '#22C55E'); // Green
+    barGradient.addColorStop(0.5, '#16A34A'); // Darker green
+    barGradient.addColorStop(1, '#15803D'); // Even darker green
+
+    // Center text plugin for doughnut chart
+    const centerTextPlugin = {
+        id: 'doughnutCenterText',
+        beforeDraw: function(chart) {
+            const { width, height, ctx } = chart;
+            const { text, subtext, color, fontSize, subFontSize } = chart.options.plugins.doughnutCenterText;
+            
+            ctx.restore();
+            ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+            ctx.fillStyle = color;
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center';
+            
+            const textX = width / 2;
+            const textY = height / 2 - 10;
+            
+            ctx.fillText(text, textX, textY);
+            
+            if (subtext) {
+                ctx.font = `600 ${subFontSize}px Inter, sans-serif`;
+                ctx.fillStyle = '#6b7280';
+                ctx.fillText(subtext, textX, textY + 20);
+            }
+            
+            ctx.save();
+        }
+    };
+
+    try {
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js is not loaded');
+            return;
+        }
+        barChartRef = new Chart(ctx, {
         type: "bar",
         data: {
             labels,
             datasets: [
                 {
-                    label: "Present Count",
-                    data: present,
-                    backgroundColor: "#10b981",
-                    borderColor: "#059669",
-                    borderWidth: 1,
-                    borderRadius: 6
+                    label: "Weekly Attendance %",
+                    data: attendancePercentages,
+                    backgroundColor: '#f59e0b', // Orange single color
+                    borderColor: '#ffffff',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    barThickness: 30,
+                    maxBarThickness: 45,
+                    minBarLength: 5,
+                    hoverBackgroundColor: '#d97706',
+                    hoverBorderColor: '#ffffff',
+                    hoverBorderWidth: 3,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 6,
+                    shadowBlur: 12,
+                    shadowColor: 'rgba(245, 158, 11, 0.4)'
                 }
             ]
         },
         options: {
+            backgroundColor: 'rgba(219, 234, 254, 0.3)', // Light blue background
             responsive: true,
-            plugins: { legend: { display: true } },
-            scales: { y: { beginAtZero: true } }
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: 20,
+                    right: 20,
+                    top: 10,
+                    bottom: 10
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(31, 41, 55, 0.95)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: 'rgba(245, 158, 11, 0.3)',
+                    borderWidth: 2,
+                    cornerRadius: 16,
+                    displayColors: false,
+                    padding: 20,
+                    titleFont: {
+                        size: 16,
+                        weight: '700',
+                        family: 'Inter, sans-serif'
+                    },
+                    bodyFont: {
+                        size: 14,
+                        weight: '500',
+                        family: 'Inter, sans-serif'
+                    },
+                    callbacks: {
+                        title: function(context) {
+                            return `📊 ${context[0].label}`;
+                        },
+                        label: function(context) {
+                            return `Attendance: ${context.parsed.y}%`;
+                        }
+                    },
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 8,
+                    shadowBlur: 16,
+                    shadowColor: 'rgba(0, 0, 0, 0.2)'
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12,
+                            family: 'Inter, sans-serif',
+                            weight: '600'
+                        },
+                        color: '#374151',
+                        padding: 15,
+                        maxTicksLimit: 10
+                    },
+                    border: {
+                        display: false
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    suggestedMax: 100, // Ensure bars show even with low data
+                    grid: {
+                        color: 'rgba(245, 158, 11, 0.1)', // Light orange grid
+                        lineWidth: 1,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12,
+                            family: 'Inter, sans-serif',
+                            weight: '600'
+                        },
+                        color: '#d97706', // Orange
+                        padding: 15,
+                        stepSize: 20,
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    border: {
+                        display: false
+                    }
+                }
+            },
+            elements: {
+                bar: {
+                    borderRadius: 12
+                }
+            },
+            animation: {
+                duration: 1600,
+                easing: 'easeOutElastic',
+                delay: function(context) {
+                    return context.dataIndex * 250;
+                },
+                onProgress: function(animation) {
+                    // Add sparkle effect during animation
+                    const progress = animation.currentStep / animation.numSteps;
+                    if (progress > 0.7) {
+                        ctx.shadowColor = 'rgba(245, 158, 11, 0.6)';
+                        ctx.shadowBlur = 20;
+                    }
+                }
+            }
         }
     });
+    
+    } catch (error) {
+        console.error('Error creating bar chart:', error);
+    }
+}
+
+// Draw a professional 'no data' message on a canvas
+function drawNoDataOnCanvas(canvas, message) {
+    try {
+        const ctx = canvas.getContext('2d');
+        // clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // draw message
+        ctx.save();
+        ctx.fillStyle = '#6b7280';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const fontSize = Math.max(14, Math.floor(canvas.width / 25));
+        ctx.font = `400 ${fontSize}px Inter, sans-serif`;
+        ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+        ctx.restore();
+    } catch (e) {
+        // ignore drawing errors
+    }
 }
 
 
@@ -238,7 +601,7 @@ function renderBarChart(chartData) {
 // DEPARTMENT DROPDOWN
 // =====================================
 async function loadDepartments() {
-    fetch("/reports/api/departments")
+    fetch("/admin/reports/api/departments")
         .then(res => res.json())
         .then(data => {
             if (data.status !== "ok") return;
@@ -262,7 +625,7 @@ async function loadDepartments() {
 // EMPLOYEE DROPDOWN (for analysis)
 // =====================================
 async function loadEmployeeDropdown() {
-    fetch("/reports/api/employees")
+    fetch("/admin/reports/api/employees")
         .then(res => res.json())
         .then(data => {
             if (data.status !== "ok") return;
@@ -321,6 +684,66 @@ async function loadEmployeeAnalysis() {
     // Load data
     await loadEmployeeMonthlySummary(employeeName, year, month);
     await loadEmployeeCalendar(employeeName, currentCalendarDate);
+}
+
+
+// =====================================
+// EMPLOYEE ATTENDANCE SUMMARY (for cards)
+// =====================================
+async function loadEmployeeAttendanceSummary(employeeName) {
+    // Get today's date
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    const url = `/admin/reports/api/table?from=${todayStr}&to=${todayStr}&employee=${encodeURIComponent(employeeName)}`;
+    
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "ok") {
+                // Count today's attendance for this employee
+                const todayRecords = data.records.filter(record => record.date === todayStr);
+                
+                let present = 0;
+                let late = 0;
+                let absent = 1; // Assume absent unless proven present
+                
+                if (todayRecords.length > 0) {
+                    present = 1; // Employee checked in
+                    absent = 0;
+                    
+                    // Check if any check-in was late (after 9:30 AM)
+                    const lateCheckin = todayRecords.find(record => {
+                        if (record.entry_time) {
+                            const time = record.entry_time.split(' ')[1] || record.entry_time;
+                            return time > '09:30:00';
+                        }
+                        return false;
+                    });
+                    
+                    if (lateCheckin) {
+                        late = 1;
+                    }
+                }
+                
+                // Update cards with employee data
+                const presentCount = document.getElementById("presentCount");
+                const absentCount = document.getElementById("absentCount");
+                const lateCount = document.getElementById("lateCount");
+                const attendancePercent = document.getElementById("attendancePercentage");
+                
+                const setText = (el, val) => { if (!el) return; el.textContent = val; el.setAttribute('data-target', val); };
+                
+                setText(presentCount, present);
+                setText(absentCount, absent);
+                setText(lateCount, late);
+                setText(attendancePercent, present ? "100%" : "0%");
+                
+                // Re-run countup animation
+                runCountups();
+            }
+        })
+        .catch(err => console.error("Failed to load employee attendance summary:", err));
 }
 
 
@@ -421,7 +844,8 @@ function renderEmployeeCalendar(year, month, calendarData) {
         let label = "";
         let statusText = "";
         
-        if (status === "present" || status === "late") {
+        if (status === "present" || status === "late" || status === "check-in" || status === "check-out" || status === "already") {
+            // Treat check-in/check-out/already as present for calendar visualization
             bg = "bg-green-50 border-green-300";
             label = "✓";
             statusText = "Present";
@@ -539,7 +963,7 @@ function renderCalendarLegend(statusCount) {
 // EMPLOYEE DROPDOWN (for table filter)
 // =====================================
 async function loadEmployees() {
-    fetch("/reports/api/employees")
+    fetch("/admin/reports/api/employees")
         .then(res => res.json())
         .then(data => {
             if (data.status !== "ok") return;
@@ -568,7 +992,7 @@ async function loadTable() {
     const user = document.getElementById("employeeFilter").value;
     const dept = document.getElementById("departmentFilter").value;
 
-    let url = "/reports/api/table?";
+    let url = "/admin/reports/api/table?";
 
     if (from) url += `from=${encodeURIComponent(from)}&`;
     if (to)   url += `to=${encodeURIComponent(to)}&`;
@@ -627,7 +1051,7 @@ function exportCSV() {
     const user = document.getElementById("employeeFilter").value;
     const dept = document.getElementById("departmentFilter").value;
 
-    let url = "/reports/api/export/csv?";
+    let url = "/admin/reports/api/export/csv?";
 
     if (from) url += `from=${encodeURIComponent(from)}&`;
     if (to)   url += `to=${encodeURIComponent(to)}&`;
@@ -648,7 +1072,7 @@ function exportPDF() {
     const user = document.getElementById("employeeFilter").value;
     const dept = document.getElementById("departmentFilter").value;
 
-    let url = "/reports/api/export/pdf?";
+    let url = "/admin/reports/api/export/pdf?";
 
     if (from) url += `from=${encodeURIComponent(from)}&`;
     if (to)   url += `to=${encodeURIComponent(to)}&`;

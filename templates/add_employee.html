@@ -11,7 +11,7 @@
             Add New Employee
         </h2>
 
-        <a href="{{ url_for('employees.list_employees') }}"
+        <a href="{{ url_for('admin.employees.list_employees') }}"
            class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-300 hover:dark:bg-gray-600 transition">
             <i class="fa-solid fa-arrow-left"></i> Back
         </a>
@@ -20,7 +20,7 @@
     <!-- Add Employee Card -->
     <div class="premium-card p-8 scroll-reveal" style="--delay:0.1s">
 
-          <form action="{{ url_for('employees.add_employee') }}"
+          <form action="{{ url_for('admin.employees.add_employee') }}"
               method="POST"
               enctype="multipart/form-data"
               class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -60,25 +60,16 @@
                 </select>
             </div>
 
-            <!-- Phone with Country Code -->
+            <!-- Phone -->
             <div class="scroll-reveal" style="transition-delay:0.24s">
                 <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
                     <i class="fas fa-phone text-blue-600 text-sm"></i>
                     Phone
                 </label>
-                <div class="flex gap-2 items-center">
-                    <select name="country_code" id="country_code" class="input-premium w-12 flex-shrink-0" aria-label="Country code" style="width:3rem">
-                        <option value="+91">+91</option>
-                        <option value="+1">+1</option>
-                        <option value="+44">+44</option>
-                        <option value="+61">+61</option>
-                        <option value="+966">+966</option>
-                    </select>
-                    <input name="phone" id="phoneInput" type="tel" inputmode="numeric" 
-                           autocomplete="off" maxlength="10" minlength="10" pattern="\d{10}" 
-                           placeholder="9876543210" 
-                           class="input-premium flex-1" required />
-                </div>
+                <input name="phone" type="tel" inputmode="numeric" 
+                       autocomplete="off" maxlength="10" minlength="10" pattern="\d{10}" 
+                       placeholder="9876543210" 
+                       class="input-premium" required />
             </div>
 
             <!-- Department -->
@@ -89,7 +80,9 @@
                 </label>
                 <select name="department_id" class="input-premium">
                     {% for dept in departments %}
+                    {% if dept.name != 'Admin' and dept.name != 'Administration' %}
                     <option value="{{ dept.id }}">{{ dept.name }}</option>
+                    {% endif %}
                     {% endfor %}
                 </select>
             </div>
@@ -110,7 +103,7 @@
                     <i class="fas fa-calendar text-blue-600 text-sm"></i>
                     Joining Date
                 </label>
-                <input name="joining_date" type="date"
+                <input name="join_date" type="date"
                        class="input-premium" />
             </div>
 
@@ -138,7 +131,7 @@
 
             <!-- Submit Button -->
             <div class="col-span-1 md:col-span-2 flex justify-end gap-3 scroll-reveal" style="transition-delay:0.42s">
-                <button type="button" class="btn-secondary" onclick="window.location.href='{{ url_for('employees.list_employees') }}'">
+                <button type="button" class="btn-secondary" onclick="window.location.href='{{ url_for('admin.employees.list_employees') }}'">
                     Cancel
                 </button>
                 <button type="submit" class="btn-premium btn-premium-primary flex items-center gap-2">

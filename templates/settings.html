@@ -1,356 +1,907 @@
 {% extends "base.html" %}
 {% block head %}
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <style>
+      .tab-button {
+        transition: all 0.2s ease-in-out;
+        position: relative;
+      }
+      .tab-button.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: #3b82f6;
+        border-radius: 1px 1px 0 0;
+      }
+      .tab-content {
+        animation: fadeIn 0.3s ease-in-out;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        border: 1px solid #e5e7eb;
+      }
+      .modal-enter {
+        animation: modalEnter 0.3s ease-out forwards;
+      }
+      @keyframes modalEnter {
+        from { opacity: 0; transform: scale(0.95) translateY(-20px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+      }
+      .tab-transition {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+    </style>
 {% endblock %}
 {% block page_title %}Settings{% endblock %}
 {% block breadcrumb %}Settings{% endblock %}
 {% block content %}
 
-<div class="max-w-5xl mx-auto">
+<div class="max-w-6xl mx-auto">
 
   <!-- HEADER -->
   <div class="mb-8">
-    <h1 class="text-2xl font-bold text-gray-900">System Settings</h1>
-    <p class="text-sm text-gray-500 mt-1">
-      Configure AI recognition, attendance rules, system behavior, and company details.
-    </p>
+    <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
+    <p class="text-gray-600 mt-2">Configure AI recognition & system behavior</p>
   </div>
 
-  <!-- SECTION 1: RECOGNITION SETTINGS -->
-  <div class="card mb-8">
-    <div class="flex items-center gap-3 mb-6">
-      <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
-        <i class="fas fa-brain text-indigo-600 text-lg"></i>
-      </div>
-      <h2 class="text-lg font-bold text-gray-900">Recognition Settings</h2>
-    </div>
-
-    <div class="space-y-6">
-
-      <!-- Threshold -->
-      <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
-        <label for="recognition_threshold" class="block font-medium text-gray-700 mb-3">
-          <i class="fas fa-sliders-h text-indigo-600 mr-2"></i>
-          Recognition Threshold: 
-          <span id="th-val" class="text-indigo-600 font-bold">{{ settings.recognition_threshold }}</span>
-        </label>
-        <input id="recognition_threshold"
-               type="range" min="0.30" max="0.80" step="0.01"
-               value="{{ settings.recognition_threshold }}"
-               class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
-        <div class="flex justify-between text-xs text-gray-600 mt-2">
-          <span>Lower (0.30)</span>
-          <span>Higher (0.80)</span>
-        </div>
-      </div>
-
-      <!-- Duplicate Interval -->
-      <div>
-        <label for="duplicate_interval" class="block font-medium text-gray-700 mb-2">
-          <i class="fas fa-clock text-indigo-600 mr-2"></i>
-          Duplicate Attendance Interval (minutes)
-        </label>
-        <input id="duplicate_interval" type="number"
-               value="{{ settings.duplicate_interval }}"
-               class="input w-full" />
-      </div>
-
-      <!-- Snapshot Mode -->
-      <div class="flex items-center justify-between bg-gray-50 rounded-lg p-4 border border-gray-200">
-        <div>
-          <label for="snapshot_mode" class="font-medium text-gray-700 flex items-center gap-2">
-            <i class="fas fa-camera text-indigo-600"></i>
-            Snapshot Mode
-          </label>
-          <p class="text-xs text-gray-500 mt-1">Save snapshots of recognized faces</p>
-        </div>
-        <input id="snapshot_mode" type="checkbox"
-               {% if settings.snapshot_mode == 'on' %}checked{% endif %}
-               class="h-6 w-6 rounded accent-indigo-600">
-      </div>
-
-    </div>
-  </div>
-
-
-  <!-- SECTION 2: ATTENDANCE RULES -->
-  <div class="card mb-8">
-    <div class="flex items-center gap-3 mb-6">
-      <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
-        <i class="fas fa-check-circle text-green-600 text-lg"></i>
-      </div>
-      <h2 class="text-lg font-bold text-gray-900">Attendance Rules</h2>
-    </div>
-
-    <div class="space-y-6">
-
-      <div>
-        <label for="late_time" class="block font-medium text-gray-700 mb-2">
-          <i class="fas fa-clock text-indigo-600 mr-2"></i>
-          Late Time (HH:MM)
-        </label>
-        <input id="late_time" type="time"
-               value="{{ settings.late_time }}"
-               class="input w-full" />
-      </div>
-
-      <div>
-        <label for="min_confidence" class="block font-medium text-gray-700 mb-2">
-          <i class="fas fa-percentage text-indigo-600 mr-2"></i>
-          Minimum Confidence (%)
-        </label>
-        <input id="min_confidence" type="number"
-               value="{{ settings.min_confidence }}"
-               class="input w-full" />
-      </div>
-
-    </div>
-  </div>
-
-
-  <!-- SECTION 3: SYSTEM PREFERENCES -->
-  <div class="card mb-8">
-    <div class="flex items-center gap-3 mb-6">
-      <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
-        <i class="fas fa-cog text-purple-600 text-lg"></i>
-      </div>
-      <h2 class="text-lg font-bold text-gray-900">System Preferences</h2>
-    </div>
-
-    <div class="space-y-6">
-
-      <div>
-        <label for="company_name" class="block font-medium text-gray-700 mb-2">
-          <i class="fas fa-building text-indigo-600 mr-2"></i>
-          Company Name
-        </label>
-        <input id="company_name" type="text"
-               value="{{ settings.company_name }}"
-               class="input w-full" />
-      </div>
-
-      <div>
-        <label for="company_logo" class="block font-medium text-gray-700 mb-3">
-          <i class="fas fa-image text-indigo-600 mr-2"></i>
-          Company Logo
-        </label>
-
-        <div class="flex items-center gap-6 bg-gray-50 rounded-lg p-6 border border-gray-200">
-          <img id="logo_preview"
-               src="{{ settings.company_logo }}"
-               class="h-20 w-auto object-contain border-2 border-gray-300 rounded-lg bg-white p-2">
-
-          <form id="logoForm" enctype="multipart/form-data" class="flex-1">
-            <input id="company_logo" name="company_logo" type="file" accept="image/*" class="mb-3" />
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="button" id="uploadLogoBtn" class="btn btn-primary">
-              <i class="fas fa-upload"></i>Upload Logo
-            </button>
-          </form>
-        </div>
-      </div>
-
-      <div>
-        <label for="camera_index" class="block font-medium text-gray-700 mb-2">
-          <i class="fas fa-video text-indigo-600 mr-2"></i>
-          Camera Device Index
-        </label>
-        <input id="camera_index"
-               type="number"
-               value="{{ settings.camera_index }}"
-               class="input w-full" />
-      </div>
-
-    </div>
-  </div>
-
-  <!-- SECTION 4: SECURITY SETTINGS -->
-  <div class="card mb-8">
-    <div class="flex items-center gap-3 mb-6">
-      <div class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
-        <i class="fas fa-shield-alt text-red-600 text-lg"></i>
-      </div>
-      <h2 class="text-lg font-bold text-gray-900">Security Settings</h2>
-    </div>
-
-    <div class="space-y-6">
-
-      <div>
-        <label for="session_timeout" class="block font-medium text-gray-700 mb-2">
-          <i class="fas fa-clock text-indigo-600 mr-2"></i>
-          Session Timeout (minutes)
-        </label>
-        <select id="session_timeout" class="input w-full">
-          <option value="15" {% if settings.session_timeout == '15' %}selected{% endif %}>15</option>
-          <option value="30" {% if settings.session_timeout == '30' %}selected{% endif %}>30</option>
-          <option value="60" {% if settings.session_timeout == '60' %}selected{% endif %}>60</option>
-        </select>
-      </div>
-
-      <div>
-        <label for="login_alert" class="block font-medium text-gray-700 mb-2">
-          <i class="fas fa-bell text-indigo-600 mr-2"></i>
-          Login Alert
-        </label>
-        <input id="login_alert"
-               value="{{ settings.login_alert }}"
-               class="input w-full"
-               placeholder="off or email" />
-      </div>
-
-      <!-- Change Password -->
-      <div class="bg-blue-50 rounded-lg p-6 border border-blue-200">
-        <label class="block font-medium text-gray-700 mb-3">
-          <i class="fas fa-key text-blue-600 mr-2"></i>
-          Change Your Password
-        </label>
-        <form id="changePasswordForm" class="space-y-3">
-          <input 
-            id="old_password" 
-            name="old_password"
-            type="password" 
-            placeholder="Current Password"
-            class="input w-full"
-            autocomplete="current-password"
-            required
-          />
-          <input 
-            id="new_password" 
-            name="new_password"
-            type="password" 
-            placeholder="New Password (min 8 chars)"
-            class="input w-full"
-            autocomplete="new-password"
-            required
-          />
-          <input 
-            id="confirm_password" 
-            name="confirm_password"
-            type="password" 
-            placeholder="Confirm New Password"
-            class="input w-full"
-            autocomplete="new-password"
-            required
-          />
-          <button 
-            type="submit"
-            class="btn btn-primary w-full"
-          >
-            <i class="fas fa-shield-alt"></i>Change Password
-          </button>
-        </form>
-        <p class="text-xs text-gray-600 mt-2">
-          <i class="fas fa-info-circle text-blue-600 mr-1"></i>
-          Password must be at least 8 characters with uppercase, lowercase, number, and special character.
-        </p>
-        <div id="passwordStatus" class="text-sm mt-2 hidden"></div>
-      </div>
-
-      <!-- Kiosk PIN -->
-      <div class="bg-red-50 rounded-lg p-6 border border-red-200">
-        <label for="kiosk_pin" class="block font-medium text-gray-700 mb-3">
-          <i class="fas fa-lock text-red-600 mr-2"></i>
-          Kiosk Exit PIN
-        </label>
-        <form id="kioskPinForm" class="flex gap-3">
-          <input 
-            id="kiosk_pin" 
-            type="password" 
-            placeholder="Enter 4+ digit PIN"
-            class="input flex-1"
-            autocomplete="new-password"
-          />
-          <button 
-            type="button"
-            id="setPinBtn"
-            class="btn btn-primary"
-          >
-            <i class="fas fa-key"></i>Set PIN
-          </button>
-        </form>
-        <p class="text-xs text-gray-600 mt-2">
-          <i class="fas fa-info-circle text-red-600 mr-1"></i>
-          Used to exit kiosk mode. Must be numeric, 4+ digits.
-        </p>
-        <div id="pinStatus" class="text-sm mt-2 hidden"></div>
-      </div>
-
-      <!-- Remote Unlock -->
-      <div class="bg-orange-50 rounded-lg p-6 border border-orange-200">
-        <label class="block font-medium text-gray-700 mb-3">
-          <i class="fas fa-wifi text-orange-600 mr-2"></i>
-          Remote Kiosk Control
-        </label>
-        <button 
-          id="remoteUnlockBtn"
-          class="btn btn-warning"
-        >
-          <i class="fas fa-unlock"></i>
-          Force Unlock Kiosk
+  <!-- TABS -->
+  <div class="mb-8">
+    <div class="border-b border-gray-200">
+      <nav class="flex space-x-32" aria-label="Tabs">
+        <button onclick="switchTab('recognition')" id="tab-recognition" class="tab-button active border-b-2 border-blue-500 text-blue-600 whitespace-nowrap py-2 px-4 font-medium text-sm hover:text-blue-700 tab-transition">
+          <i class="fas fa-brain mr-2"></i>Recognition
         </button>
-        <p class="text-xs text-gray-600 mt-2">
-          <i class="fas fa-info-circle text-orange-600 mr-1"></i>
-          Remotely unlock kiosk without PIN. Use only in emergencies.
-        </p>
-        <div id="unlockStatus" class="text-sm mt-2 hidden"></div>
-      </div>
-
+        <button onclick="switchTab('attendance')" id="tab-attendance" class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-4 font-medium text-sm tab-transition">
+          <i class="fas fa-clock mr-2"></i>Attendance
+        </button>
+        <button onclick="switchTab('security')" id="tab-security" class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-4 font-medium text-sm tab-transition">
+          <i class="fas fa-shield-alt mr-2"></i>Security
+        </button>
+        <button onclick="switchTab('system')" id="tab-system" class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-4 font-medium text-sm tab-transition">
+          <i class="fas fa-cog mr-2"></i>System
+        </button>
+        <button onclick="switchTab('kiosk')" id="tab-kiosk" class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-4 font-medium text-sm tab-transition">
+          <i class="fas fa-desktop mr-2"></i>Kiosk
+        </button>
+        <button onclick="switchTab('backup')" id="tab-backup" class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-4 font-medium text-sm tab-transition">
+          <i class="fas fa-database mr-2"></i>Data & Backup
+        </button>
+      </nav>
     </div>
   </div>
 
+  <!-- TAB CONTENT -->
+  <div class="space-y-8">
 
-  <!-- SECTION 5: DATA & BACKUP -->
-  <div class="card">
-    <div class="flex items-center gap-3 mb-6">
-      <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-        <i class="fas fa-database text-blue-600 text-lg"></i>
+    <!-- RECOGNITION TAB -->
+    <div id="content-recognition" class="tab-content">
+      <div class="card p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center shadow-sm">
+            <i class="fas fa-brain text-blue-600 text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Recognition Settings</h2>
+            <p class="text-gray-600 text-sm">Configure AI face recognition parameters</p>
+          </div>
+        </div>
+
+        <div class="space-y-8">
+          <!-- Recognition Threshold -->
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">Recognition Threshold</label>
+            <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-sm text-gray-600">Current: <span id="threshold-value" class="font-bold text-blue-600">{{ settings.recognition_threshold }}</span></span>
+                <span class="text-xs text-gray-500">Lower = faster, Higher = accurate</span>
+              </div>
+              <input id="recognition_threshold" type="range" min="0.30" max="0.80" step="0.01"
+                     value="{{ settings.recognition_threshold }}" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+              <div class="flex justify-between text-xs text-gray-500 mt-2">
+                <span>0.30 (Faster)</span>
+                <span>0.80 (Accurate)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Duplicate Attendance Interval -->
+          <div>
+            <label for="duplicate_interval" class="block font-semibold text-gray-800 mb-3">Duplicate Attendance Interval (minutes)</label>
+            <input id="duplicate_interval" type="number" min="1" max="60"
+                   value="{{ settings.duplicate_interval or 5 }}"
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <p class="text-xs text-gray-500 mt-1">Prevent duplicate attendance entries within this time window</p>
+          </div>
+
+          <!-- Snapshot Mode -->
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">Snapshot Mode</label>
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div>
+                <span class="font-medium text-gray-800">Save snapshots of faces</span>
+                <p class="text-sm text-gray-600">Store attendance photos for verification</p>
+              </div>
+              <div class="flex items-center gap-3">
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input id="snapshot_mode" type="checkbox" class="sr-only peer" {{ 'checked' if settings.snapshot_mode == 'on' else '' }}>
+                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+                <span id="snapshot_mode_text" class="text-sm font-medium {{ 'text-blue-600' if settings.snapshot_mode == 'on' else 'text-gray-500' }}">
+                  {{ 'On' if settings.snapshot_mode == 'on' else 'Off' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <h2 class="text-lg font-bold text-gray-900">Data & Backup</h2>
     </div>
 
-    <div class="flex gap-3">
-      <button id="exportAttendance" class="btn btn-secondary">
-        <i class="fas fa-file-csv"></i>
-        Export Attendance (CSV)
-      </button>
+    <!-- ATTENDANCE TAB -->
+    <div id="content-attendance" class="tab-content hidden">
+      <div class="card p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center shadow-sm">
+            <i class="fas fa-clock text-green-600 text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Attendance Rules</h2>
+            <p class="text-gray-600 text-sm">Configure working hours and attendance policies</p>
+          </div>
+        </div>
 
-      <button id="exportEmployees" class="btn btn-secondary">
-        <i class="fas fa-users"></i>
-        Export Employees (CSV)
-      </button>
+        <div class="space-y-8">
+          <!-- Late Time -->
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">Late Time</label>
+            <input id="late_time" type="time" value="{{ settings.late_time or '09:30' }}"
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+            <p class="text-xs text-gray-500 mt-1">Employees checking in after this time will be marked as late</p>
+          </div>
+
+          <!-- Company Check-Out Time -->
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">Company Check-Out Time</label>
+            <input id="checkout_time" type="time" value="{{ settings.checkout_time or '18:00' }}"
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+            <p class="text-xs text-gray-500 mt-1">Used for warnings & auto completion of attendance</p>
+          </div>
+
+          <!-- Minimum Confidence -->
+          <div>
+            <label for="min_confidence" class="block font-semibold text-gray-800 mb-3">Minimum Confidence (%)</label>
+            <input id="min_confidence" type="number" min="50" max="100"
+                   value="{{ settings.min_confidence or 85 }}"
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+            <p class="text-xs text-gray-500 mt-1">Minimum confidence level required for face recognition</p>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- SECURITY TAB -->
+    <div id="content-security" class="tab-content hidden">
+      <div class="card p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center shadow-sm">
+            <i class="fas fa-shield-alt text-red-600 text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Security Settings</h2>
+            <p class="text-gray-600 text-sm">Configure authentication and security policies</p>
+          </div>
+        </div>
+
+        <div class="space-y-8">
+          <!-- Session Timeout -->
+          <div>
+            <label for="session_timeout" class="block font-semibold text-gray-800 mb-3">Session Timeout (minutes)</label>
+            <input id="session_timeout" type="number" min="5" max="480"
+                   value="{{ settings.session_timeout or 30 }}"
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+            <p class="text-xs text-gray-500 mt-1">Auto logout after inactivity period</p>
+          </div>
+
+          <!-- Login Alerts -->
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">Login Alerts</label>
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div>
+                <span class="font-medium text-gray-800">Email alert on login</span>
+                <p class="text-sm text-gray-600">Receive email notifications for login attempts</p>
+              </div>
+              <div class="flex items-center gap-3">
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input id="login_alerts" type="checkbox" class="sr-only peer" {{ 'checked' if settings.login_alerts == 'on' else '' }}>
+                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                </label>
+                <span id="login_alerts_text" class="text-sm font-medium {{ 'text-red-600' if settings.login_alerts == 'on' else 'text-gray-500' }}">
+                  {{ 'On' if settings.login_alerts == 'on' else 'Off' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password Section -->
+          <div class="border-t border-gray-200 pt-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <i class="fas fa-key text-red-600"></i>Password
+            </h3>
+            <button onclick="openPasswordModal()" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">
+              <i class="fas fa-lock mr-2"></i>Change Password
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SYSTEM TAB -->
+    <div id="content-system" class="tab-content hidden">
+      <div class="card p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center shadow-sm">
+            <i class="fas fa-cog text-purple-600 text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">System Preferences</h2>
+            <p class="text-gray-600 text-sm">Configure system-wide settings and branding</p>
+          </div>
+        </div>
+
+        <div class="space-y-8">
+          <!-- Camera Device -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <label for="camera_device" class="block font-semibold text-gray-800">Camera Device</label>
+              <button type="button" onclick="refreshCameras()" 
+                      class="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                      id="refreshCamerasBtn">
+                <i class="fas fa-sync-alt mr-1"></i>Refresh Cameras
+              </button>
+            </div>
+            <select id="camera_device" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    data-current-value="{{ settings.camera_device }}">
+              {% for camera in available_cameras %}
+                {% if camera.available %}
+                  <option value="{{ camera.index }}" {{ 'selected' if settings.camera_device|string == camera.index|string else '' }}>
+                    {{ camera.name }} (Available)
+                  </option>
+                {% else %}
+                  <option value="{{ camera.index }}" disabled class="text-gray-400">
+                    {{ camera.name }} (Not Available)
+                  </option>
+                {% endif %}
+              {% endfor %}
+            </select>
+            <p class="text-sm text-gray-500 mt-2">
+              <i class="fas fa-info-circle mr-1"></i>
+              Select the camera device to use for face recognition. Click "Refresh Cameras" to detect newly connected devices.
+            </p>
+          </div>
+
+          <!-- Company Name -->
+          <div>
+            <label for="company_name" class="block font-semibold text-gray-800 mb-3">Company Name</label>
+            <input id="company_name" type="text" value="{{ settings.company_name or 'FaceTrack Pro' }}"
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+          </div>
+
+          <!-- Company Logo -->
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">Company Logo</label>
+            <div class="space-y-4">
+              <div class="flex gap-4">
+                <input id="company_logo" type="file" accept="image/*"
+                       class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                <button class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors">
+                  <i class="fas fa-upload mr-2"></i>Upload
+                </button>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-image text-gray-400 text-2xl"></i>
+                </div>
+                <span class="text-sm text-gray-600">Preview will appear here</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KIOSK TAB -->
+    <div id="content-kiosk" class="tab-content hidden">
+      <div class="card p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center shadow-sm">
+            <i class="fas fa-desktop text-orange-600 text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Kiosk Mode</h2>
+            <p class="text-gray-600 text-sm">Configure kiosk security and emergency settings</p>
+          </div>
+        </div>
+
+        <div class="space-y-8">
+          <!-- Exit PIN -->
+          <div>
+            <label for="exit_pin" class="block font-semibold text-gray-800 mb-3">Kiosk Exit PIN</label>
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+              <p class="text-sm text-orange-800 mb-3">
+                <i class="fas fa-info-circle mr-2"></i>
+                Set a 4-digit PIN that allows exiting kiosk mode. Leave empty to disable PIN protection.
+              </p>
+            </div>
+            <form id="exitPinForm" class="flex gap-4">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <div class="flex-1">
+                <input id="exit_pin" name="exit_pin" type="password" maxlength="4" pattern="[0-9]{4}"
+                       placeholder="Enter 4-digit PIN" value="{{ settings.exit_pin or '' }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-center text-xl font-mono" autocomplete="off">
+              </div>
+              <button type="submit" class="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap">
+                <i class="fas fa-save mr-2"></i>Save PIN
+              </button>
+            </form>
+            <p class="text-xs text-gray-500 mt-2">Current PIN: {{ '****' if settings.exit_pin else 'Not set' }}</p>
+          </div>
+
+          <!-- Danger Zone -->
+          <div class="border-t border-red-200 pt-6">
+            <h3 class="text-lg font-semibold text-red-800 mb-4 flex items-center gap-2">
+              <i class="fas fa-exclamation-triangle text-red-600"></i>Danger Zone
+            </h3>
+            <p class="text-sm text-gray-600 mb-4">Force unlock kiosk mode in emergency situations</p>
+            <button class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">
+              <i class="fas fa-unlock mr-2"></i>Force Unlock Kiosk
+            </button>
+            <p class="text-xs text-red-600 mt-2">Use only in emergencies</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BACKUP TAB -->
+    <div id="content-backup" class="tab-content hidden">
+      <div class="card p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center shadow-sm">
+            <i class="fas fa-database text-teal-600 text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Data & Backup</h2>
+            <p class="text-gray-600 text-sm">Export data and manage backups</p>
+          </div>
+        </div>
+
+        <div class="space-y-8">
+          <!-- Export Buttons -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <button onclick="exportData('attendance')" class="p-6 bg-gradient-to-br from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 border border-teal-200 hover:border-teal-300 rounded-xl transition-all duration-200 text-left group hover:shadow-md cursor-pointer">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-lg bg-teal-100 group-hover:bg-teal-200 flex items-center justify-center transition-colors">
+                  <i class="fas fa-file-csv text-teal-600 text-lg"></i>
+                </div>
+                <span class="font-semibold text-teal-800">Export Attendance</span>
+              </div>
+              <p class="text-sm text-teal-600 ml-13">Download attendance records as CSV file</p>
+            </button>
+
+            <button onclick="exportData('employees')" class="p-6 bg-gradient-to-br from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 border border-teal-200 hover:border-teal-300 rounded-xl transition-all duration-200 text-left group hover:shadow-md cursor-pointer">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-lg bg-teal-100 group-hover:bg-teal-200 flex items-center justify-center transition-colors">
+                  <i class="fas fa-users text-teal-600 text-lg"></i>
+                </div>
+                <span class="font-semibold text-teal-800">Export Employees</span>
+              </div>
+              <p class="text-sm text-teal-600 ml-13">Download employee database as CSV file</p>
+            </button>
+          </div>
+
+          <!-- Last Export Info -->
+          <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+            <h4 class="font-semibold text-gray-800 mb-2">Last Export</h4>
+            <p class="text-sm text-gray-600">24 Jan 2026 - Attendance data exported</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
 </div>
 
-{% endblock %}
+<!-- CHANGE PASSWORD MODAL -->
+<div id="passwordModal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0" style="background-color: rgba(0, 0, 0, 0.5);"></div>
+  <div class="relative flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 modal-enter">
+      <div class="p-8">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+              <i class="fas fa-key text-red-600"></i>
+            </div>
+            Change Password
+          </h3>
+          <button onclick="closePasswordModal()" class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
 
-{% block scripts %}
-<!-- Page-only CSRF helper: read meta token and attach header for settings fetches -->
+        <form id="passwordForm" class="space-y-4">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div>
+            <label for="current_password" class="block font-medium text-gray-700 mb-2">Current Password</label>
+            <input type="password" id="current_password" name="current_password" required autocomplete="current-password"
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+          </div>
+
+          <div>
+            <label for="new_password" class="block font-medium text-gray-700 mb-2">New Password</label>
+            <input type="password" id="new_password" name="new_password" required autocomplete="new-password"
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+          </div>
+
+          <div>
+            <label for="confirm_password" class="block font-medium text-gray-700 mb-2">Confirm Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" required autocomplete="new-password"
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button type="button" onclick="closePasswordModal()"
+                    class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+              Cancel
+            </button>
+            <button type="submit"
+                    class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">
+              Update Password
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE CONFIRMATION MODAL -->
+<div id="saveModal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0" style="background-color: rgba(0, 0, 0, 0.5);"></div>
+  <div class="relative flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 modal-enter">
+      <div class="p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
+            <i class="fas fa-save text-blue-600 text-xl"></i>
+          </div>
+          <div>
+            <h3 class="text-2xl font-bold text-gray-900">Confirm Save</h3>
+            <p class="text-gray-600 text-sm">Save all settings changes?</p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p class="text-sm text-blue-800">
+              <i class="fas fa-info-circle mr-2"></i>
+              This will update the system configuration and may affect ongoing operations.
+            </p>
+          </div>
+
+          <div class="flex gap-3">
+            <button onclick="closeSaveModal()" class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+              Cancel
+            </button>
+            <button onclick="confirmSave()" class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+              <i class="fas fa-check mr-2"></i>Save Changes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STICKY SAVE BAR -->
+<div id="saveBar" class="fixed bottom-0 left-64 right-0 bg-white border-t border-gray-200 shadow-sm transform translate-y-full transition-transform duration-300 z-40">
+  <!-- compact save bar aligned with main page (account for sidebar) -->
+  <div class="max-w-6xl mx-auto px-4 py-2">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-exclamation-triangle text-amber-500 text-xs"></i>
+        <span class="text-sm font-medium text-gray-800">Unsaved changes</span>
+      </div>
+      <div class="flex gap-2 items-center">
+        <button onclick="resetChanges()" class="px-3 py-1 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm">
+          Reset
+        </button>
+        <button onclick="openSaveModal()" class="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors text-sm flex items-center">
+          <i class="fas fa-save mr-2 text-sm"></i>Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-    (function(){
-        try{
-            const meta = document.querySelector('meta[name="csrf-token"]');
-            const token = meta ? meta.getAttribute('content') : null;
-            if (!token) return;
-            // Wrap fetch to add X-CSRFToken for settings API/upload endpoints
-            const _fetch = window.fetch;
-            window.fetch = function(input, init={}){
-                try{
-                    let url = (typeof input === 'string') ? input : (input && input.url);
-                    if (url && url.startsWith('/settings')){
-                        init = init || {};
-                        init.headers = init.headers || {};
-                        if (!init.headers['X-CSRFToken'] && !init.headers['X-CSRF-Token']){
-                            init.headers['X-CSRFToken'] = token;
-                        }
-                        // preserve credentials default
-                    }
-                }catch(e){}
-                return _fetch.apply(this, [input, init]);
-            };
-        }catch(e){console.warn('csrf helper init failed', e)}
-    })();
+// Tab switching functionality
+function switchTab(tabName) {
+  // Hide all tab contents
+  document.querySelectorAll('.tab-content').forEach(content => {
+    content.classList.add('hidden');
+  });
+
+  // Reset all tabs to inactive state
+  document.querySelectorAll('.tab-button').forEach(button => {
+    button.classList.remove('active', 'border-blue-500', 'text-blue-600', 'hover:text-blue-700');
+    button.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+  });
+
+  // Show selected tab content
+  document.getElementById('content-' + tabName).classList.remove('hidden');
+
+  // Activate selected tab
+  const activeTab = document.getElementById('tab-' + tabName);
+  activeTab.classList.add('active', 'border-blue-500', 'text-blue-600', 'hover:text-blue-700');
+  activeTab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+}
+
+// Generic modal functions
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  modal.classList.remove('hidden');
+  // Trigger animation
+  setTimeout(() => modal.querySelector('.modal-enter').classList.add('scale-100'), 10);
+}
+
+function closeModal(modalId, formId = null) {
+  const modal = document.getElementById(modalId);
+  modal.querySelector('.modal-enter').classList.remove('scale-100');
+  setTimeout(() => {
+    modal.classList.add('hidden');
+    if (formId) {
+      document.getElementById(formId).reset();
+    }
+  }, 300);
+}
+
+// Password modal functions
+function openPasswordModal() {
+  openModal('passwordModal');
+}
+
+function closePasswordModal() {
+  closeModal('passwordModal', 'passwordForm');
+}
+
+// Company logo preview
+document.getElementById('company_logo').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  const previewContainer = e.target.closest('.space-y-4').querySelector('.flex.items-center.gap-4');
+  const previewImg = previewContainer.querySelector('div');
+  const previewText = previewContainer.querySelector('span');
+  
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      previewImg.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover rounded-lg">`;
+      previewText.textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    previewImg.innerHTML = `<i class="fas fa-image text-gray-400 text-2xl"></i>`;
+    previewText.textContent = 'Preview will appear here';
+  }
+});
+
+// Update toggle text labels
+document.getElementById('snapshot_mode').addEventListener('change', function() {
+  const text = document.getElementById('snapshot_mode_text');
+  if (this.checked) {
+    text.textContent = 'On';
+    text.className = 'text-sm font-medium text-blue-600';
+  } else {
+    text.textContent = 'Off';
+    text.className = 'text-sm font-medium text-gray-500';
+  }
+  showSaveBar();
+});
+
+document.getElementById('login_alerts').addEventListener('change', function() {
+  const text = document.getElementById('login_alerts_text');
+  if (this.checked) {
+    text.textContent = 'On';
+    text.className = 'text-sm font-medium text-red-600';
+  } else {
+    text.textContent = 'Off';
+    text.className = 'text-sm font-medium text-gray-500';
+  }
+  showSaveBar();
+});
+
+function hideSaveBar() {
+  hasChanges = false;
+  document.getElementById('saveBar').classList.add('translate-y-full');
+  document.querySelector('main').style.paddingBottom = '';
+}
+
+// Track changes for save bar
+let hasChanges = false;
+
+function showSaveBar() {
+  if (!hasChanges) {
+    hasChanges = true;
+    document.getElementById('saveBar').classList.remove('translate-y-full');
+    document.querySelector('main').style.paddingBottom = '60px';
+  }
+}
+
+function showNotification(message, type = 'info') {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+  
+  if (type === 'success') {
+    notification.classList.add('bg-green-500', 'text-white');
+  } else if (type === 'error') {
+    notification.classList.add('bg-red-500', 'text-white');
+  } else {
+    notification.classList.add('bg-blue-500', 'text-white');
+  }
+  
+  notification.innerHTML = `
+    <div class="flex items-center gap-3">
+      <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+      <span>${message}</span>
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Animate in
+  setTimeout(() => notification.classList.remove('translate-x-full'), 100);
+  
+  // Auto remove after 3 seconds
+  setTimeout(() => {
+    notification.classList.add('translate-x-full');
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
+function refreshCameras() {
+  const btn = document.getElementById('refreshCamerasBtn');
+  const select = document.getElementById('camera_device');
+  const originalText = btn.innerHTML;
+  const currentValue = select.value; // Store current selection
+  
+  // Show loading state
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Detecting...';
+  btn.disabled = true;
+  
+  fetch('/admin/settings/api/detect-cameras')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Update the camera dropdown
+        select.innerHTML = '';
+        
+        data.cameras.forEach(camera => {
+          const option = document.createElement('option');
+          option.value = camera.index;
+          
+          if (camera.available) {
+            option.textContent = `${camera.name} (Available)`;
+            // Keep current selection
+            if (currentValue == camera.index) {
+              option.selected = true;
+            }
+          } else {
+            option.textContent = `${camera.name} (Not Available)`;
+            option.disabled = true;
+            option.style.color = '#9CA3AF';
+          }
+          
+          select.appendChild(option);
+        });
+        
+        showNotification(data.message, 'success');
+      } else {
+        showNotification('Failed to detect cameras: ' + data.error, 'error');
+      }
+    })
+    .catch(error => {
+      console.error('Camera detection error:', error);
+      showNotification('Failed to detect cameras', 'error');
+    })
+    .finally(() => {
+      // Restore button state
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    });
+}
+
+function exportData(type) {
+  const url = `/admin/settings/export/${type}`;
+  showNotification(`Starting ${type} export...`, 'info');
+  
+  // Create a temporary link to trigger download
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${type}_export.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  showNotification(`${type} data exported successfully!`, 'success');
+}
+
+// Add change listeners to all inputs
+document.querySelectorAll('input, select').forEach(element => {
+  element.addEventListener('input', showSaveBar);
+  element.addEventListener('change', showSaveBar);
+});
+
+function openSaveModal() {
+  openModal('saveModal');
+}
+
+function closeSaveModal() {
+  closeModal('saveModal');
+}
+
+function confirmSave() {
+  // Get CSRF token
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+  // Create form data
+  const formData = new FormData();
+  formData.append('recognition_threshold', document.getElementById('recognition_threshold').value);
+  formData.append('duplicate_interval', document.getElementById('duplicate_interval').value);
+  formData.append('snapshot_mode', document.getElementById('snapshot_mode').checked ? 'on' : 'off');
+  formData.append('late_time', document.getElementById('late_time').value);
+  formData.append('checkout_time', document.getElementById('checkout_time').value);
+  formData.append('min_confidence', document.getElementById('min_confidence').value);
+  formData.append('session_timeout', document.getElementById('session_timeout').value);
+  formData.append('login_alerts', document.getElementById('login_alerts').checked ? 'on' : 'off');
+  formData.append('camera_device', document.getElementById('camera_device').value);
+  formData.append('company_name', document.getElementById('company_name').value);
+  formData.append('exit_pin', document.getElementById('exit_pin').value);
+  formData.append('csrf_token', csrfToken);
+
+  // Send to server
+  fetch('/admin/settings/api', {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      closeSaveModal();
+      showNotification('Settings saved successfully!', 'success');
+      hideSaveBar();
+    } else {
+      showNotification('Error saving settings: ' + (data.error || 'Unknown error'), 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showNotification('Error saving settings. Please try again.', 'error');
+  });
+}
+
+function resetChanges() {
+  if (confirm('Are you sure you want to reset all changes?')) {
+    location.reload();
+  }
+}
+
+// Close modal when clicking outside
+function setupModalClickOutside(modalId, closeFunction) {
+  document.getElementById(modalId).addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeFunction();
+    }
+  });
+}
+
+setupModalClickOutside('passwordModal', closePasswordModal);
+setupModalClickOutside('saveModal', closeSaveModal);
+
+// Password form submission
+document.getElementById('passwordForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  const currentPassword = document.getElementById('current_password').value;
+  const newPassword = document.getElementById('new_password').value;
+  const confirmPassword = document.getElementById('confirm_password').value;
+
+  if (newPassword !== confirmPassword) {
+    showNotification('Passwords do not match!', 'error');
+    return;
+  }
+
+  if (newPassword.length < 8) {
+    showNotification('Password must be at least 8 characters long!', 'error');
+    return;
+  }
+
+  // Get CSRF token
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+  // Create form data
+  const formData = new FormData();
+  formData.append('old_password', currentPassword);
+  formData.append('new_password', newPassword);
+  formData.append('confirm_password', confirmPassword);
+  formData.append('csrf_token', csrfToken);
+
+  // Send request
+  fetch('/admin/settings/change-password', {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showNotification('Password changed successfully!', 'success');
+      closePasswordModal();
+    } else {
+      showNotification('Error: ' + (data.error || 'Failed to change password'), 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showNotification('Error changing password. Please try again.', 'error');
+  });
+});
+
+// Exit PIN form submission
+document.getElementById('exitPinForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  const pin = document.getElementById('exit_pin').value;
+  if (pin !== "" && (pin.length !== 4 || !/^\d{4}$/.test(pin))) {
+    showNotification('Please enter a valid 4-digit PIN or leave empty to disable', 'error');
+    return;
+  }
+
+  // Get CSRF token
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+  // Send to server
+  fetch('/admin/settings/api', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
+    },
+    body: JSON.stringify({ exit_pin: pin })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showNotification('Exit PIN updated successfully!', 'success');
+      // Update the display
+      const statusText = pin ? '****' : 'Not set';
+      document.querySelector('.text-xs.text-gray-500').textContent = `Current PIN: ${statusText}`;
+    } else {
+      showNotification('Error saving PIN: ' + (data.error || 'Unknown error'), 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showNotification('Error saving PIN. Please try again.', 'error');
+  });
+});
 </script>
-<script src="{{ url_for('static', filename='js/settings.js') }}" defer></script>
+
 {% endblock %}

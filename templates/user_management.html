@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block page_title %}User Management{% endblock %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto">
+
+  <!-- HEADER -->
+  <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-8">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">User Management</h1>
+      <p class="text-sm text-gray-500 mt-1">Assign and manage user roles</p>
+    </div>
+  </div>
+
+  <!-- SEARCH AND FILTER -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-8">
+    <form method="GET" class="flex gap-4">
+      <div class="flex-1">
+        <input type="text" name="search" value="{{ search }}" placeholder="Search by name or email..."
+               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+      </div>
+      <div>
+        <select name="role" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          <option value="all" {% if role_filter == 'all' %}selected{% endif %}>All Roles</option>
+          {% for role in roles %}
+          <option value="{{ role }}" {% if role_filter == role %}selected{% endif %}>{{ role.title() }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+        <i class="fas fa-search mr-2"></i>Search
+      </button>
+    </form>
+  </div>
+
+  <!-- USERS TABLE -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Profile</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for user in users %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4">
+              <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
+                {{ (user.full_name or user.username)[0].upper() }}
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="font-medium text-gray-900">{{ user.full_name or user.username }}</div>
+              <div class="text-sm text-gray-500">@{{ user.username }}</div>
+            </td>
+            <td class="px-6 py-4 text-gray-900">{{ user.email }}</td>
+            <td class="px-6 py-4">
+              <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                {% if user.role == 'admin' %}bg-red-100 text-red-800
+                {% elif user.role == 'hr' %}bg-blue-100 text-blue-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                {{ user.role.title() }}
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <form method="POST" action="{{ url_for('admin.employees.change_user_role', user_id=user.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="flex items-center gap-2">
+                  <select name="role" class="role-select text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-indigo-500" data-current-role="{{ user.role }}">
+                    <option value="employee" {% if user.role == 'employee' %}selected{% endif %}>Employee</option>
+                    <option value="hr" {% if user.role == 'hr' %}selected{% endif %}>HR</option>
+                    <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                  </select>
+                  <button type="button" class="change-role-btn px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700" data-user-id="{{ user.id }}">Change</button>
+                </div>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if users %}
+    <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+      <div class="flex items-center justify-between">
+        <div class="text-sm text-gray-700">
+          Showing {{ (page-1)*per_page + 1 }} to {{ min(page*per_page, total) }} of {{ total }} results
+        </div>
+        <div class="flex space-x-1">
+          {% if page > 1 %}
+          <a href="?page={{ page-1 }}{% if search %}&search={{ search }}{% endif %}{% if role_filter != 'all' %}&role={{ role_filter }}{% endif %}"
+             class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">Previous</a>
+          {% endif %}
+
+          {% for page_num in range(max(1, page-2), min(total_pages+1, page+3)) %}
+          <a href="?page={{ page_num }}{% if search %}&search={{ search }}{% endif %}{% if role_filter != 'all' %}&role={{ role_filter }}{% endif %}"
+             class="px-3 py-1 text-sm border {% if page_num == page %}border-indigo-500 bg-indigo-50 text-indigo-600{% else %}border-gray-300 hover:bg-gray-50{% endif %} rounded">
+            {{ page_num }}
+          </a>
+          {% endfor %}
+
+          {% if page < total_pages %}
+          <a href="?page={{ page+1 }}{% if search %}&search={{ search }}{% endif %}{% if role_filter != 'all' %}&role={{ role_filter }}{% endif %}"
+             class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">Next</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Role Change Confirmation Modal -->
+<div id="roleConfirmModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" onclick="if(event.target === this) hideRoleConfirmModal()">
+  <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+    <div class="p-6">
+      <div class="flex items-center mb-4">
+        <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mr-4">
+          <i class="fas fa-exclamation-triangle text-amber-600 text-xl"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Confirm Role Change</h3>
+          <p class="text-sm text-gray-600">Are you sure you want to change this user's role?</p>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 rounded-lg p-4 mb-6">
+        <div class="text-sm">
+          <div class="flex justify-between mb-2">
+            <span class="text-gray-600">Current Role:</span>
+            <span id="currentRoleDisplay" class="font-medium"></span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">New Role:</span>
+            <span id="newRoleDisplay" class="font-medium"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button type="button" onclick="hideRoleConfirmModal()"
+                class="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+          Cancel
+        </button>
+        <button type="button" onclick="confirmRoleChange()"
+                class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+          Confirm Change
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentRole = '';
+let newRole = '';
+let currentForm = null;
+
+function showRoleConfirmModal(currRole, newRoleVal, form) {
+  currentRole = currRole;
+  newRole = newRoleVal;
+  currentForm = form;
+
+  document.getElementById('currentRoleDisplay').textContent = currRole.charAt(0).toUpperCase() + currRole.slice(1);
+  document.getElementById('newRoleDisplay').textContent = newRoleVal.charAt(0).toUpperCase() + newRoleVal.slice(1);
+
+  const modal = document.getElementById('roleConfirmModal');
+  modal.classList.remove('hidden');
+}
+
+function hideRoleConfirmModal() {
+  const modal = document.getElementById('roleConfirmModal');
+  modal.classList.add('hidden');
+  currentRole = '';
+  newRole = '';
+  currentForm = null;
+}
+
+function confirmRoleChange() {
+  if (currentForm) {
+    currentForm.submit();
+  }
+  hideRoleConfirmModal();
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Wire Change buttons to open confirmation modal
+  document.querySelectorAll('.change-role-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const form = this.closest('form');
+      const select = form.querySelector('.role-select');
+      const current = select.getAttribute('data-current-role');
+      const chosen = select.value;
+      if (current === chosen) {
+        if (typeof showNotification === 'function') showNotification('No role change detected', 'info');
+        return;
+      }
+      showRoleConfirmModal(current, chosen, form);
+    });
+  });
+
+  // Show flash messages as toast notifications
+  const flashMessages = document.querySelectorAll('#flashMessages > div');
+  flashMessages.forEach(msg => {
+    const text = msg.querySelector('span').textContent;
+    const isError = msg.classList.contains('bg-red-50');
+    if (typeof showNotification === 'function') {
+      showNotification(text, isError ? 'error' : 'success');
+      msg.style.display = 'none'; // Hide the banner
+    }
+  });
+});
+</script>
+{% endblock %}

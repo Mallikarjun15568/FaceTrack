@@ -8,17 +8,14 @@ from datetime import date, timedelta
 # ================================
 # ADMIN DASHBOARD (FINAL CLEAN)
 # ================================
-@bp.route("/")
-@bp.route("/admin")
 @bp.route("")
-@bp.route("/dashboard")
 @login_required
 def admin_dashboard():
     role = session.get('role')
 
-    # If user is not admin/hr, show employee dashboard
+    # If user is not admin/hr, redirect to employee dashboard
     if role not in ["admin", "hr"]:
-        return render_template("dashboard_employee.html")
+        return redirect(url_for("employee.dashboard"))
 
     db = get_db()
     cursor = db.cursor(dictionary=True)

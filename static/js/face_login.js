@@ -279,7 +279,7 @@ async function captureLoop() {
         setStatus(`Matched: ${result.name} (${matchCount}/${REQUIRED_MATCHES})`, "success");
 
         if (matchCount >= REQUIRED_MATCHES) {
-          showSuccessThenRedirect(result.redirect_url || "/dashboard");
+          showSuccessThenRedirect(result.redirect_url || "/employee/dashboard/");
           return;
         }
       } else if (result && result.not_enrolled) {
@@ -331,7 +331,7 @@ modalForce.addEventListener("click", async () => {
   const image = captureFrame();
   const result = await sendFrameToServer(image);
   if (result && result.matched) {
-    showSuccessThenRedirect(result.redirect_url || "/dashboard");
+    showSuccessThenRedirect(result.redirect_url || "/employee/dashboard/");
   } else {
     setStatus(result.reason || "No match", "error");
   }

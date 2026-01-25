@@ -14,11 +14,11 @@
 
     <!-- PHOTO -->
     <div>
-      {% set emp_photo_path = emp.photo_path %}
-      {% if emp_photo_path and not emp_photo_path.startswith('/') %}
-        {% set emp_photo_path = '/' ~ emp_photo_path %}
+      {% set emp_photo = emp.photo %}
+      {% if emp_photo and not emp_photo.startswith('/') %}
+        {% set emp_photo = '/' ~ emp_photo %}
       {% endif %}
-      <img src="{{ emp_photo_path if emp_photo_path else url_for('static', filename='default_user.png') }}"
+      <img src="{{ emp_photo if emp_photo else url_for('static', filename='default_user.png') }}"
            class="w-40 h-40 rounded-xl border object-cover">
     </div>
 
@@ -28,6 +28,7 @@
 
       <p><span class="font-semibold">Email:</span> {{ emp.email }}</p>
       <p><span class="font-semibold">Phone:</span> {{ emp.phone or '-' }}</p>
+      <p><span class="font-semibold">Gender:</span> {{ emp.gender or '-' }}</p>
       <p><span class="font-semibold">Department:</span> {{ emp.department or '-' }}</p>
       <p><span class="font-semibold">Join Date:</span> {{ emp.join_date or '-' }}</p>
 

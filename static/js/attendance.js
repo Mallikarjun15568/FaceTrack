@@ -186,6 +186,14 @@ function renderAttendance(records) {
         else if (r.status === "holiday") statusBadge = `<span class="inline-block px-3 py-1 text-xs font-medium rounded-full bg-purple-50 text-purple-600 min-w-[90px] text-center">Holiday</span>`;
         else if (r.status === "absent") statusBadge = `<span class="inline-block px-3 py-1 text-xs font-medium rounded-full bg-red-50 text-red-600 min-w-[90px] text-center">Absent</span>`;
 
+        // Actions column for admin/hr
+        let actionsCell = '';
+        if (r.status === "check-in" && !r.check_out_time) {
+            actionsCell = `<button onclick="completeCheckout(${r.id})" class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors" title="Complete check-out">
+                <i class="fas fa-check-circle mr-1"></i>Complete
+            </button>`;
+        }
+
         tr.innerHTML = `
             <td class="py-3 px-4">
                 <img src="${photo}" class="w-10 h-10 rounded-full object-cover border-2 border-gray-100 shadow-sm">
@@ -201,6 +209,7 @@ function renderAttendance(records) {
             <td class="py-3 px-4">${formatDateTime(r.check_out_time)}</td>
             <td class="py-3 px-4">${formatWorkingHours(r.working_hours)}</td>
             <td class="py-3 px-4 text-right">${statusBadge}</td>
+            ${actionsCell ? `<td class="py-3 px-4 text-center">${actionsCell}</td>` : ''}
         `;
 
         tbody.appendChild(tr);
@@ -267,4 +276,156 @@ function openSnapshotModal(src) {
     `;
 
     document.body.appendChild(modal);
+}
+
+
+// =============================================
+//   COMPLETE CHECK-OUT FUNCTION
+// =============================================
+let currentCheckoutId = null;
+
+function completeCheckout(attendanceId) {
+    currentCheckoutId = attendanceId;
+    openCheckoutModal();
+}
+
+function openCheckoutModal() {
+    const modal = document.getElementById("checkoutModal");
+    const modalContent = modal.querySelector("div");
+    // Reset buttons in case previous action left them disabled/spinning
+    const confirmBtn = document.getElementById("confirmCheckout");
+    const cancelBtn = document.getElementById("cancelCheckout");
+    if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Complete Check-Out';
+    }
+    if (cancelBtn) {
+        cancelBtn.disabled = false;
+    }
+    
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    
+    setTimeout(() => {
+        modalContent.classList.remove("scale-95", "opacity-0");
+        modalContent.classList.add("scale-100", "opacity-100");
+    }, 10);
+}
+
+function closeCheckoutModal() {
+    const modal = document.getElementById("checkoutModal");
+    const modalContent = modal.querySelector("div");
+    
+    modalContent.classList.remove("scale-100", "opacity-100");
+    modalContent.classList.add("scale-95", "opacity-0");
+    
+    setTimeout(() => {
+        // Re-enable and reset buttons so modal is fresh next time
+        const confirmBtn = document.getElementById("confirmCheckout");
+        const cancelBtn = document.getElementById("cancelCheckout");
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Complete Check-Out';
+        }
+        if (cancelBtn) {
+            cancelBtn.disabled = false;
+        }
+
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+        currentCheckoutId = null;
+    }, 300);
+}
+
+function confirmCheckout() {
+    if (!currentCheckoutId) return;
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    // Disable buttons during processing
+    const confirmBtn = document.getElementById("confirmCheckout");
+    const cancelBtn = document.getElementById("cancelCheckout");
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+    cancelBtn.disabled = true;
+
+    fetch(`/attendance/api/complete_checkout/${currentCheckoutId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        closeCheckoutModal();
+        
+        if (data.status === 'ok') {
+            // Reload attendance data
+            loadAttendance();
+            showNotification('Check-out completed successfully!', 'success');
+        } else {
+            showNotification('Failed to complete check-out: ' + (data.message || 'Unknown error'), 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Error completing check-out:', err);
+        closeCheckoutModal();
+        showNotification('Error completing check-out', 'error');
+    });
+}
+
+
+// =============================================
+//   CHECKOUT MODAL EVENT LISTENERS
+// =============================================
+document.addEventListener("DOMContentLoaded", () => {
+    // Close modal on background click
+    const checkoutModal = document.getElementById("checkoutModal");
+    if (checkoutModal) {
+        checkoutModal.addEventListener("click", (e) => {
+            if (e.target === checkoutModal) {
+                closeCheckoutModal();
+            }
+        });
+    }
+});
+
+// Close modal on Escape key
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && document.getElementById("checkoutModal").classList.contains("flex")) {
+        closeCheckoutModal();
+    }
+});
+
+
+// =============================================
+//   NOTIFICATION FUNCTION
+// =============================================
+function showNotification(message, type = 'info') {
+    const popup = document.getElementById('attendance-popup');
+    if (!popup) return;
+
+    // Set color based on type
+    let bgColor = 'bg-blue-500';
+    if (type === 'success') bgColor = 'bg-green-500';
+    else if (type === 'error') bgColor = 'bg-red-500';
+    else if (type === 'warning') bgColor = 'bg-yellow-500';
+
+    popup.className = `fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[90%] max-w-md rounded-xl shadow-2xl p-4 text-white text-sm font-medium z-50 animate-slideUp backdrop-blur-xl ${bgColor}`;
+
+    popup.innerHTML = `
+        <div class="flex items-center gap-2">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    popup.style.display = 'block';
+
+    // Hide after 3 seconds
+    setTimeout(() => {
+        popup.style.display = 'none';
+    }, 3000);
 }

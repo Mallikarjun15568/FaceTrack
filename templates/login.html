@@ -4,29 +4,41 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>Login - FaceTrack</title>
+  <title>Admin Login - FaceTrack</title>
 
   <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/professional.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .admin-bg {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      background-image:
+        radial-gradient(circle at 25% 25%, rgba(37, 99, 235, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(37, 99, 235, 0.02) 0%, transparent 50%);
+    }
+  </style>
 </head>
 
-<body class="bg-gray-50 min-h-screen flex items-center justify-center px-4">
+<body class="admin-bg min-h-screen flex items-center justify-center px-4">
 
   <!-- ================= LOGIN CARD ================= -->
   <div class="w-full max-w-md">
 
-    <!-- LOGO -->
+    <!-- HEADER -->
     <div class="text-center mb-8">
-      <div class="flex items-center justify-center mb-2">
-        <img src="/static/images/favicon.ico" alt="FaceTrack Logo" class="w-14 h-14 rounded-lg shadow-sm">
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4 shadow-lg">
+        <i class="fas fa-shield-alt text-2xl text-white"></i>
       </div>
-      <h1 class="text-2xl font-bold text-gray-900">Welcome back</h1>
-      <p class="text-sm text-gray-500 mt-1">Sign in to your FaceTrack account</p>
+      <h1 class="text-3xl font-bold text-gray-900 mb-2" style="color: #0F172A;">Admin Access</h1>
+      <p class="text-blue-600">Secure Administrator Login Portal</p>
+      <div class="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full text-xs text-blue-700 border border-blue-200">
+        <i class="fas fa-lock text-blue-600"></i>
+        <span>Restricted Access</span>
+      </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+    <div class="bg-white rounded-xl shadow-2xl border border-gray-200 p-8">
 
       <!-- Flash Messages -->
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -43,147 +55,57 @@
       {% endwith %}
 
       <!-- NORMAL LOGIN FORM -->
-      <form method="POST" class="space-y-5">
+      <form method="POST" class="space-y-6">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
-          <input type="text" name="username" required
-                 class="input-premium" placeholder="Enter your username">
+          <label class="block text-sm font-semibold mb-2" style="color: #334155;">
+            <i class="fas fa-user mr-2 text-blue-600"></i>Administrator Username
+          </label>
+          <input type="text" name="username" required autocomplete="off"
+                 class="input-premium focus:border-blue-600 focus:ring-blue-600" 
+                 placeholder="Enter admin username" value=""
+                 style="color: #020617;">
+          <style>
+            .input-premium::placeholder { color: #94A3B8; }
+          </style>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-          <input type="password" name="password" required
-                 class="input-premium" placeholder="Enter your password">
-        </div>
-        
-        <div class="flex items-center justify-between">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500">
-            <span class="text-sm text-gray-600">Remember me</span>
+          <label class="block text-sm font-semibold mb-2" style="color: #334155;">
+            <i class="fas fa-key mr-2 text-blue-600"></i>Password
           </label>
-          <a href="{{ url_for('auth.forgot_password') }}"
-            class="text-sm text-indigo-600 hover:text-indigo-700 font-medium transition">
-            <i class="fas fa-key mr-1"></i>Forgot password?
-          </a>
+          <input type="password" name="password" required
+                 class="input-premium focus:border-blue-600 focus:ring-blue-600" 
+                 placeholder="Enter your password"
+                 style="color: #020617;">
+          <style>
+            .input-premium::placeholder { color: #94A3B8; }
+          </style>
         </div>
-        
-        <button type="submit" class="btn btn-primary w-full">
-          <i class="fas fa-sign-in-alt"></i>
-          Sign In
+
+        <button type="submit" class="w-full text-lg py-3 font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]" 
+                style="background-color: #2563EB; color: white; border: 2px solid #2563EB;">
+          <i class="fas fa-sign-in-alt mr-2"></i>
+          Access Admin Panel
         </button>
 
       </form>
-      
-      <div class="relative my-6">
-        <div class="absolute inset-0 flex items-center">
-          <div class="w-full border-t border-gray-200"></div>
-        </div>
-        <div class="relative flex justify-center text-sm">
-          <span class="px-3 bg-white text-gray-500">Or continue with</span>
-        </div>
-      </div>
-
-      <!-- FACE ID BUTTON -->
-      <button id="loginFaceID" type="button" class="btn btn-secondary w-full">
-        <i class="fas fa-camera text-indigo-600"></i>
-        Login with Face ID
-      </button>
 
       <p class="mt-6 text-center text-sm text-gray-600">
-        New user?
-        <a href="/auth/signup" class="font-semibold text-indigo-600 hover:text-indigo-700">
-          Create account
+        Need help?
+        <a href="/contact" class="font-semibold hover:text-blue-800 transition" style="color: #3B82F6;">
+          Contact Support
         </a>
       </p>
 
     </div>
 
     <p class="text-center text-xs text-gray-500 mt-6">
-      © 2026 FaceTrack. AI-Powered Attendance System.
+      © 2026 FaceTrack Pro. Secure Administrator Portal.
     </p>
 
   </div>
-
-
-  <!-- ================= FACE ID MODAL ================= -->
-  <div id="faceModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
-
-    <!-- BACKDROP -->
-    <div id="faceBackdrop" class="absolute inset-0 bg-black/50"></div>
-
-    <!-- MODAL BOX -->
-    <div class="relative z-10 w-full max-w-md bg-white rounded-lg shadow-xl p-6 mx-4">
-
-      <div class="text-center mb-5">
-        <h3 class="text-xl font-bold text-gray-900">Face ID Login</h3>
-        <p class="text-sm text-gray-500 mt-1">Position your face in the camera</p>
-      </div>
-
-      <!-- CAMERA + SCAN -->
-      <div class="flex flex-col items-center gap-4">
-
-        <div class="relative w-56 h-56">
-          <div class="relative w-full h-full rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-300">
-            <video id="modalFaceCam"
-                   autoplay playsinline muted
-                   class="w-full h-full object-cover"></video>
-            <!-- FACE DETECTION CANVAS OVERLAY -->
-            <canvas id="faceCanvas" 
-                    class="absolute inset-0 w-full h-full pointer-events-none z-10"></canvas>
-          </div>
-
-          <!-- SCANNING ANIMATION -->
-          <div id="scanningOverlay" class="absolute inset-0 hidden items-center justify-center pointer-events-none z-20">
-            <div class="absolute inset-0 rounded-lg border-4 border-indigo-500 animate-pulse"></div>
-            <div class="absolute inset-4 rounded-lg border-2 border-indigo-400 opacity-60"></div>
-            <div class="absolute w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent animate-scan"></div>
-          </div>
-
-          <!-- PROCESSING OVERLAY -->
-          <div id="processingOverlay" class="absolute inset-0 hidden items-center justify-center bg-indigo-900/80 rounded-lg">
-            <div class="text-center">
-              <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mb-3"></div>
-              <p class="text-white text-sm font-semibold">Processing...</p>
-            </div>
-          </div>
-
-          <!-- SUCCESS OVERLAY -->
-          <div id="faceSuccess"
-               class="absolute inset-0 hidden items-center justify-center bg-green-500/90 rounded-lg">
-            <div class="text-center">
-              <svg class="w-20 h-20 text-white mx-auto animate-bounce-once"
-                   viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
-                      d="M5 13l4 4L19 7"/>
-              </svg>
-              <p class="text-white text-sm font-bold mt-2">Recognized!</p>
-            </div>
-          </div>
-        </div>
-
-        <div id="modalStatus" class="text-sm font-medium text-gray-700 min-h-[22px] text-center">
-          <i class="fas fa-circle-notch fa-spin text-indigo-600 mr-2"></i>Initializing camera…
-        </div>
-
-      </div>
-
-      <!-- ACTIONS -->
-      <div class="flex gap-3 mt-6">
-        <button id="modalCancel" class="flex-1 btn btn-secondary">
-          Cancel
-        </button>
-        <button id="modalForceCapture" class="flex-1 btn btn-primary">
-          Capture
-        </button>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- FACE LOGIN JS -->
-  <script src="{{ url_for('static', filename='js/face_login.js') }}"></script>
 
 </body>
 </html>

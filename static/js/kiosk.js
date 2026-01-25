@@ -295,10 +295,11 @@ async function loadCameras() {
         // Request permission first to get device labels
         let permissionGranted = false;
         try {
-            const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
-            testStream.getTracks().forEach(track => track.stop());
-            permissionGranted = true;
-            console.log('📹 Camera permission granted');
+            // Temporarily disabled test stream to prevent brief torch/flash on page load
+            // const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            // testStream.getTracks().forEach(track => track.stop());
+            permissionGranted = true; // Assume permission for device enumeration
+            console.log('📹 Camera permission check skipped');
         } catch (permErr) {
             console.warn('📹 Camera permission needed:', permErr);
         }
@@ -1179,7 +1180,7 @@ if (pinVerify) {
                     document.body.appendChild(exitMsg);
 
                     setTimeout(() => {
-                        window.location.href = data.redirect || '/dashboard';
+                        window.location.href = data.redirect || '/admin/dashboard/';
                     }, 1500);
 
                 } else {
@@ -1368,8 +1369,9 @@ async function loadAdminCameras() {
 
         // Request permission first for device labels
         try {
-            const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
-            testStream.getTracks().forEach(track => track.stop());
+            // Temporarily disabled to prevent brief torch on modal open
+            // const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            // testStream.getTracks().forEach(track => track.stop());
         } catch (e) {
             console.warn('Admin camera permission needed');
         }

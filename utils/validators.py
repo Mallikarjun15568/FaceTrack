@@ -238,7 +238,7 @@ def validate_phone(phone):
 
 def validate_department(department):
     """Validate department"""
-    valid_departments = ['IT', 'HR', 'Sales', 'Marketing', 'Finance', 'Admin']
+    valid_departments = ['IT', 'HR', 'Sales', 'Marketing', 'Finance']
     if department not in valid_departments:
         return False, f"Department must be one of: {', '.join(valid_departments)}"
 

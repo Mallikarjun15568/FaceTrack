@@ -238,24 +238,97 @@ class EmailService:
     # Keep: Leave approval/rejection and welcome emails remain active.
     # ========================================================================
     
-    # def send_attendance_alert(self, to_email, employee_name, date, status, message):
-    #     """Send attendance alert (late, absent, etc.)"""
-    #     color = "#ef4444" if status == "absent" else "#f59e0b"
-    #     icon = "❌" if status == "absent" else "⚠️"
-    #     
-    #     body = f"""
-    #         <p style="margin-bottom:20px;">Dear <strong>{employee_name}</strong>,</p>
-    #         <div style="background:#fee2e2; border-left:4px solid {color}; padding:20px; border-radius:8px; margin:20px 0;">
-    #             <p style="margin:0; color:#991b1b; font-weight:600; font-size:16px;">{icon} Attendance Alert</p>
-    #         </div>
-    #         <p><strong>Date:</strong> {date}</p>
-    #         <p><strong>Status:</strong> {status.upper()}</p>
-    #         <p style="margin-top:20px;">{message}</p>
-    #         <p style="margin-top:25px; color:#6b7280;">Please contact HR if this is incorrect.</p>
-    #         <p style="margin-top:15px; color:#6b7280;">Best regards,<br><strong>HR Team</strong></p>
-    #     """
-    #     html = self._html_template("Attendance Alert", body, color)
-    #     return self._send(to_email, f"{icon} Attendance Alert - {date}", html)
+    def send_attendance_alert(self, to_email, employee_name, date, status, message):
+        """Send attendance alert (late, absent, etc.)"""
+        color = "#ef4444" if status == "absent" else "#f59e0b"
+        icon = "❌" if status == "absent" else "⚠️"
+        
+        body = f"""
+            <p style="margin-bottom:20px;">Dear <strong>{employee_name}</strong>,</p>
+            <div style="background:#fee2e2; border-left:4px solid {color}; padding:20px; border-radius:8px; margin:20px 0;">
+                <p style="margin:0; color:#991b1b; font-weight:600; font-size:16px;">{icon} Attendance Alert</p>
+            </div>
+            <p><strong>Date:</strong> {date}</p>
+            <p><strong>Status:</strong> {status.upper()}</p>
+            <p style="margin-top:20px;">{message}</p>
+            <p style="margin-top:25px; color:#6b7280;">Please contact HR if this is incorrect.</p>
+            <p style="margin-top:15px; color:#6b7280;">Best regards,<br><strong>HR Team</strong></p>
+        """
+        html = self._html_template("Attendance Alert", body, color)
+        return self._send(to_email, f"{icon} Attendance Alert - {date}", html)
+    
+    def send_checkout_completion(self, to_email, employee_name, date, check_in_time, check_out_time, working_hours):
+        """Send notification when check-out is auto-completed"""
+        color = "#10b981"  # Green
+        icon = "✅"
+        
+        body = f"""
+            <p style="margin-bottom:20px;">Dear <strong>{employee_name}</strong>,</p>
+            <div style="background:#d1fae5; border-left:4px solid {color}; padding:20px; border-radius:8px; margin:20px 0;">
+                <p style="margin:0; color:#065f46; font-weight:600; font-size:16px;">{icon} Check-Out Completed</p>
+            </div>
+            <p><strong>Date:</strong> {date}</p>
+            <p><strong>Check-In Time:</strong> {check_in_time}</p>
+            <p><strong>Check-Out Time:</strong> {check_out_time}</p>
+            <p><strong>Working Hours:</strong> {working_hours:.2f} hours</p>
+            <p style="margin-top:20px;">Your check-out has been automatically completed by the system.</p>
+            <p style="margin-top:15px; color:#6b7280;">If this is incorrect, please contact HR immediately.</p>
+            <p style="margin-top:15px; color:#6b7280;">Best regards,<br><strong>HR Team</strong></p>
+        """
+        html = self._html_template("Check-Out Completed", body, color)
+        return self._send(to_email, f"{icon} Check-Out Completed - {date}", html)
+    
+    def send_checkout_warning(self, to_email, employee_name, date, check_in_time, current_time):
+        """Send warning for incomplete check-out"""
+        color = "#f59e0b"  # Orange
+        icon = "⚠️"
+        
+        body = f"""
+            <p style="margin-bottom:20px;">Dear <strong>{employee_name}</strong>,</p>
+            <div style="background:#fef3c7; border-left:4px solid {color}; padding:20px; border-radius:8px; margin:20px 0;">
+                <p style="margin:0; color:#92400e; font-weight:600; font-size:16px;">{icon} Check-Out Reminder</p>
+            </div>
+            <p><strong>Date:</strong> {date}</p>
+            <p><strong>Check-In Time:</strong> {check_in_time}</p>
+            <p><strong>Current Time:</strong> {current_time}</p>
+            <p style="margin-top:20px; color:#dc2626; font-weight:600;">⚠️ You have not checked out yet!</p>
+            <p>Please complete your check-out at the kiosk or contact HR.</p>
+            <p style="margin-top:15px; color:#6b7280;">Your check-out will be auto-completed at end of day if not done manually.</p>
+            <p style="margin-top:15px; color:#6b7280;">Best regards,<br><strong>HR Team</strong></p>
+        """
+    def send_checkout_reminder(self, to_email, employee_name, date, check_in_time, current_time, hours_worked, message, urgency="medium"):
+        """Send check-out reminder with urgency levels"""
+        if urgency == "high":
+            color = "#dc2626"  # Red
+            icon = "🚨"
+            bg_color = "#fef2f2"
+            border_color = "#dc2626"
+        elif urgency == "medium":
+            color = "#f59e0b"  # Orange
+            icon = "⚠️"
+            bg_color = "#fffbeb"
+            border_color = "#f59e0b"
+        else:
+            color = "#3b82f6"  # Blue
+            icon = "💡"
+            bg_color = "#eff6ff"
+            border_color = "#3b82f6"
+
+        body = f"""
+            <p style="margin-bottom:20px;">Dear <strong>{employee_name}</strong>,</p>
+            <div style="background:{bg_color}; border-left:4px solid {border_color}; padding:20px; border-radius:8px; margin:20px 0;">
+                <p style="margin:0; color:{color}; font-weight:600; font-size:16px;">{icon} Check-Out Reminder</p>
+            </div>
+            <p><strong>Date:</strong> {date}</p>
+            <p><strong>Check-In Time:</strong> {check_in_time}</p>
+            <p><strong>Current Time:</strong> {current_time}</p>
+            <p><strong>Hours Worked:</strong> {hours_worked} hours</p>
+            <p style="margin-top:20px; font-weight:600;">{message}</p>
+            <p style="margin-top:15px; color:#6b7280;">Please visit the kiosk to complete your check-out.</p>
+            <p style="margin-top:15px; color:#6b7280;">Best regards,<br><strong>HR Team</strong></p>
+        """
+        html = self._html_template("Check-Out Reminder", body, color)
+        return self._send(to_email, f"{icon} Check-Out Reminder - {date}", html)
     
     # -----------------------------
     # System Notifications
@@ -287,6 +360,25 @@ class EmailService:
         """
         html = self._html_template("Password Reset Request", body)
         return self._send(to_email, "🔐 Password Reset Request", html)
+
+
+    def send_missing_checkout_notification(self, to_email, employee_name):
+        """Send single notification for missing check-out (end of day)"""
+        color = "#f59e0b"  # Orange
+        icon = "⚠️"
+        
+        body = f"""
+            <p style="margin-bottom:20px;">Hello <strong>{employee_name}</strong>,</p>
+            <div style="background:#fef3c7; border-left:4px solid {color}; padding:20px; border-radius:8px; margin:20px 0;">
+                <p style="margin:0; color:#92400e; font-weight:600; font-size:16px;">{icon} Checkout Pending</p>
+            </div>
+            <p>You have checked in today but have not checked out.</p>
+            <p>Please contact HR if this is an issue.</p>
+            <p style="margin-top:15px; color:#6b7280;">Best regards,<br><strong>HR Team</strong></p>
+        """
+        
+        html = self._html_template("Checkout Pending", body)
+        return self._send(to_email, "Checkout Pending", html)
 
 
 # Global instance
