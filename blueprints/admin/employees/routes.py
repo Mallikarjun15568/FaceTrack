@@ -686,6 +686,40 @@ def process_face_request(request_id, action):
                 logger.error(f"Exception while encoding face for request id={request_id}: {e}", exc_info=True)
                 return jsonify({"success": False, "message": "Error encoding face"}), 500
 
+            # Check for duplicate faces against other employees
+            cursor.execute("SELECT emp_id, embedding FROM face_data WHERE emp_id != %s", (request_data["emp_id"],))
+            existing_faces = cursor.fetchall()
+            
+            # Find best match (highest similarity)
+            max_sim = -1
+            matched_emp_id = None
+            for row in existing_faces:
+                existing_emb = face_encoder._decode_embedding(row['embedding'])
+                # Normalize embeddings
+                emb_norm = embedding / np.linalg.norm(embedding)
+                existing_emb_norm = existing_emb / np.linalg.norm(existing_emb)
+                sim = np.dot(emb_norm, existing_emb_norm)
+                if sim > max_sim:
+                    max_sim = sim
+                    matched_emp_id = row['emp_id']
+            
+            if max_sim >= 0.90:
+                # Fetch matched employee name
+                cursor.execute("SELECT full_name FROM employees WHERE id = %s", (matched_emp_id,))
+                matched_emp = cursor.fetchone()
+                matched_name = matched_emp['full_name'] if matched_emp else f"ID {matched_emp_id}"
+                
+                message = f"This face already belongs to Employee: {matched_name}. Please verify before approving."
+                logger.warning(f"Duplicate face detected for request {request_id}, emp {request_data['emp_id']}, best match emp {matched_emp_id} with sim {max_sim}")
+                log_audit(
+                    user_id=session.get("user_id"),
+                    action="FACE_REQUEST_DUPLICATE_REJECTED",
+                    module="face_requests",
+                    details=f"Rejected face request ID {request_id} for employee {request_data['emp_id']} - duplicate face (best match: emp {matched_emp_id}, sim {max_sim:.3f})",
+                    ip_address=request.remote_addr
+                )
+                return jsonify({"success": False, "message": message}), 400
+
             # Save to face_data (store path relative to static/ for use in templates)
             new_path_rel = new_path.replace('\\', '/')
             if new_path_rel.startswith('static/'):

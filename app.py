@@ -4,7 +4,7 @@ import time
 import os
 from dotenv import load_dotenv
 from utils.extensions import limiter
-from flask_wtf.csrf import CSRFProtect, generate_csrf
+from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 
 from config import Config
 from db_utils import get_connection, close_db, get_setting
@@ -260,6 +260,22 @@ def handle_exception(e):
     except Exception as e:
         logger.exception("Error closing DB in exception handler: %s", e)
     return jsonify({'error': 'Internal server error', 'message': 'Something went wrong. Please try again.'}), 500
+
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    try:
+        from db_utils import log_audit
+        log_audit(None, 'CSRF_ERROR', 'csrf', str(e), request.remote_addr)
+    except Exception:
+        logger.exception('Failed to write CSRF audit')
+
+    # Return JSON for API-like requests, otherwise redirect to login with flash
+    if request.is_json or request.path.startswith('/auth/face_login'):
+        return jsonify({'matched': False, 'reason': 'Security validation failed. Please refresh the page.'}), 403
+    else:
+        flash('Security validation failed. Please refresh the page.', 'error')
+        return redirect(url_for('auth.login'))
 
 
 # DB health and deep health endpoints removed per user request.
