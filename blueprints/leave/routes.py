@@ -50,6 +50,15 @@ def index():
         balance = fetchone("""
             SELECT * FROM leave_balance WHERE employee_id = %s
         """, (employee_id,))
+    # For admins without employee_id, check if they have an employee record
+    elif session.get('role') in ['admin', 'hr']:
+        user_id = session.get('user_id')
+        if user_id:
+            emp = fetchone("SELECT id FROM employees WHERE user_id = %s", (user_id,))
+            if emp:
+                balance = fetchone("""
+                    SELECT * FROM leave_balance WHERE employee_id = %s
+                """, (emp['id'],))
 
     return render_template('leave/leave_list.html', leaves=leaves, employees=employees, balance=balance, employee_view=False, role=session.get('role'))
 
@@ -83,7 +92,7 @@ def adjust_balance():
     # Calculate adjustment
     adjust_days = days if operation == 'add' else -days
 
-    allowed_types = ['casual_leave', 'sick_leave', 'vacation_leave', 'emergency_leave']
+    allowed_types = ['casual_leave', 'sick_leave', 'personal_leave', 'emergency_leave']
     if leave_type not in allowed_types:
         flash('Invalid leave type.', 'error')
         return redirect(url_for('leave.index'))
@@ -97,7 +106,7 @@ def adjust_balance():
         if not balance:
             # Optionally, create a new row if missing (admin only)
             execute("""
-                INSERT INTO leave_balance (employee_id, casual_leave, sick_leave, vacation_leave, emergency_leave)
+                INSERT INTO leave_balance (employee_id, casual_leave, sick_leave, personal_leave, emergency_leave)
                 VALUES (%s, 0, 0, 0, 0)
             """, (employee_id,))
         # Update the leave balance
@@ -141,7 +150,7 @@ def apply():
         leave_map = {
             'Casual Leave': 'casual_leave',
             'Sick Leave': 'sick_leave',
-            'Vacation Leave': 'vacation_leave',
+            'Personal Leave': 'personal_leave',
             'Emergency Leave': 'emergency_leave'
         }
 
@@ -251,7 +260,7 @@ def approve(leave_id):
     leave_map = {
         'Casual Leave': 'casual_leave',
         'Sick Leave': 'sick_leave',
-        'Vacation Leave': 'vacation_leave',
+        'Personal Leave': 'personal_leave',
         'Emergency Leave': 'emergency_leave'
     }
 
@@ -382,7 +391,7 @@ def api_balance():
     return jsonify({
         'casual_leave': balance['casual_leave'],
         'sick_leave': balance['sick_leave'],
-        'vacation_leave': balance['vacation_leave'],
+        'personal_leave': balance['personal_leave'],
         'emergency_leave': balance['emergency_leave']
     })
 

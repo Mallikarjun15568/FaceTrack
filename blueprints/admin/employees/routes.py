@@ -237,18 +237,28 @@ def add_employee():
 
         photo_file = request.files.get("photo")
 
-        if not photo_file:
-            db.rollback()
-            flash("Please upload a photo!", "danger")
-            return redirect(url_for("employees.add_employee"))
-        
-        # Validate file upload
-        from utils.validators import validate_image_upload
-        is_valid, error_msg = validate_image_upload(photo_file)
-        if not is_valid:
-            db.rollback()
-            flash(f"Photo upload failed: {error_msg}", "danger")
-            return redirect(url_for("employees.add_employee"))
+        # ✅ Photo is now OPTIONAL (only for profile display)
+        photo_path = None
+        if photo_file and photo_file.filename:
+            # Validate file upload
+            from utils.validators import validate_image_upload
+            is_valid, error_msg = validate_image_upload(photo_file)
+            if not is_valid:
+                db.rollback()
+                flash(f"Photo upload failed: {error_msg}", "danger")
+                return redirect(url_for("employees.add_employee"))
+
+            # Save photo to disk
+            folder_path = f"static/uploads/employees/{employee_id}/"
+            os.makedirs(folder_path, exist_ok=True)
+
+            filename = secure_filename(photo_file.filename)
+            image_path = os.path.join(folder_path, filename)
+            photo_file.save(image_path)
+            # Store path relative to the static/ folder (templates expect filenames relative to static)
+            photo_path = image_path.replace('\\', '/')
+            if photo_path.startswith('static/'):
+                photo_path = photo_path[len('static/'):]
 
         # PRE-CHECK: avoid duplicate employee by email
         cursor.execute("SELECT id FROM employees WHERE email=%s", (email,))
@@ -261,58 +271,14 @@ def add_employee():
         from mysql.connector import IntegrityError
         cursor.execute("""
             INSERT INTO employees (full_name, email, phone, gender, job_title, department_id, join_date, status, photo)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, '')
-        """, (full_name, email, phone, gender, job_title, department_id, join_date, status))
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (full_name, email, phone, gender, job_title, department_id, join_date, status, photo_path or ''))
         # ❌ NO db.commit() HERE
 
         employee_id = cursor.lastrowid
 
-        # Save photo to disk
-        folder_path = f"static/uploads/employees/{employee_id}/"
-        os.makedirs(folder_path, exist_ok=True)
+        # ✅ REMOVED: No automatic photo processing since photo is optional
 
-        filename = secure_filename(photo_file.filename)
-        image_path = os.path.join(folder_path, filename)
-        photo_file.save(image_path)
-
-        # Process face embedding
-        img = cv2.imread(image_path)
-        if img is None:
-            db.rollback()
-            # 🔧 FIX 3: Filesystem cleanup on rollback
-            if os.path.exists(image_path):
-                os.remove(image_path)
-            flash("Failed to read uploaded photo!", "danger")
-            return redirect(url_for("employees.add_employee"))
-
-        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        embedding = face_encoder.get_embedding(rgb)
-
-        if embedding is None:
-            db.rollback()
-            # 🔧 FIX 3: Filesystem cleanup on rollback
-            if os.path.exists(image_path):
-                os.remove(image_path)
-            flash("No face detected in the photo!", "danger")
-            logger.warning(f"No face detected in uploaded photo for employee: {full_name}")
-            return redirect(url_for("employees.add_employee"))
-
-        # Store embedding in face_data table (512-dim float32)
-        embedding_bytes = embedding.astype(np.float32).tobytes()
-        
-        # Update employee photo path
-        cursor.execute("""
-            UPDATE employees
-            SET photo=%s
-            WHERE id=%s
-        """, (image_path, employee_id))
-        
-        # Insert into face_data table
-        cursor.execute("""
-            INSERT INTO face_data (emp_id, embedding, image_path, created_at)
-            VALUES (%s, %s, %s, NOW())
-        """, (employee_id, embedding_bytes, image_path))
-        
         # Create leave_balance row for new employee (MANDATORY for admin credit to work)
         cursor.execute("""
             INSERT INTO leave_balance (employee_id, casual_leave, sick_leave, vacation_leave, emergency_leave)
@@ -322,8 +288,7 @@ def add_employee():
         # ✅ SINGLE COMMIT - Only at the end after all operations
         db.commit()
 
-        # Invalidate cache so new embedding is loaded
-        invalidate_embeddings_cache()
+        # ✅ REMOVED: No embeddings added, so no cache invalidation needed
 
         # Audit log
         log_audit(
@@ -336,7 +301,7 @@ def add_employee():
 
         flash("Employee added successfully!", "success")
         logger.info(f"Employee added: {full_name} (ID: {employee_id})")
-        return redirect(url_for("employees.list_employees"))
+        return redirect(url_for("admin.employees.list_employees"))
         
     except IntegrityError as e:
         # ✅ ROLLBACK on database constraint error
@@ -545,7 +510,7 @@ def edit_employee(emp_id):
     is_valid_email, email_error = validate_email(email)
     if not is_valid_email:
         flash(f"Invalid email: {email_error}", "danger")
-        return redirect(url_for("employees.edit_employee", emp_id=emp_id))
+        return redirect(url_for("admin.employees.edit_employee", emp_id=emp_id))
 
     photo_file = request.files.get("photo")
     update_photo = False
@@ -568,6 +533,11 @@ def edit_employee(emp_id):
         filename = secure_filename(photo_file.filename)
         photo = os.path.join(folder_path, filename)
         photo_file.save(photo)
+
+        # Normalize stored path to be relative to `static/` so url_for('static', filename=...) works
+        photo = photo.replace('\\', '/')
+        if photo.startswith('static/'):
+            photo = photo[len('static/'):]
 
         try:
             # Use InsightFace for consistent embeddings
@@ -633,12 +603,12 @@ def edit_employee(emp_id):
 
         flash("Employee updated successfully!", "success")
         logger.info(f"Employee updated: ID {emp_id}")
-        return redirect(url_for("employees.list_employees"))
+        return redirect(url_for("admin.employees.list_employees"))
     except Exception as e:
         db.rollback()
         logger.error(f"Error updating employee {emp_id}: {e}", exc_info=True)
         flash(f"Error updating employee: {str(e)}", "danger")
-        return redirect(url_for("employees.edit_employee", emp_id=emp_id))
+        return redirect(url_for("admin.employees.edit_employee", emp_id=emp_id))
 
 
 # ============================================================
@@ -716,6 +686,11 @@ def process_face_request(request_id, action):
                 logger.error(f"Exception while encoding face for request id={request_id}: {e}", exc_info=True)
                 return jsonify({"success": False, "message": "Error encoding face"}), 500
 
+            # Save to face_data (store path relative to static/ for use in templates)
+            new_path_rel = new_path.replace('\\', '/')
+            if new_path_rel.startswith('static/'):
+                new_path_rel = new_path_rel[len('static/'):]
+
             # Save to face_data
             cursor.execute("""
                 INSERT INTO face_data (emp_id, image_path, embedding)
@@ -724,7 +699,7 @@ def process_face_request(request_id, action):
                 image_path = VALUES(image_path),
                 embedding = VALUES(embedding),
                 created_at = CURRENT_TIMESTAMP
-            """, (request_data["emp_id"], new_path, embedding.tobytes()))
+            """, (request_data["emp_id"], new_path_rel, embedding.tobytes()))
 
             # Update request
             cursor.execute("""

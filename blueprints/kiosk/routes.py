@@ -5,8 +5,6 @@ from blueprints.auth.utils import login_required, role_required
 from . import bp
 from .utils import recognize_and_mark, decode_frame
 from utils.liveness_detector import LivenessDetector
-from flask_wtf.csrf import CSRFProtect
-csrf = CSRFProtect()
 from db_utils import get_setting, set_setting
 from utils.logger import logger
 import time
@@ -77,7 +75,6 @@ def kiosk_page():
 # LIVENESS CHECK API
 # ---------------------------------------------------------
 @bp.route("/liveness_check", methods=["POST"])
-@csrf.exempt
 def liveness_check():
     """Real liveness detection - prevents photo/video spoofing"""
     try:
@@ -125,7 +122,6 @@ def liveness_check():
 # BACKEND RECOGNITION API
 # ---------------------------------------------------------
 @bp.route("/recognize", methods=["POST"])
-@csrf.exempt
 def kiosk_recognize():
     """Face recognition + attendance marking (requires liveness pass)"""
     try:
@@ -199,7 +195,6 @@ def kiosk_recognize():
 # EXIT KIOSK (PIN Protected)
 # ---------------------------------------------------------
 @bp.route("/exit", methods=["GET", "POST"])
-@csrf.exempt
 def kiosk_exit():
     """Exit kiosk mode - requires PIN authentication to prevent unauthorized exit"""
     logger.info(f"[DEBUG] Kiosk exit request - Method: {request.method}, Session in_kiosk: {session.get('in_kiosk')}")
@@ -286,7 +281,6 @@ def kiosk_exit():
 # VERIFY PIN (for UI-only checks, does NOT exit kiosk)
 # ---------------------------------------------------------
 @bp.route("/verify_pin", methods=["POST"])
-@csrf.exempt
 def verify_pin():
     """Verify PIN without exiting kiosk mode (used by kiosk UI to unlock settings)."""
     data = request.get_json()
@@ -333,7 +327,6 @@ def verify_pin():
 # ADMIN: Set Kiosk PIN
 # ---------------------------------------------------------
 @bp.route("/admin/set_pin", methods=["POST"])
-@csrf.exempt
 @role_required("admin")
 def set_kiosk_pin():
     """Admin endpoint - set/update kiosk exit PIN"""
@@ -370,7 +363,6 @@ def kiosk_status():
 # ADMIN: Force Unlock Kiosk
 # ---------------------------------------------------------
 @bp.route("/admin/force_unlock", methods=["POST"])
-@csrf.exempt
 @role_required("admin")
 def force_unlock():
     """Admin emergency unlock - bypass PIN requirement to exit kiosk mode"""

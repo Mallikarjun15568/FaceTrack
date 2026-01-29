@@ -395,11 +395,12 @@ captureBtn.onclick = () => {
 
         console.log("✅ Face captured successfully with stability gates");
 
+        // Show buttons after settling delay
+        retakeBtn.classList.remove("hidden");
+        saveBtn.classList.remove("hidden");
+        cameraControls.classList.add("hidden");
+
     }, 300); // 300ms delay for settling
-};
-    retakeBtn.classList.remove("hidden");
-    saveBtn.classList.remove("hidden");
-    cameraControls.classList.add("hidden");
 };
 
 retakeBtn.onclick = () => {

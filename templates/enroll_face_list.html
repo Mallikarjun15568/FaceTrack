@@ -45,8 +45,13 @@
                     <td class="p-3">{{ emp.id }}</td>
 
                     <td class="p-3">
+                        {% if emp.photo %}
+                        <img src="{{ url_for('static', filename=emp.photo) }}"
+                             class="w-10 h-10 rounded-full border object-cover">
+                        {% else %}
                         <img src="{{ url_for('static', filename='default_user.png') }}"
                              class="w-10 h-10 rounded-full border">
+                        {% endif %}
                     </td>
 
                     <td class="p-3 font-medium">{{ emp.full_name }}</td>

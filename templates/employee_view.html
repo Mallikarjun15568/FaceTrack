@@ -6,7 +6,7 @@
 
 <div class="p-6 space-y-6 max-w-4xl mx-auto">
 
-  <a href="/employees" class="text-blue-600 hover:underline">&larr; Back to Employees</a>
+  <a href="/admin/employees/" class="text-blue-600 hover:underline">&larr; Back to Employees</a>
 
   <h1 class="text-2xl font-bold">Employee Profile</h1>
 
@@ -14,11 +14,12 @@
 
     <!-- PHOTO -->
     <div>
-      {% set emp_photo = emp.photo %}
-      {% if emp_photo and not emp_photo.startswith('/') %}
-        {% set emp_photo = '/' ~ emp_photo %}
+      {% if emp.photo %}
+        {% set emp_photo_url = url_for('static', filename=emp.photo) %}
+      {% else %}
+        {% set emp_photo_url = url_for('static', filename='default_user.png') %}
       {% endif %}
-      <img src="{{ emp_photo if emp_photo else url_for('static', filename='default_user.png') }}"
+      <img src="{{ emp_photo_url }}"
            class="w-40 h-40 rounded-xl border object-cover">
     </div>
 
@@ -46,7 +47,7 @@
   <!-- ACTIONS -->
   <div class="flex gap-4 pt-2">
 
-    <a href="/employees/edit/{{ emp.id }}"
+    <a href="/admin/employees/edit/{{ emp.id }}"
        class="btn-premium btn-premium-success">
       Edit
     </a>
@@ -81,7 +82,7 @@ function deleteEmp(id) {
             Swal.fire("Security error", "CSRF token missing", "error");
             return;
         }
-        fetch("/employees/delete/" + id, { 
+        fetch("/admin/employees/delete/" + id, { 
             method: "POST",
             headers: {
                 "X-CSRFToken": csrfToken
@@ -91,7 +92,7 @@ function deleteEmp(id) {
         .then(res => {
             if (res.success) {
                 Swal.fire("Deleted!", "", "success");
-                setTimeout(() => window.location.href = "/employees", 1300);
+                setTimeout(() => window.location.href = "/admin/employees/", 1300);
             }
         });
     });

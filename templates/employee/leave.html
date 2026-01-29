@@ -65,12 +65,26 @@
         transform: translateY(0);
       }
     }
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    .animate-slideIn {
+      animation: slideIn 0.5s ease-out;
+    }
     .leave-usage-bar {
       width: 0%;
       transition: width 0.8s ease-out;
     }
     .line-clamp-2 {
       display: -webkit-box;
+      line-clamp: 2;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
@@ -150,6 +164,26 @@
       </div>
     </div>
 
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="space-y-3 mb-6" id="flashMessages">
+      {% for category, msg in messages %}
+      <div class="flex items-center gap-3 p-4 rounded-lg border {% if category=='error' %}bg-red-50 border-red-200 text-red-800{% else %}bg-green-50 border-green-200 text-green-800{% endif %} animate-slideIn">
+        <i class="{% if category=='error' %}fas fa-exclamation-circle{% else %}fas fa-check-circle{% endif %} text-lg"></i>
+        <span class="font-medium text-sm">{{ msg }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Calculate progress bar percentages -->
+    {% set casual_percent = ((balance.casual_leave / 12 * 100) if balance.casual_leave <= 12 else 100) %}
+    {% set sick_percent = ((balance.sick_leave / 12 * 100) if balance.sick_leave <= 12 else 100) %}
+    {% set personal_percent = ((balance.personal_leave / 15 * 100) if balance.personal_leave <= 15 else 100) %}
+    {% set emergency_percent = ((balance.emergency_leave / 10 * 100) if balance.emergency_leave <= 10 else 100) %}
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
       <!-- Leave Balance Cards -->
@@ -170,7 +204,7 @@
               </div>
               <p class="text-xs text-gray-600 font-medium">Casual Leave</p>
               <div class="w-full bg-blue-200 rounded-full h-2 mt-2">
-                <div class="bg-blue-600 h-2 rounded-full" style="width: {{ (balance.casual_leave / 12 * 100) if balance.casual_leave <= 12 else 100 }}%"></div>
+                <div class="bg-blue-600 h-2 rounded-full progress-fill" data-progress="{{ casual_percent }}"></div>
               </div>
             </div>
             <!-- Sick Leave -->
@@ -183,33 +217,33 @@
               </div>
               <p class="text-xs text-gray-600 font-medium">Sick Leave</p>
               <div class="w-full bg-red-200 rounded-full h-2 mt-2">
-                <div class="bg-red-600 h-2 rounded-full" style="width: {{ (balance.sick_leave / 12 * 100) if balance.sick_leave <= 12 else 100 }}%"></div>
+                <div class="bg-red-600 h-2 rounded-full progress-fill" data-progress="{{ sick_percent }}"></div>
               </div>
             </div>
-            <!-- Vacation Leave -->
+            <!-- Personal Leave -->
             <div class="text-center p-3 bg-green-50 rounded-lg border border-green-200">
               <div class="flex items-center justify-center mb-2">
                 <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-2">
-                  <i class="fas fa-plane text-green-600 text-sm"></i>
+                  <i class="fas fa-user text-green-600 text-sm"></i>
                 </div>
-                <p class="text-2xl font-bold text-green-600">{{ balance.vacation_leave }}</p>
+                <p class="text-2xl font-bold text-green-600">{{ balance.personal_leave }}</p>
               </div>
-              <p class="text-xs text-gray-600 font-medium">Vacation Leave</p>
+              <p class="text-xs text-gray-600 font-medium">Personal Leave</p>
               <div class="w-full bg-green-200 rounded-full h-2 mt-2">
-                <div class="bg-green-600 h-2 rounded-full" style="width: {{ (balance.vacation_leave / 15 * 100) if balance.vacation_leave <= 15 else 100 }}%"></div>
+                <div class="bg-green-600 h-2 rounded-full progress-fill" data-progress="{{ personal_percent }}"></div>
               </div>
             </div>
-            <!-- Work From Home -->
+            <!-- Emergency Leave -->
             <div class="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
               <div class="flex items-center justify-center mb-2">
                 <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-2">
-                  <i class="fas fa-home text-purple-600 text-sm"></i>
+                  <i class="fas fa-exclamation-triangle text-purple-600 text-sm"></i>
                 </div>
                 <p class="text-2xl font-bold text-purple-600">{{ balance.emergency_leave }}</p>
               </div>
-              <p class="text-xs text-gray-600 font-medium">Work From Home</p>
+              <p class="text-xs text-gray-600 font-medium">Emergency Leave</p>
               <div class="w-full bg-purple-200 rounded-full h-2 mt-2">
-                <div class="bg-purple-600 h-2 rounded-full" style="width: {{ (balance.emergency_leave / 10 * 100) if balance.emergency_leave <= 10 else 100 }}%"></div>
+                <div class="bg-purple-600 h-2 rounded-full progress-fill" data-progress="{{ emergency_percent }}"></div>
               </div>
             </div>
           </div>
@@ -258,11 +292,10 @@
               <select id="leave_type" name="leave_type" required
                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all">
                 <option value="">Select leave type</option>
-                <option value="annual">Annual Leave</option>
-                <option value="sick">Sick Leave</option>
-                <option value="personal">Personal Leave</option>
-                <option value="emergency">Emergency Leave</option>
-                <option value="casual_leave">Casual Leave</option>
+                <option value="Personal Leave">Personal Leave</option>
+                <option value="Sick Leave">Sick Leave</option>
+                <option value="Casual Leave">Casual Leave</option>
+                <option value="Emergency Leave">Emergency Leave</option>
               </select>
             </div>
 
@@ -337,7 +370,14 @@
                   </td>
                   <td class="px-3 py-3 whitespace-nowrap">
                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {{ request.leave_type.title() }}
+                      {% if request.leave_type == 'casual_leave' or request.leave_type == 'Casual Leave' %}Casual Leave
+                      {% elif request.leave_type == 'sick' or request.leave_type == 'Sick Leave' %}Sick Leave
+                      {% elif request.leave_type == 'annual' or request.leave_type == 'Annual Leave' or request.leave_type == 'Vacation Leave' or request.leave_type == 'Personal Leave' %}Personal Leave
+                      {% elif request.leave_type == 'emergency' or request.leave_type == 'Emergency Leave' %}Emergency Leave
+                      {% elif request.leave_type == 'personal' %}Personal Leave
+                      {% elif request.leave_type == 'maternity' %}Maternity Leave
+                      {% elif request.leave_type == 'paternity' %}Paternity Leave
+                      {% else %}{{ request.leave_type.title() }}{% endif %}
                     </span>
                   </td>
                   <td class="px-3 py-3 max-w-xs">
@@ -404,7 +444,14 @@
                   <span class="text-xs text-gray-500 uppercase tracking-wider">Type</span>
                   <div class="text-sm font-medium">
                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {{ request.leave_type.title() }}
+                      {% if request.leave_type == 'casual_leave' or request.leave_type == 'Casual Leave' %}Casual Leave
+                      {% elif request.leave_type == 'sick' or request.leave_type == 'Sick Leave' %}Sick Leave
+                      {% elif request.leave_type == 'annual' or request.leave_type == 'Annual Leave' or request.leave_type == 'Vacation Leave' or request.leave_type == 'Personal Leave' %}Personal Leave
+                      {% elif request.leave_type == 'emergency' or request.leave_type == 'Emergency Leave' %}Emergency Leave
+                      {% elif request.leave_type == 'personal' %}Personal Leave
+                      {% elif request.leave_type == 'maternity' %}Maternity Leave
+                      {% elif request.leave_type == 'paternity' %}Paternity Leave
+                      {% else %}{{ request.leave_type.title() }}{% endif %}
                     </span>
                   </div>
                 </div>
@@ -461,6 +508,14 @@
 
       document.querySelectorAll('.scroll-reveal').forEach(el => {
         observer.observe(el);
+      });
+
+      // Set progress bar widths
+      document.querySelectorAll('.progress-fill').forEach(el => {
+        const progress = el.getAttribute('data-progress');
+        if (progress) {
+          el.style.width = progress + '%';
+        }
       });
     });
 

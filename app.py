@@ -52,13 +52,6 @@ app.csrf = csrf
 
 limiter.init_app(app)
 
-@app.context_processor
-def inject_csrf_token():
-    return dict(csrf_token=generate_csrf)
-
-# Ensure global access as well (fallback for templates)
-app.jinja_env.globals['csrf_token'] = generate_csrf
-
 # Secure session configuration
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -116,6 +109,11 @@ logger = logging.getLogger("app")
 # REGISTER BLUEPRINTS
 # 
 # --------------------------
+
+# Setup selective CSRF exemptions BEFORE registering blueprints
+from utils.csrf_exemptions import setup_csrf_exemptions
+setup_csrf_exemptions(app, csrf)
+
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(attendance_bp)
@@ -126,9 +124,7 @@ app.register_blueprint(charts_bp)
 from blueprints.employee import bp as employee_bp
 app.register_blueprint(employee_bp)
 
-# Setup selective CSRF exemptions
-from utils.csrf_exemptions import setup_csrf_exemptions
-setup_csrf_exemptions(app, csrf)
+
 
 
 # --------------------------
@@ -158,8 +154,8 @@ def _log_session_and_flashes():
             return
         logger.info(f"[session] keys={list(session.keys())}")
         logger.info(f"[_flashes]={session.get('_flashes')}")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.exception("Error in _log_session_and_flashes: %s", e)
 
 @app.route("/about")
 def about():
@@ -168,14 +164,6 @@ def about():
 @app.route("/contact", methods=["GET", "POST"])
 def contact():
     if request.method == "POST":
-        # CSRF check
-        from flask_wtf.csrf import validate_csrf
-        try:
-            validate_csrf(request.form.get('csrf_token'))
-        except Exception as e:
-            flash("CSRF token validation failed", "error")
-            return redirect(url_for("contact"))
-        
         # Handle contact form submission
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip()
@@ -259,8 +247,8 @@ def internal_error(error):
     try:
         # attempt to rollback any open DB transaction
         close_db()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.exception("Error while rolling back DB in error handler: %s", e)
     return render_template('500.html'), 500
 
 
@@ -269,8 +257,8 @@ def handle_exception(e):
     logger.error(f"Unhandled exception: {str(e)}", exc_info=True)
     try:
         close_db()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.exception("Error closing DB in exception handler: %s", e)
     return jsonify({'error': 'Internal server error', 'message': 'Something went wrong. Please try again.'}), 500
 
 
@@ -298,7 +286,7 @@ with app.app_context():
                 if 'recognition_threshold' in saved_settings:
                     app.config['EMBED_THRESHOLD'] = float(saved_settings.get('recognition_threshold'))
             except Exception:
-                pass
+                logger.exception("Error parsing recognition_threshold from settings")
 
             # Duplicate attendance interval (minutes) -> cooldown seconds
             try:
@@ -306,35 +294,35 @@ with app.app_context():
                     mins = float(saved_settings.get('duplicate_interval'))
                     app.config['KIOSK_COOLDOWN_SECONDS'] = mins * 60.0
             except Exception:
-                pass
+                logger.exception("Error parsing duplicate_interval from settings")
 
             # Snapshot mode
             try:
                 if 'snapshot_mode' in saved_settings:
                     app.config['SAVE_SNAPSHOTS'] = str(saved_settings.get('snapshot_mode')).lower() == 'on'
             except Exception:
-                pass
+                logger.exception("Error parsing snapshot_mode from settings")
 
             # Minimum confidence
             try:
                 if 'min_confidence' in saved_settings:
                     app.config['MIN_CONFIDENCE'] = float(saved_settings.get('min_confidence'))
             except Exception:
-                pass
+                logger.exception("Error parsing min_confidence from settings")
 
             # Camera index
             try:
                 if 'camera_index' in saved_settings:
                     app.config['DEFAULT_CAMERA_INDEX'] = int(saved_settings.get('camera_index'))
             except Exception:
-                pass
+                logger.exception("Error parsing camera_index from settings")
 
             # Session timeout (minutes)
             try:
                 if 'session_timeout' in saved_settings:
                     app.config['PERMANENT_SESSION_LIFETIME'] = int(saved_settings.get('session_timeout')) * 60
             except Exception:
-                pass
+                logger.exception("Error parsing session_timeout from settings")
 
             # Misc mirrors
             try:
@@ -350,7 +338,7 @@ with app.app_context():
                 if 'checkout_time' in saved_settings:
                     app.config['CHECKOUT_TIME'] = saved_settings.get('checkout_time')
             except Exception:
-                pass
+                logger.exception("Error parsing miscellaneous settings")
 
     except Exception as e:
         logger.exception("Failed to sync settings from DB at startup: %s", e)

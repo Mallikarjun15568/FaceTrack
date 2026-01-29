@@ -14,6 +14,7 @@ from blueprints.kiosk import utils as kiosk_utils
 from utils.helpers import generate_unique_filename, ensure_folder
 from utils.email_service import EmailService
 from flask_wtf.csrf import CSRFProtect
+from blueprints.auth.utils import login_required
 csrf = CSRFProtect()
 
 # ================================
@@ -47,10 +48,10 @@ def dashboard():
 
     # Leave balance (from leave_balance table)
     try:
-        cur.execute("SELECT casual_leave, sick_leave, vacation_leave, emergency_leave FROM leave_balance WHERE employee_id = %s", (employee_id,))
+        cur.execute("SELECT casual_leave, sick_leave, personal_leave, emergency_leave FROM leave_balance WHERE employee_id = %s", (employee_id,))
         balance_data = cur.fetchone()
         if balance_data:
-            leave_balance = (balance_data['casual_leave'] or 0) + (balance_data['sick_leave'] or 0) + (balance_data['vacation_leave'] or 0) + (balance_data['emergency_leave'] or 0)
+            leave_balance = (balance_data['casual_leave'] or 0) + (balance_data['sick_leave'] or 0) + (balance_data['personal_leave'] or 0) + (balance_data['emergency_leave'] or 0)
             total_possible = 12 + 6 + 10 + 5  # Assuming defaults: 12 casual, 6 sick, 10 vacation, 5 emergency
             leave_balance_percentage = min((leave_balance / total_possible) * 100, 100)
         else:
@@ -446,11 +447,21 @@ def leave():
         reason = request.form.get('reason', '').strip()
 
         if leave_type and start_date and end_date and reason:
+            # Calculate total days
+            from datetime import datetime
+            start = datetime.strptime(start_date, '%Y-%m-%d')
+            end = datetime.strptime(end_date, '%Y-%m-%d')
+            total_days = (end - start).days + 1
+            
+            if total_days <= 0:
+                flash('End date must be after start date', 'error')
+                return redirect(url_for('employee.leave'))
+            
             # Insert leave request
             cur.execute("""
-                INSERT INTO leaves (employee_id, leave_type, start_date, end_date, reason, status)
-                VALUES (%s, %s, %s, %s, %s, 'pending')
-            """, (employee_id, leave_type, start_date, end_date, reason))
+                INSERT INTO leaves (employee_id, leave_type, start_date, end_date, total_days, reason, status)
+                VALUES (%s, %s, %s, %s, %s, %s, 'pending')
+            """, (employee_id, leave_type, start_date, end_date, total_days, reason))
             db.commit()
             flash('Leave request submitted successfully', 'success')
         else:
@@ -476,7 +487,7 @@ def leave():
     # If no balance record exists, create one with default values
     if not balance:
         cur.execute("""
-            INSERT INTO leave_balance (employee_id, casual_leave, sick_leave, vacation_leave, emergency_leave)
+            INSERT INTO leave_balance (employee_id, casual_leave, sick_leave, personal_leave, emergency_leave)
             VALUES (%s, 12, 12, 15, 10)
         """, (employee_id,))
         db.commit()
@@ -490,7 +501,7 @@ def leave():
         balance = {
             'casual_leave': 12,
             'sick_leave': 12,
-            'vacation_leave': 15,
+            'personal_leave': 15,
             'emergency_leave': 10
         }
 
@@ -502,7 +513,7 @@ def leave():
 # CANCEL LEAVE REQUEST
 # ================================
 @bp.route('/cancel-leave/<int:leave_id>', methods=['POST'])
-@csrf.exempt
+@login_required
 def cancel_leave(leave_id):
     db = get_db()
     cur = db.cursor(dictionary=True)
@@ -704,7 +715,7 @@ def face_request():
 
 
 @bp.route('/submit_face_request', methods=['POST'])
-@csrf.exempt
+@login_required
 def submit_face_request():
     try:
         # Require logged-in employee
@@ -787,7 +798,7 @@ FaceTrack Team
 
 
 @bp.route('/cancel_face_request', methods=['POST'])
-@csrf.exempt
+@login_required
 def cancel_face_request():
     try:
         # Check authentication

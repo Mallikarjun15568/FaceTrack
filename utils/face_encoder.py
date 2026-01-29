@@ -186,8 +186,8 @@ class FaceEncoder:
                     if face_width < min_face_size or face_height < min_face_size:
                         issues.append(f"Face too small ({face_width}x{face_height})")
                         quality_score -= 20
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.exception("Error processing bbox in quality check: %s", e)
 
             # 6. Pose check if available
             pose = getattr(face, 'pose', None)
@@ -198,8 +198,8 @@ class FaceEncoder:
                     if abs(pitch) > 30 or abs(yaw) > 30:
                         issues.append("Face not front-facing")
                         quality_score -= 15
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.exception("Error processing pose in quality check: %s", e)
 
             # 7. Landmarks visibility
             landmarks = getattr(face, 'landmark_2d_106', None)

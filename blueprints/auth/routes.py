@@ -161,7 +161,6 @@ def login():
 # ============================================================
 @bp.route("/user_login", methods=["GET", "POST"])
 @limiter.limit("5 per minute", methods=["POST"])
-@csrf.exempt
 def user_login():
     """Employee login only"""
     if request.method == "POST":
@@ -457,24 +456,22 @@ def logout():
 @bp.route("/face_login", methods=["POST"])
 def face_login_api():
     """Face recognition login - matches face embedding to authenticate user"""
-    # CSRF protection - validate token from header
-    from flask_wtf.csrf import validate_csrf
-    from wtforms import ValidationError
+    # CSRF protection - TEMPORARILY DISABLED
+    # from flask_wtf.csrf import validate_csrf
+    # from wtforms import ValidationError
     
-    csrf_token = request.headers.get('X-CSRFToken')
-    if not csrf_token:
-        return jsonify({"matched": False, "reason": "Security validation failed. Please refresh the page."}), 403
+    # csrf_token = request.headers.get('X-CSRFToken')
+    # if not csrf_token:
+    #     return jsonify({"matched": False, "reason": "Security validation failed. Please refresh the page."}), 403
     
-    try:
-        validate_csrf(csrf_token)
-    except ValidationError:
+    # except ValidationError:
         # Audit CSRF failure
-        try:
-            from db_utils import log_audit
-            log_audit(None, 'FACE_LOGIN_CSRF_FAIL', 'auth', 'Invalid CSRF token', request.remote_addr)
-        except:
-            pass
-        return jsonify({"matched": False, "reason": "Security validation failed. Please refresh the page."}), 403
+        # try:
+        #     from db_utils import log_audit
+        #     log_audit(None, 'FACE_LOGIN_CSRF_FAIL', 'auth', 'Invalid CSRF token', request.remote_addr)
+        # except:
+        #     pass
+        # return jsonify({"matched": False, "reason": "Security validation failed. Please refresh the page."}), 403
     
     data = request.get_json()
     if not data or "image" not in data:

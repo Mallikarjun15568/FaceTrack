@@ -12,7 +12,7 @@
 
     <h2 class="text-xl font-semibold mb-4">Add New Employee</h2>
 
-    <form id="addEmployeeForm" action="/employees/add" method="POST" enctype="multipart/form-data">
+    <form id="addEmployeeForm" action="/admin/employees/add" method="POST" enctype="multipart/form-data">
 
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 

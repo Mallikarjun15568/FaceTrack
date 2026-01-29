@@ -73,7 +73,6 @@ def update_enroll_page(employee_id):
 @bp.route("/capture", methods=["POST"])
 @login_required
 @role_required("admin", "hr")
-@csrf.exempt
 def capture_face():
 
     try:
@@ -109,16 +108,18 @@ def capture_face():
             # If quality check fails unexpectedly, remove temp and return error
             try:
                 os.remove(temp_path)
-            except Exception:
-                pass
+            except Exception as ee:
+                from utils.logger import logger
+                logger.exception("Failed to remove temp file after quality-check failure: %s", ee)
             return jsonify({"status": "error", "message": "Quality check failed"}), 500
 
         if not is_valid:
             # Cleanup and return issues
             try:
                 os.remove(temp_path)
-            except Exception:
-                pass
+            except Exception as ee:
+                from utils.logger import logger
+                logger.exception("Failed to remove temp file after quality failed: %s", ee)
 
             feedback = face_encoder.get_quality_feedback(issues)
             return jsonify({
@@ -246,7 +247,6 @@ def capture_face():
 @bp.route("/update_capture", methods=["POST"])
 @login_required
 @role_required("admin", "hr")
-@csrf.exempt
 def update_capture_face():
     try:
         data = request.get_json()
@@ -395,6 +395,7 @@ def enroll_home():
         SELECT 
             e.id,
             e.full_name,
+            e.photo,
             d.name AS department,
 
             CASE 

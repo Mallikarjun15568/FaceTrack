@@ -94,8 +94,8 @@ def close_db(error=None):
     if db is not None:
         try:
             db.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.exception("Error closing DB connection: %s", e)
 
 
 # -------------------------------------------

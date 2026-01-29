@@ -52,7 +52,7 @@ def save_snapshot(img, app, filename):
             if not bool(app_override):
                 return None
         except Exception:
-            pass
+            logger.exception("Error parsing SAVE_SNAPSHOTS app override: %s", app_override)
 
     if not SAVE_SNAPSHOTS:
         return None  # 🔕 demo mode: no snapshots at all

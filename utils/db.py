@@ -159,8 +159,8 @@ def execute_fetchall(query, params=None, dict_result=True):
             cursor.close()
         try:
             conn.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.exception("Error closing DB connection in execute_fetchall: %s", e)
 
 
 # -------------------------

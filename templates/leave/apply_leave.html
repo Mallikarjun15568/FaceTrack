@@ -58,11 +58,11 @@
                         <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-2">
                             <i class="fas fa-plane text-green-600 text-sm"></i>
                         </div>
-                        <p class="text-2xl font-bold text-green-600">{{ balance.vacation_leave }}</p>
+                        <p class="text-2xl font-bold text-green-600">{{ balance.personal_leave }}</p>
                     </div>
                     <p class="text-xs text-gray-600 font-medium">Vacation Leave</p>
                     <div class="w-full bg-green-200 rounded-full h-2 mt-2">
-                        <div class="bg-green-600 h-2 rounded-full" style="width: {{ (balance.vacation_leave / 15 * 100) if balance.vacation_leave <= 15 else 100 }}%"></div>
+                        <div class="bg-green-600 h-2 rounded-full" style="width: {{ (balance.personal_leave / 15 * 100) if balance.personal_leave <= 15 else 100 }}%"></div>
                     </div>
                 </div>
                 <div class="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
@@ -148,7 +148,7 @@
                                 </div>
                             </label>
                         </div>
-                        <div class="leave-type-option" data-type="Vacation Leave" data-balance="{{ balance.vacation_leave }}">
+                        <div class="leave-type-option" data-type="Personal Leave" data-balance="{{ balance.personal_leave }}">
                             <input type="radio" name="leave_type" value="Vacation Leave" id="vacation" required class="hidden">
                             <label for="vacation" class="block p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-green-300 transition-all leave-type-label">
                                 <div class="flex items-center justify-between">
@@ -162,7 +162,7 @@
                                         </div>
                                     </div>
                                     <div class="text-right">
-                                        <div class="text-lg font-bold text-green-600">{{ balance.vacation_leave }}</div>
+                                        <div class="text-lg font-bold text-green-600">{{ balance.personal_leave }}</div>
                                         <div class="text-xs text-gray-500">available</div>
                                     </div>
                                 </div>

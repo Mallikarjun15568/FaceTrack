@@ -149,12 +149,13 @@
             <td class="px-6 py-4">
               <div class="flex items-center gap-4">
                 <div class="relative">
-                  {% set emp_photo = emp.photo %}
-                  {% if emp_photo and not emp_photo.startswith('/') %}
-                    {% set emp_photo = '/' ~ emp_photo %}
+                  {% if emp.photo %}
+                    {% set emp_photo_url = url_for('static', filename=emp.photo) %}
+                  {% else %}
+                    {% set emp_photo_url = url_for('static', filename='images/default-avatar.png') %}
                   {% endif %}
                   <img class="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
-                       src="{{ emp_photo if emp_photo else url_for('static', filename='images/default-avatar.png') }}"
+                       src="{{ emp_photo_url }}"
                        alt="{{ emp.full_name }}"
                        data-fallback="{{ url_for('static', filename='images/default-avatar.png') }}"
                        onerror="this.src = this.dataset.fallback">

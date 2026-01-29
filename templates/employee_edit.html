@@ -4,7 +4,7 @@
 <div class="p-6 space-y-6">
 
     <!-- Back Button -->
-    <a href="/employees" class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors">
+    <a href="/admin/employees/" class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors">
         <i class="fas fa-arrow-left mr-2"></i>Back to Employees
     </a>
 
@@ -21,7 +21,7 @@
     <!-- Edit Form -->
     <div class="premium-card p-8 max-w-2xl scroll-reveal" style="--delay: 0.1s">
 
-        <form action="/employees/edit/{{ emp.id }}" 
+        <form action="/admin/employees/edit/{{ emp.id }}" 
               method="POST" 
               enctype="multipart/form-data"
               class="space-y-6">
@@ -141,7 +141,7 @@
                         class="btn-premium btn-premium-primary flex-1">
                     <i class="fas fa-save mr-2"></i>Save Changes
                 </button>
-                <a href="/employees" 
+                <a href="/admin/employees/" 
                    class="btn-premium btn-premium-outline flex-1 text-center">
                     <i class="fas fa-times mr-2"></i>Cancel
                 </a>
