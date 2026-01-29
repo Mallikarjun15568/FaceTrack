@@ -45,22 +45,38 @@ def index():
 
     # Get current user's leave balance if they have employee_id
     balance = None
+    selected_employee = None
     employee_id = session.get('employee_id')
-    if employee_id:
-        balance = fetchone("""
-            SELECT * FROM leave_balance WHERE employee_id = %s
-        """, (employee_id,))
-    # For admins without employee_id, check if they have an employee record
-    elif session.get('role') in ['admin', 'hr']:
-        user_id = session.get('user_id')
-        if user_id:
-            emp = fetchone("SELECT id FROM employees WHERE user_id = %s", (user_id,))
-            if emp:
+    
+    # For admins, allow selecting which employee's balance to view
+    if session.get('role') in ['admin', 'hr']:
+        selected_emp_id = request.args.get('employee_id', type=int)
+        if selected_emp_id:
+            # Verify the selected employee exists
+            selected_employee = fetchone("SELECT id, full_name FROM employees WHERE id = %s", (selected_emp_id,))
+            if selected_employee:
                 balance = fetchone("""
                     SELECT * FROM leave_balance WHERE employee_id = %s
-                """, (emp['id'],))
+                """, (selected_emp_id,))
+        else:
+            # For admins without selection, check if they have an employee record
+            user_id = session.get('user_id')
+            if user_id:
+                emp = fetchone("SELECT id, full_name FROM employees WHERE user_id = %s", (user_id,))
+                if emp:
+                    balance = fetchone("""
+                        SELECT * FROM leave_balance WHERE employee_id = %s
+                    """, (emp['id'],))
+                    selected_employee = emp
+    else:
+        # For regular employees, show their own balance
+        if employee_id:
+            balance = fetchone("""
+                SELECT * FROM leave_balance WHERE employee_id = %s
+            """, (employee_id,))
+            selected_employee = fetchone("SELECT id, full_name FROM employees WHERE id = %s", (employee_id,))
 
-    return render_template('leave/leave_list.html', leaves=leaves, employees=employees, balance=balance, employee_view=False, role=session.get('role'))
+    return render_template('leave/leave_list.html', leaves=leaves, employees=employees, balance=balance, selected_employee=selected_employee, employee_view=False, role=session.get('role'))
 
 
 # ==================== ADMIN: LEAVE BALANCE ADJUSTMENT ====================
@@ -123,7 +139,14 @@ def adjust_balance():
 @leave_bp.route('/apply', methods=['GET', 'POST'])
 @login_required
 def apply():
-    employee_id = session.get('employee_id')
+    employee_id = request.args.get('employee_id', type=int)
+    if not employee_id:
+        employee_id = session.get('employee_id')
+    
+    # Security check: only admin/hr can apply for others
+    if session.get('role') not in ['admin', 'hr'] and employee_id != session.get('employee_id'):
+        flash('Access denied', 'error')
+        return redirect(url_for('leave.index'))
 
     if request.method == 'POST':
         leave_type = request.form.get('leave_type')
@@ -179,11 +202,17 @@ def apply():
         flash("Leave balance not found. Contact admin.", "error")
         return redirect(url_for("leave.index"))
 
+    employee = fetchone("SELECT full_name FROM employees WHERE id = %s", (employee_id,))
+    if not employee:
+        flash('Employee not found', 'error')
+        return redirect(url_for('leave.index'))
+    employee_name = employee['full_name']
+
     # Get today's date for date input min attribute
     from datetime import date
     today = date.today().strftime('%Y-%m-%d')
 
-    return render_template('leave/apply_leave.html', balance=balance, today=today)
+    return render_template('leave/apply_leave.html', balance=balance, today=today, employee_name=employee_name)
 
 
 @leave_bp.route('/cancel/<int:leave_id>', methods=['POST'])
