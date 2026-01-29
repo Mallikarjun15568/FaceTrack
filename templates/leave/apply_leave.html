@@ -70,11 +70,11 @@
                         <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-2">
                             <i class="fas fa-home text-purple-600 text-sm"></i>
                         </div>
-                        <p class="text-2xl font-bold text-purple-600">{{ balance.work_from_home }}</p>
+                        <p class="text-2xl font-bold text-purple-600">{{ balance.emergency_leave }}</p>
                     </div>
                     <p class="text-xs text-gray-600 font-medium">Work From Home</p>
                     <div class="w-full bg-purple-200 rounded-full h-2 mt-2">
-                        <div class="bg-purple-600 h-2 rounded-full" style="width: {{ (balance.work_from_home / 10 * 100) if balance.work_from_home <= 10 else 100 }}%"></div>
+                        <div class="bg-purple-600 h-2 rounded-full" style="width: {{ (balance.emergency_leave / 10 * 100) if balance.emergency_leave <= 10 else 100 }}%"></div>
                     </div>
                 </div>
             </div>
@@ -168,7 +168,7 @@
                                 </div>
                             </label>
                         </div>
-                        <div class="leave-type-option" data-type="Work From Home" data-balance="{{ balance.work_from_home }}">
+                        <div class="leave-type-option" data-type="Emergency Leave" data-balance="{{ balance.emergency_leave }}">
                             <input type="radio" name="leave_type" value="Work From Home" id="wfh" required class="hidden">
                             <label for="wfh" class="block p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-purple-300 transition-all leave-type-label">
                                 <div class="flex items-center justify-between">
@@ -182,7 +182,7 @@
                                         </div>
                                     </div>
                                     <div class="text-right">
-                                        <div class="text-lg font-bold text-purple-600">{{ balance.work_from_home }}</div>
+                                        <div class="text-lg font-bold text-purple-600">{{ balance.emergency_leave }}</div>
                                         <div class="text-xs text-gray-500">available</div>
                                     </div>
                                 </div>

@@ -31,12 +31,34 @@ let isCaptured = false; // 🔒 GLOBAL STATE for capture lock
 let detectSessionId = 0; // 🔒 SESSION GUARD
 let isProcessing = false; // 🚨 COOLDOWN FLAG
 
+// 🎯 FACE STABILITY & QUALITY GATES
+let stabilityStartTime = null;
+const STABILITY_THRESHOLD_MS = 800; // 800ms stability required
+let lastFaceCount = 0;
+let stabilityResetTimeout = null;
+
+// 🎯 STABILITY TIMER FUNCTIONS
+function resetStabilityTimer() {
+    stabilityStartTime = null;
+    if (stabilityResetTimeout) {
+        clearTimeout(stabilityResetTimeout);
+        stabilityResetTimeout = null;
+    }
+}
+
+function startStabilityTimer() {
+    if (!stabilityStartTime) {
+        stabilityStartTime = Date.now();
+    }
+}
+
 // CSRF helper for AJAX
 function getCSRFToken() {
     return document.querySelector('meta[name="csrf-token"]')?.content;
 }
 
-// PURE UI FUNCTION
+// PURE UI FUNCTION - DISABLED for clean UX (no face boxes)
+/*
 function drawDetectionBox(color = "#ef4444") {
     if (!video || !faceCanvas) return;
     const rect = video.getBoundingClientRect();
@@ -52,6 +74,17 @@ function drawDetectionBox(color = "#ef4444") {
     ctx.shadowColor = color;
     ctx.shadowBlur = 8;
     ctx.strokeRect(x, y, size, size);
+}
+*/
+function drawDetectionBox(color = "#ef4444") {
+    // Disabled for clean UX - no face detection boxes
+    if (!video || !faceCanvas) return;
+    const rect = video.getBoundingClientRect();
+    faceCanvas.width = rect.width;
+    faceCanvas.height = rect.height;
+    const ctx = faceCanvas.getContext("2d");
+    ctx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
+    // No box drawing - clean interface
 }
 
 // Start Camera
@@ -98,6 +131,8 @@ function stopCamera() {
     detectSessionId++;   // 🔥 INVALIDATE OLD REQUESTS
     isCaptured = false; // Camera stopped, not photo captured
     faceDetected = false;
+    isProcessing = false; // 🚨 RESET COOLDOWN
+    resetStabilityTimer(); // 🎯 RESET STABILITY TIMER
     if (detectInterval) {
         clearInterval(detectInterval);
         detectInterval = null;
@@ -155,36 +190,62 @@ startCameraBtn.addEventListener("click", startCamera);
 stopCameraBtn.addEventListener("click", stopCamera);
 
 captureBtn.onclick = () => {
-    if (!currentStream || !faceDetected) return;
+    if (!currentStream || !faceDetected || isProcessing) return;
 
-    isCaptured = true; // 🔒 LOCK UI STATE
+    // 🎯 STEP 1: Lock UI and show "Hold still" message
+    isProcessing = true; // 🚨 COOLDOWN FLAG
+    captureBtn.disabled = true;
+    captureBtn.textContent = "Hold still...";
+    captureBtn.classList.add("opacity-75", "cursor-not-allowed");
 
-    if (detectInterval) {
-        clearInterval(detectInterval);
-        detectInterval = null;
-    }
+    showGuidance("Capturing... Hold still!");
 
-    faceDetected = false;
-    let canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d").drawImage(video, 0, 0);
-    lastImage = canvas.toDataURL("image/jpeg");
-    previewImg.src = lastImage;
-    previewImg.classList.remove("hidden");
-    actionBtns.classList.remove("hidden");
-    saveBtn.classList.remove("hidden");
-    retakeBtn.classList.remove("hidden");
-    captureBtn.classList.add("hidden");
-    guidanceText.classList.add("hidden");
-    stopCameraBtn.classList.add("hidden");
-    startCameraBtn.classList.add("hidden");
-    if (currentStream) {
-        currentStream.getTracks().forEach(t => t.stop());
-        video.srcObject = null;
-        currentStream = null;
-    }
-    video.classList.add("hidden");
+    // 🎯 STEP 2: Wait 300ms for autofocus/settling
+    setTimeout(() => {
+        if (!currentStream) return; // Safety check
+
+        // 🎯 STEP 3: Stop detection and capture
+        if (detectInterval) {
+            clearInterval(detectInterval);
+            detectInterval = null;
+        }
+
+        faceDetected = false;
+        isCaptured = true; // 🔒 LOCK UI STATE
+
+        // 🎯 STEP 4: Create capture canvas (use video dimensions for quality)
+        let canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+        lastImage = canvas.toDataURL("image/jpeg", 0.95); // High quality
+
+        // 🎯 STEP 5: Show preview and hide camera
+        previewImg.src = lastImage;
+        previewImg.classList.remove("hidden");
+        actionBtns.classList.remove("hidden");
+        saveBtn.classList.remove("hidden");
+        retakeBtn.classList.remove("hidden");
+        captureBtn.classList.add("hidden");
+        guidanceText.classList.add("hidden");
+        stopCameraBtn.classList.add("hidden");
+        startCameraBtn.classList.add("hidden");
+
+        // Stop camera stream
+        if (currentStream) {
+            currentStream.getTracks().forEach(t => t.stop());
+            video.srcObject = null;
+            currentStream = null;
+        }
+        video.classList.add("hidden");
+
+        // 🎯 STEP 6: Reset stability for next capture
+        resetStabilityTimer();
+
+        console.log("✅ Face captured successfully with stability gates");
+
+    }, 300); // 300ms delay for settling
+};
     faceCanvas.classList.add("hidden");
     cameraInactiveBox.classList.add("hidden");
 };
@@ -276,13 +337,13 @@ saveBtn.onclick = async () => {
     retakeBtn.classList.add("hidden");
 };
 
-// Face Detection
+// Face Detection with Stability & Quality Gates
 async function detectFaceOnce() {
     const sessionAtStart = detectSessionId;
     if (isCaptured || !detectInterval) return;
     if (!currentStream || !video.videoWidth) {
         guidanceText.classList.add("hidden");
-        captureBtn.classList.add("hidden"); // Ensure button is hidden when no stream
+        captureBtn.classList.add("hidden");
         return;
     }
 
@@ -292,7 +353,7 @@ async function detectFaceOnce() {
     canvas.getContext("2d").drawImage(video, 0, 0);
 
     try {
-        const { face_count } = await (await fetch("/enroll/detect_face", {
+        const { face_count, distance, lighting } = await (await fetch("/auth/detect_face", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -308,30 +369,80 @@ async function detectFaceOnce() {
         let message = "";
         let allowCapture = false;
 
+        // 🎯 STEP 1: Basic Face Detection
         if (face_count === 0) {
             // 🔴 STATE-1: No Face
             borderColor = "#ef4444"; // Red
             message = "No face detected";
             allowCapture = false;
+            resetStabilityTimer(); // Reset stability on no face
         } else if (face_count > 1) {
             // 🟠 STATE-2: Multiple Faces
             borderColor = "#f97316"; // Orange
             message = "Multiple faces detected. Only one person allowed";
             allowCapture = false;
+            resetStabilityTimer(); // Reset stability on multiple faces
         } else if (face_count === 1) {
-            // 🟢 STATE-3: Exactly One Face
-            borderColor = "#10b981"; // Green
-            message = "Face detected – hold still & capture";
-            allowCapture = true;
+            // 🎯 STEP 2: Single Face Detected - Now Check Quality Gates
+
+            // Distance Check
+            if (distance === "far") {
+                borderColor = "#f59e0b"; // Yellow
+                message = "Move closer to camera";
+                allowCapture = false;
+                resetStabilityTimer();
+            } else if (distance === "close") {
+                borderColor = "#f59e0b"; // Yellow
+                message = "Move back from camera";
+                allowCapture = false;
+                resetStabilityTimer();
+            }
+            // Lighting Check
+            else if (lighting === "dark") {
+                borderColor = "#f59e0b"; // Yellow
+                message = "Lighting too dark - find better light";
+                allowCapture = false;
+                resetStabilityTimer();
+            } else if (lighting === "bright") {
+                borderColor = "#f59e0b"; // Yellow
+                message = "Lighting too bright - reduce glare";
+                allowCapture = false;
+                resetStabilityTimer();
+            }
+            // 🎯 STEP 3: All Quality Gates Passed - Check Stability
+            else {
+                // Start/Continue stability timer
+                if (!stabilityStartTime) {
+                    stabilityStartTime = Date.now();
+                    message = "Face detected - hold still...";
+                    borderColor = "#3b82f6"; // Blue - stabilizing
+                    allowCapture = false;
+                } else {
+                    const stableDuration = Date.now() - stabilityStartTime;
+
+                    if (stableDuration < STABILITY_THRESHOLD_MS) {
+                        // Still stabilizing
+                        const progress = Math.round((stableDuration / STABILITY_THRESHOLD_MS) * 100);
+                        message = `Hold still... ${progress}%`;
+                        borderColor = "#3b82f6"; // Blue - stabilizing
+                        allowCapture = false;
+                    } else {
+                        // 🎯 STEP 4: Fully Stable - Ready for Capture
+                        message = "Perfect! Click capture";
+                        borderColor = "#10b981"; // Green - ready
+                        allowCapture = true;
+                    }
+                }
+            }
         }
 
         faceDetected = allowCapture;
         drawDetectionBox(borderColor);
-        
+
         // Update UI based on detection state
         guidanceText.textContent = message;
         guidanceText.classList.remove("hidden");
-        
+
         // Always hide button first, then show only if capture is allowed
         captureBtn.classList.add("hidden");
         if (!isCaptured && allowCapture) {
@@ -344,5 +455,6 @@ async function detectFaceOnce() {
         if (sessionAtStart !== detectSessionId) return;
         captureBtn.classList.add("hidden");
         guidanceText.textContent = "Detection error";
+        resetStabilityTimer();
     }
 }

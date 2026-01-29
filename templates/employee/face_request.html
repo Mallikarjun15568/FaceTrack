@@ -78,41 +78,36 @@
         transform: translateY(0);
       }
     }
-    /* Ensure fixed header height is accounted for so page content isn't overlapped */
-    :root { --header-height: 5rem; }
-    header { height: var(--header-height); }
-    /* Add slightly more padding to account for shadows/margins */
-    body { padding-top: calc(var(--header-height) + 0.5rem); }
+    /* Header uses internal h-16; page layout handles top spacing */
   </style>
 </head>
-<body class="m-0 admin-bg min-h-screen">
+<body class="m-0 bg-soft-mist min-h-screen">
 
   <!-- Premium Header -->
-    <header class="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-lg">
+    <header class="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-100 shadow-sm">
       <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <!-- Logo and Brand -->
-        <div class="flex items-center gap-4">
-          <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
-            <i class="fas fa-user-check text-white text-lg"></i>
-          </div>
-          <h1 class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">FaceTrack Pro</h1>
+        <!-- Logo only (compact) -->
+        <div class="flex items-center gap-2">
+          <a href="/" class="block">
+            <img src="{{ url_for('static', filename='images/FaceTrack_logo.png') }}" alt="FaceTrack Logo" class="h-16 w-auto">
+          </a>
         </div>
 
         <!-- Navigation Menu -->
         <nav class="flex items-center gap-6">
-          <a href="{{ url_for('employee.dashboard') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.dashboard' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+          <a href="{{ url_for('employee.dashboard') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.dashboard' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
             <i class="fas fa-home mr-2"></i>Dashboard
           </a>
-          <a href="{{ url_for('employee.attendance') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.attendance' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+          <a href="{{ url_for('employee.attendance') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.attendance' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
             <i class="fas fa-clipboard-list mr-2"></i>Attendance
           </a>
-          <a href="{{ url_for('employee.face_request') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.face_request' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+          <a href="{{ url_for('employee.face_request') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.face_request' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
             <i class="fas fa-camera mr-2"></i>Face Request
           </a>
-          <a href="{{ url_for('employee.leave') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.leave' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+          <a href="{{ url_for('employee.leave') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.leave' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
             <i class="fas fa-calendar-plus mr-2"></i>Leave
           </a>
-          <a href="{{ url_for('employee.summary') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.summary' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+          <a href="{{ url_for('employee.summary') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.summary' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
             <i class="fas fa-chart-bar mr-2"></i>Summary
           </a>
         </nav>
@@ -129,7 +124,10 @@
           <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-md py-2 z-50">
             <a href="{{ url_for('employee.profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-user mr-2"></i>Profile</a>
             <a href="{{ url_for('employee.settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-cog mr-2"></i>Settings</a>
-            <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+            <form action="{{ url_for('auth.logout') }}" method="post" style="display: inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
+            </form>
           </div>
         </div>
       </div>
@@ -203,7 +201,7 @@
       </div>
 
       <!-- Face Request Form -->
-      {% if not pending_request %}
+      {% if not pending_request or pending_request.status == 'rejected' %}
       <div id="faceRequestSection" class="premium-card p-6 scroll-reveal">
         <h3 class="text-lg font-semibold text-gray-900 mb-6">Request Face Enrollment/Update</h3>
         <div class="space-y-6">
@@ -339,6 +337,27 @@
     let isProcessing = false; // Cooldown flag
     let requestType = '';
 
+    // 🎯 FACE STABILITY & QUALITY GATES
+    let stabilityStartTime = null;
+    const STABILITY_THRESHOLD_MS = 800; // 800ms stability required
+    let lastFaceCount = 0;
+    let stabilityResetTimeout = null;
+
+    // 🎯 STABILITY TIMER FUNCTIONS
+    function resetStabilityTimer() {
+        stabilityStartTime = null;
+        if (stabilityResetTimeout) {
+            clearTimeout(stabilityResetTimeout);
+            stabilityResetTimeout = null;
+        }
+    }
+
+    function startStabilityTimer() {
+        if (!stabilityStartTime) {
+            stabilityStartTime = Date.now();
+        }
+    }
+
     // =====================
     // UTILITY FUNCTIONS
     // =====================
@@ -346,6 +365,30 @@
         return document.querySelector('meta[name="csrf-token"]')?.content;
     }
 
+    function showGuidance(message) {
+        if (guidanceText) {
+            guidanceText.textContent = message;
+            guidanceText.classList.remove("hidden");
+        }
+    }
+
+    function drawDetectionBox(color = "#ef4444") {
+        // Disabled for clean UX - no face detection boxes
+        if (!video || !faceCanvas) return;
+
+        const rect = video.getBoundingClientRect();
+        faceCanvas.width = rect.width;
+        faceCanvas.height = rect.height;
+
+        const ctx = faceCanvas.getContext("2d");
+        ctx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
+
+        // No box drawing - clean interface
+    }
+
+    // =====================
+    // OLD drawDetectionBox function - DISABLED for clean UX
+    /*
     function drawDetectionBox(color = "#ef4444") {
         if (!video || !faceCanvas) return;
 
@@ -367,15 +410,18 @@
 
         ctx.strokeRect(x, y, size, size);
     }
+    */
 
     // =====================
-    // FACE DETECTION
+    // FACE DETECTION WITH STABILITY & QUALITY GATES
     // =====================
+    let isSendingRequest = false; // 🚨 GUARD AGAINST OVERLAPPING REQUESTS
+
     async function detectFaceOnce() {
         const sessionAtStart = detectSessionId;
-        if (!currentStream || !video.videoWidth) {
-            guidanceText.classList.add("hidden");
-            captureBtn.classList.add("hidden");
+        if (!currentStream || !video.videoWidth || isSendingRequest) {
+            guidanceText?.classList.add("hidden");
+            captureBtn?.classList.add("hidden");
             return;
         }
 
@@ -384,54 +430,131 @@
         canvas.height = video.videoHeight;
         canvas.getContext("2d").drawImage(video, 0, 0);
 
+        isSendingRequest = true; // 🚨 SET GUARD
+
         try {
-            const res = await fetch("/enroll/detect_face", {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            
+            const res = await fetch("/auth/detect_face", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRFToken": getCSRFToken()
                 },
-                body: JSON.stringify({ image: canvas.toDataURL("image/jpeg") })
+                body: JSON.stringify({ image: canvas.toDataURL("image/jpeg") }),
+                signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
 
             if (sessionAtStart !== detectSessionId) return;
 
-            const { face_detected, face_count } = await res.json();
+            const { face_count, distance, lighting } = await res.json();
 
             let borderColor = "#ef4444";
             let message = "";
             let allowCapture = false;
 
+            // 🎯 STEP 1: Basic Face Detection
             if (face_count === 0) {
+                // 🔴 STATE-1: No Face
                 borderColor = "#ef4444";
                 message = "No face detected";
                 allowCapture = false;
+                resetStabilityTimer(); // Reset stability on no face
             } else if (face_count > 1) {
+                // 🟠 STATE-2: Multiple Faces
                 borderColor = "#f97316";
                 message = "Multiple faces detected. Only one person allowed";
                 allowCapture = false;
+                resetStabilityTimer(); // Reset stability on multiple faces
             } else if (face_count === 1) {
-                borderColor = "#10b981";
-                message = "Face detected – hold still & capture";
-                allowCapture = true;
+                // 🎯 STEP 2: Single Face Detected - Now Check Quality Gates
+
+                // Distance Check
+                if (distance === "far") {
+                    borderColor = "#f59e0b"; // Yellow
+                    message = "Move closer to camera";
+                    allowCapture = false;
+                    resetStabilityTimer();
+                } else if (distance === "close") {
+                    borderColor = "#f59e0b"; // Yellow
+                    message = "Move back from camera";
+                    allowCapture = false;
+                    resetStabilityTimer();
+                }
+                // Lighting Check
+                else if (lighting === "dark") {
+                    borderColor = "#f59e0b"; // Yellow
+                    message = "Lighting too dark - find better light";
+                    allowCapture = false;
+                    resetStabilityTimer();
+                } else if (lighting === "bright") {
+                    borderColor = "#f59e0b"; // Yellow
+                    message = "Lighting too bright - reduce glare";
+                    allowCapture = false;
+                    resetStabilityTimer();
+                }
+                // 🎯 STEP 3: All Quality Gates Passed - Check Stability
+                else {
+                    // Start/Continue stability timer
+                    if (!stabilityStartTime) {
+                        stabilityStartTime = Date.now();
+                        message = "Face detected - hold still...";
+                        borderColor = "#3b82f6"; // Blue - stabilizing
+                        allowCapture = false;
+                    } else {
+                        const stableDuration = Date.now() - stabilityStartTime;
+
+                        if (stableDuration < STABILITY_THRESHOLD_MS) {
+                            // Still stabilizing
+                            const progress = Math.round((stableDuration / STABILITY_THRESHOLD_MS) * 100);
+                            message = `Hold still... ${progress}%`;
+                            borderColor = "#3b82f6"; // Blue - stabilizing
+                            allowCapture = false;
+                        } else {
+                            // 🎯 STEP 4: Fully Stable - Ready for Capture
+                            message = "Perfect! Click capture";
+                            borderColor = "#10b981"; // Green - ready
+                            allowCapture = true;
+                        }
+                    }
+                }
             }
 
             faceDetected = allowCapture;
             drawDetectionBox(borderColor);
 
-            guidanceText.textContent = message;
-            guidanceText.classList.remove("hidden");
+            if (guidanceText) {
+                guidanceText.textContent = message;
+                guidanceText.classList.remove("hidden");
+            }
 
-            captureBtn.classList.add("hidden");
+            captureBtn?.classList.add("hidden");
             if (allowCapture) {
-                captureBtn.classList.remove("hidden");
+                captureBtn?.classList.remove("hidden");
             }
 
         } catch (err) {
             if (sessionAtStart !== detectSessionId) return;
-            captureBtn.classList.add("hidden");
-            guidanceText.classList.add("hidden");
+            captureBtn?.classList.add("hidden");
+            guidanceText?.classList.add("hidden");
             console.error("Face detection error:", err);
+            resetStabilityTimer();
+            
+            // 🚨 STOP LOOP ON FETCH ERRORS (including timeout)
+            if (detectInterval && (err.name === 'AbortError' || err.message.includes('fetch'))) {
+                clearInterval(detectInterval);
+                detectInterval = null;
+                console.warn("Face detection loop stopped due to connection errors");
+                if (guidanceText) {
+                    guidanceText.textContent = "Connection timeout - please refresh page";
+                    guidanceText.classList.remove("hidden");
+                }
+            }
+        } finally {
+            isSendingRequest = false; // 🚨 RESET GUARD
         }
     }
 
@@ -448,18 +571,18 @@
             .then(stream => {
                 currentStream = stream;
                 video.srcObject = stream;
-                cameraSection.classList.remove("hidden");
-                previewSection.classList.add("hidden");
-                loadingBox.classList.add("hidden");
-                faceCanvas.classList.remove("hidden");
-                guidanceText.classList.remove("hidden");
-                cameraControls.classList.remove("hidden");
-                startCameraBtn.classList.add("hidden");
-                stopCameraBtn.classList.remove("hidden");
-                captureBtn.classList.add("hidden");
+                cameraSection?.classList.remove("hidden");
+                previewSection?.classList.add("hidden");
+                loadingBox?.classList.add("hidden");
+                faceCanvas?.classList.remove("hidden");
+                guidanceText?.classList.remove("hidden");
+                cameraControls?.classList.remove("hidden");
+                startCameraBtn?.classList.add("hidden");
+                stopCameraBtn?.classList.remove("hidden");
+                captureBtn?.classList.add("hidden");
                 video.onloadeddata = () => drawDetectionBox("#ef4444");
                 if (detectInterval) clearInterval(detectInterval);
-                detectInterval = setInterval(detectFaceOnce, 600);
+                detectInterval = setInterval(detectFaceOnce, 800); // ⏰ INCREASED INTERVAL
             })
             .catch(err => {
                 alert('Camera access denied or not available. Please check permissions.');
@@ -469,6 +592,9 @@
 
     function stopCamera() {
         detectSessionId++;
+        isProcessing = false; // 🚨 RESET COOLDOWN
+        isSendingRequest = false; // 🚨 RESET REQUEST GUARD
+        resetStabilityTimer(); // 🎯 RESET STABILITY TIMER
         if (detectInterval) {
             clearInterval(detectInterval);
             detectInterval = null;
@@ -481,68 +607,143 @@
         currentStream = null;
         video.srcObject = null;
 
-        cameraSection.classList.add("hidden");
-        previewSection.classList.add("hidden");
-        loadingBox.classList.add("hidden");
-        faceCanvas.classList.add("hidden");
-        guidanceText.classList.add("hidden");
-        cameraControls.classList.remove("hidden");
-        startCameraBtn.classList.remove("hidden");
-        stopCameraBtn.classList.add("hidden");
-        captureBtn.classList.add("hidden");
+        cameraSection?.classList.add("hidden");
+        previewSection?.classList.add("hidden");
+        loadingBox?.classList.add("hidden");
+        faceCanvas?.classList.add("hidden");
+        guidanceText?.classList.add("hidden");
+        cameraControls?.classList.remove("hidden");
+        startCameraBtn?.classList.remove("hidden");
+        stopCameraBtn?.classList.add("hidden");
+        captureBtn?.classList.add("hidden");
     }
 
     // =====================
     // EVENT LISTENERS
     // =====================
-    enrollBtn?.addEventListener('click', () => startCamera('enroll'));
-    updateBtn?.addEventListener('click', () => startCamera('update'));
-    startCameraBtn?.addEventListener('click', () => startCamera(requestType || 'enroll'));
+    // Smoothly bring camera into view when starting enroll/update
+    function scrollToCamera() {
+      const cam = document.getElementById("cameraSection");
+      if (cam) {
+        cam.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+      }
+    }
+
+    enrollBtn?.addEventListener('click', () => {
+      startCamera('enroll');
+      setTimeout(scrollToCamera, 300);
+    });
+    updateBtn?.addEventListener('click', () => {
+      startCamera('update');
+      setTimeout(scrollToCamera, 300);
+    });
+    startCameraBtn?.addEventListener('click', () => {
+      startCamera(requestType || 'enroll');
+      setTimeout(scrollToCamera, 300);
+    });
     stopCameraBtn?.addEventListener('click', stopCamera);
 
     captureBtn?.addEventListener('click', () => {
-        detectSessionId++;
         if (!currentStream || !faceDetected) return;
 
-        if (detectInterval) {
-            clearInterval(detectInterval);
-            detectInterval = null;
+        if (!requestType) {
+            alert("Please choose Enroll or Update first");
+            return;
         }
 
-        faceDetected = false;
+        // 👇 FORCE SET (VERY IMPORTANT)
+        requestType = requestType || 'enroll';
 
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext("2d").drawImage(video, 0, 0);
-        lastCapturedImage = canvas.toDataURL("image/jpeg");
+        // 🎯 STEP 1: Lock UI and show "Hold still" message
+        detectSessionId++;
+        captureBtn.disabled = true;
+        captureBtn.innerHTML = '<i class="fas fa-camera mr-2"></i>Hold still...';
+        captureBtn.classList.add("opacity-75", "cursor-not-allowed");
 
-        if (currentStream) {
-            currentStream.getTracks().forEach(t => t.stop());
-            currentStream = null;
-            video.srcObject = null;
-        }
+        showGuidance("Capturing... Hold still!");
 
-        startCameraBtn.classList.add("hidden");
-        stopCameraBtn.classList.add("hidden");
-        captureBtn.classList.add("hidden");
-        guidanceText.classList.add("hidden");
-        cameraSection.classList.add("hidden");
-        faceCanvas.classList.add("hidden");
+        // 🎯 STEP 2: Wait 300ms for autofocus/settling
+        setTimeout(() => {
+            if (!currentStream) return; // Safety check
 
-        previewImg.src = lastCapturedImage;
-        previewSection.classList.remove("hidden");
-        cameraControls.classList.add("hidden");
+            // 🎯 STEP 3: Stop detection and prepare capture
+            if (detectInterval) {
+                clearInterval(detectInterval);
+                detectInterval = null;
+            }
+
+            faceDetected = false;
+
+            // 🎯 STEP 4: Create capture canvas (use video dimensions for quality)
+            const canvas = document.createElement("canvas");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext("2d").drawImage(video, 0, 0);
+            lastCapturedImage = canvas.toDataURL("image/jpeg", 0.95); // High quality
+
+            // Stop camera stream
+            if (currentStream) {
+                currentStream.getTracks().forEach(t => t.stop());
+                currentStream = null;
+                video.srcObject = null;
+            }
+
+            // 🎯 STEP 5: Update UI for preview
+            startCameraBtn?.classList.add("hidden");
+            stopCameraBtn?.classList.add("hidden");
+            captureBtn?.classList.add("hidden");
+            guidanceText?.classList.add("hidden");
+            cameraSection?.classList.add("hidden");
+            faceCanvas?.classList.add("hidden");
+
+            if (previewImg) previewImg.src = lastCapturedImage;
+            previewSection?.classList.remove("hidden");
+            cameraControls?.classList.add("hidden");
+
+            // 🎯 STEP 6: Reset stability for next capture
+            resetStabilityTimer();
+
+            console.log("✅ Face captured successfully with stability gates");
+
+        }, 300); // 300ms delay for settling
     });
 
     retakeBtn?.addEventListener('click', () => {
+        isProcessing = false;        // ✅ RESET
+        faceDetected = false;
         lastCapturedImage = null;
+        detectSessionId++;           // 🔥 kill old loops
+
+        // 👇 EXTRA SAFETY
+        if (!requestType) requestType = 'enroll';
+
+        if (guidanceText) guidanceText.textContent = "Position your face in the frame";
         previewSection.classList.add("hidden");
-        startCamera(requestType);
+      startCamera(requestType);
+      setTimeout(scrollToCamera, 300);
     });
 
     submitBtn?.addEventListener('click', async () => {
         if (!lastCapturedImage || isProcessing) return;
+
+        console.log({
+            isProcessing,
+            lastCapturedImage: !!lastCapturedImage,
+            requestType
+        });
+
+        if (!lastCapturedImage?.startsWith("data:image")) {
+            alert("Invalid image captured. Please retake.");
+            return;
+        }
+
+        if (!requestType) {
+            alert('Please select a request type (Enroll or Update) first.');
+            return;
+        }
 
         isProcessing = true;
         submitBtn.disabled = true;
@@ -569,6 +770,7 @@
             if (loadingBox) loadingBox.classList.add("hidden");
 
             if (data.status === "success") {
+                isProcessing = false; // ✅ RESET
                 alert(data.message || "Your request has been submitted for admin approval.");
                 location.reload();
             } else {
@@ -594,12 +796,12 @@
     // =====================
     // INITIALIZATION
     // =====================
-    cameraControls.classList.remove("hidden");
-    startCameraBtn.classList.remove("hidden");
-    stopCameraBtn.classList.add("hidden");
-    captureBtn.classList.add("hidden");
-    previewSection.classList.add("hidden");
-    loadingBox.classList.add("hidden");
+    cameraControls?.classList.remove("hidden");
+    startCameraBtn?.classList.remove("hidden");
+    stopCameraBtn?.classList.add("hidden");
+    captureBtn?.classList.add("hidden");
+    previewSection?.classList.add("hidden");
+    loadingBox?.classList.add("hidden");
     if (faceCanvas) faceCanvas.classList.add("hidden");
     if (guidanceText) guidanceText.classList.add("hidden");
 

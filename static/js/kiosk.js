@@ -26,6 +26,7 @@ const empStatus = document.getElementById("emp-status");
 const unknownCard = document.getElementById("unknown-card");
 const resultsPlaceholder = document.getElementById("resultsPlaceholder");
 const logsList = document.getElementById("logs-list");
+const scanningBar = document.getElementById("scanningBar");
 
 // Face detection UI elements
 const distanceMeter = document.getElementById("distanceMeter");
@@ -181,6 +182,61 @@ function setScanError() {
     setTimeout(() => {
         if (cameraRunning) setScanScanning();
     }, 2500);
+}
+
+// ===== UI STATE FUNCTIONS =====
+function setIdleState() {
+    setScanMessage("Look at the camera");
+    if (scanningBar) scanningBar.classList.remove("hidden");
+    // Clear canvas - no guide
+    const canvas = kioskFaceCanvas;
+    if (canvas) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
+function setFaceDetectedState() {
+    console.log("Face detected state triggered");
+    setScanMessage("Hold still…");
+    if (scanningBar) scanningBar.style.animationPlayState = "paused";
+    // No face outline - clean UX
+}
+
+function setProcessingState() {
+    setScanMessage("Processing…");
+    if (scanningBar) scanningBar.style.animationPlayState = "paused";
+    // Outline stays
+}
+
+function setSuccessState() {
+    setScanMessage("Attendance marked");
+    if (scanningBar) scanningBar.classList.add("hidden");
+    // Clear canvas
+    const canvas = kioskFaceCanvas;
+    if (canvas) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    // No outline - use existing confetti animation
+    setTimeout(() => {
+        setIdleState();
+    }, 2500); // Match existing timeout
+}
+
+function setFailState() {
+    setScanMessage("Face not clear, try again");
+    if (scanningBar) scanningBar.classList.add("hidden");
+    // Clear canvas
+    const canvas = kioskFaceCanvas;
+    if (canvas) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    // No outline - use existing shake animation
+    setTimeout(() => {
+        setIdleState();
+    }, 2500); // Match existing timeout
 }
 
 // ===== Confetti Animation =====
@@ -473,17 +529,8 @@ if (startBtn) {
                 kioskFaceCanvas.height = rect.height;
                 console.log('✅ Canvas initialized:', kioskFaceCanvas.width, 'x', kioskFaceCanvas.height);
 
-                // Draw static guide box once on camera start
-                try {
-                    drawKioskFaceBox();
-                } catch (e) { /* ignore */ }
-
-                // Show simple guidance when camera is on
-                if (guidanceText) {
-                    guidanceText.textContent = "Align your face inside the box";
-                    guidanceText.style.display = 'block';
-                    guidanceText.style.visibility = 'visible';
-                }
+                // Set idle state - canvas clear
+                setIdleState();
             }
 
             startBtn.classList.add("hidden");
@@ -826,7 +873,8 @@ function updateFaceDetection(detected, faceBox, confidence, canvas) {
     }
 }
 
-/* Draw face detection box on kiosk canvas */
+/* UNUSED: Draw face detection box on kiosk canvas - commented for clean UX */
+/*
 function drawKioskFaceBox() {
     const canvas = kioskFaceCanvas;
     const videoEl = video;
@@ -848,25 +896,9 @@ function drawKioskFaceBox() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // ALWAYS DRAW STATIC BOX (guide) while camera is ON
-    const boxSize = Math.min(canvas.width, canvas.height) * 0.6;
-    const x = (canvas.width - boxSize) / 2;
-    const y = (canvas.height - boxSize) / 2;
-
-    // Outer glow stroke
-    ctx.save();
-    ctx.strokeStyle = "#10b981";
-    ctx.lineWidth = 5;
-    ctx.shadowColor = "rgba(16,185,129,0.9)";
-    ctx.shadowBlur = 14;
-    ctx.strokeRect(x, y, boxSize, boxSize);
-    ctx.restore();
-
-    // Inner subtle stroke for definition
-    ctx.strokeStyle = "rgba(16,185,129,0.25)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x + 3, y + 3, boxSize - 6, boxSize - 6);
+    // No static guide - only draw outline when face detected
 }
+*/
 
 // =======================
 // RECOGNITION LOOP
@@ -905,6 +937,10 @@ async function sendFrame() {
         const hasFace = Boolean(data.face_detected);
         console.log('📦 Should draw box?', hasFace, '| face_detected=', data.face_detected);
 
+        if (hasFace) {
+            setFaceDetectedState();
+        }
+
         // Update face detection UI with feedback
         // Delegate draw/clear responsibility solely to updateFaceDetection()
         // Provide a dummy centered box when backend doesn't provide face_box
@@ -917,30 +953,20 @@ async function sendFrame() {
 
         // --- UI mapping for liveness WAIT messages ---
         if (data.status === "WAIT") {
+            setProcessingState();
             const msg = (data.message || "").toLowerCase();
-            setScanScanning();
 
             if (msg.includes("no face")) {
-                setScanIdle();
-                setScanMessage("Please face the camera");
+                setIdleState();
                 updateFaceDetection(false, null, 0, null);
             } else if (msg.includes("multiple")) {
-                setScanIdle();
-                setScanMessage("Only one person at a time");
+                setIdleState();
             } else if (msg.includes("analyzing")) {
-                setScanMessage("Hold still • Verifying liveness");
+                // Keep processing
             } else if (msg.includes("pass ratio")) {
-                const m = msg.match(/pass ratio:\s*([0-9.]+)/i);
-                const ratio = m ? parseFloat(m[1]) : 0;
-                if (ratio < 0.4) {
-                    setScanMessage("Please blink or move slightly");
-                } else if (ratio < 0.6) {
-                    setScanMessage("Almost there… Keep looking");
-                } else {
-                    setScanMessage("Verified! Marking attendance…");
-                }
+                // Keep processing
             } else {
-                setScanMessage("Verifying…");
+                // Keep processing
             }
 
             return; // stop recognition flow on liveness WAIT
@@ -950,8 +976,7 @@ async function sendFrame() {
             playBeep(600, 200);
             if (canSpeak("unknown")) speak("Face not recognized. Please try again");
             showUnknownCard();
-            setScanMessage("Face not recognized. Please try again");
-            setScanError();
+            setFailState();
             hardCooldownUntil = Date.now() + RECOGNITION_COOLDOWN_MS;
 
             // Clear detection UI (static box remains until camera stop)
@@ -967,6 +992,7 @@ async function sendFrame() {
         if (lightingMeter) lightingMeter.classList.add("hidden");
         if (guidanceText) guidanceText.style.display = "none";
 
+        setSuccessState();
         updateUI(data);
         hardCooldownUntil = Date.now() + RECOGNITION_COOLDOWN_MS;
 
@@ -1169,7 +1195,7 @@ if (pinVerify) {
                                 <i class="fas fa-check text-white text-3xl"></i>
                             </div>
                             <h3 class="text-2xl font-bold text-gray-900 mb-2">Kiosk Mode Exited</h3>
-                            <p class="text-gray-600 mb-4">Redirecting to dashboard...</p>
+                            <p class="text-gray-600 mb-4">Redirecting to home page...</p>
                             <div class="flex items-center justify-center gap-2">
                                 <div class="w-2 h-2 bg-indigo-600 rounded-full animate-pulse"></div>
                                 <div class="w-2 h-2 bg-indigo-600 rounded-full animate-pulse" style="animation-delay: 0.2s"></div>

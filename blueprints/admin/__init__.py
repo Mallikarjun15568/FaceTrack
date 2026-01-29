@@ -59,3 +59,14 @@ admin_bp.register_blueprint(dashboard_bp, url_prefix="/dashboard")
 
 from .settings import bp as settings_bp
 admin_bp.register_blueprint(settings_bp, url_prefix="/settings")
+
+
+# ------------------------------------------------------------------
+# Development-only helper: set an employee session (admin only)
+# Usage: POST /admin/test_set_employee_session { "emp_id": 123 }
+# Only enabled when APP_MODE != 'production'. This endpoint is temporary
+# and intended for automated integration testing. It requires an admin
+# session (blueprint-level `check_admin` already enforces that).
+# ------------------------------------------------------------------
+from flask import request, session, current_app, jsonify, abort
+from utils.db import get_db

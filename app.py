@@ -148,6 +148,19 @@ def index():
     # Not logged in → show public home page
     return render_template("home.html")
 
+
+# Debugging helper: log session keys and any pending flashes for troubleshooting
+@app.before_request
+def _log_session_and_flashes():
+    try:
+        # Avoid noisy logs for static assets
+        if request.path.startswith('/static'):
+            return
+        logger.info(f"[session] keys={list(session.keys())}")
+        logger.info(f"[_flashes]={session.get('_flashes')}")
+    except Exception:
+        pass
+
 @app.route("/about")
 def about():
     return render_template("about.html")
@@ -208,8 +221,8 @@ def help_page():
 
 @app.route("/favicon.ico", endpoint="favicon")
 def favicon():
-    # Serve only the static/favicon.ico file. This project relies solely on that file.
-    static_dir = os.path.join(app.root_path, "static")
+    # Serve only the static/images/favicon.ico file. This project relies solely on that file.
+    static_dir = os.path.join(app.root_path, "static", "images")
     favicon_path = os.path.join(static_dir, "favicon.ico")
     if os.path.exists(favicon_path):
         return send_from_directory(static_dir, "favicon.ico", mimetype="image/x-icon")
@@ -355,12 +368,20 @@ with app.app_context():
 # RUN SERVER
 # --------------------------
 if __name__ == "__main__":
-    logger.info("=" * 50)
-    logger.info("FaceTrack Application Starting...")
-    logger.info(f"Environment: {app.config.get('APP_MODE', 'development')}")
-    logger.info(f"Debug Mode: {app.config.get('DEBUG', False)}")
-    logger.info("=" * 50)
+    try:
+        logger.info("=" * 50)
+        logger.info("FaceTrack Application Starting...")
+        logger.info(f"Environment: {app.config.get('APP_MODE', 'development')}")
+        logger.info(f"Debug Mode: {app.config.get('DEBUG', False)}")
+        logger.info("=" * 50)
 
-    debug_mode = bool(app.config.get('DEBUG', False))
-    app.run(debug=debug_mode, host='0.0.0.0', port=int(os.getenv('PORT', 5000)), use_reloader=False)
+        debug_mode = bool(app.config.get('DEBUG', False))
+        logger.info(f"Starting server with debug={debug_mode}, threaded=True")
+        app.run(debug=debug_mode, host='127.0.0.1', port=int(os.getenv('PORT', 5000)), use_reloader=False, threaded=True)
+    except Exception as e:
+        logger.critical(f"CRITICAL ERROR during server startup: {e}", exc_info=True)
+        print(f"CRITICAL ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
 

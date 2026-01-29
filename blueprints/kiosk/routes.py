@@ -5,7 +5,8 @@ from blueprints.auth.utils import login_required, role_required
 from . import bp
 from .utils import recognize_and_mark, decode_frame
 from utils.liveness_detector import LivenessDetector
-from utils.extensions import limiter, csrf
+from flask_wtf.csrf import CSRFProtect
+csrf = CSRFProtect()
 from db_utils import get_setting, set_setting
 from utils.logger import logger
 import time
@@ -175,6 +176,14 @@ def kiosk_recognize():
         if result.get("status") in ("check-in", "check-out"):
             liveness.reset()
 
+        # Attach liveness details so frontend can show confidence/meta
+        try:
+            if isinstance(result, dict):
+                result.setdefault('liveness_confidence', float(confidence))
+                result.setdefault('liveness_message', str(message))
+        except Exception:
+            pass
+
         return jsonify(result), 200
 
     except Exception as e:
@@ -190,6 +199,7 @@ def kiosk_recognize():
 # EXIT KIOSK (PIN Protected)
 # ---------------------------------------------------------
 @bp.route("/exit", methods=["GET", "POST"])
+@csrf.exempt
 def kiosk_exit():
     """Exit kiosk mode - requires PIN authentication to prevent unauthorized exit"""
     logger.info(f"[DEBUG] Kiosk exit request - Method: {request.method}, Session in_kiosk: {session.get('in_kiosk')}")
@@ -242,7 +252,7 @@ def kiosk_exit():
         from blueprints.auth.routes import logout
         logout()
         
-        return jsonify({"success": True, "redirect": "/auth/admin/login"})
+        return jsonify({"success": True, "redirect": "/"})
     else:
         attempts = session.get("pin_attempts", 0) + 1
         session["pin_attempts"] = attempts

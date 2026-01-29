@@ -643,7 +643,7 @@ CREATE TABLE IF NOT EXISTS leave_balance (
     casual_leave INT DEFAULT 0,
     sick_leave INT DEFAULT 0,
     vacation_leave INT DEFAULT 0,
-    work_from_home INT DEFAULT 0,
+    emergency_leave INT DEFAULT 0,
     year INT NOT NULL,
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
     UNIQUE KEY unique_employee_year (employee_id, year)

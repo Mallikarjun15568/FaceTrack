@@ -1,17 +1,7 @@
 {% extends "base_kiosk.html" %} {% block title %}Kiosk Mode - FaceTrack{% endblock %} {% block head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <style>
-/* Glow effect for face detection canvas */
-#kioskFaceCanvas {
-  border: 2px solid #22c55e;
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.8), 0 0 40px rgba(34, 197, 94, 0.5);
-  animation: pulse-glow 1s infinite alternate;
-}
-
-@keyframes pulse-glow {
-  0% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.8), 0 0 40px rgba(34, 197, 94, 0.5); }
-  100% { box-shadow: 0 0 30px rgba(34, 197, 94, 1), 0 0 60px rgba(34, 197, 94, 0.7); }
-}
+/* Glow effect for face detection canvas - REMOVED for clean UX */
 
 /* Animate guidance text */
 #guidanceText {
@@ -41,6 +31,12 @@
 @keyframes rainbow {
   0% { filter: hue-rotate(0deg); }
   100% { filter: hue-rotate(360deg); }
+}
+
+/* Scanning bar animation */
+@keyframes scan {
+  0% { top: 0; }
+  100% { top: 100%; }
 }
 </style>
 {% endblock %} {% block content %} <!-- TOP BAR -->
@@ -75,8 +71,8 @@
         class="relative aspect-video rounded-lg bg-gray-900 overflow-hidden border-2 border-gray-300 shadow-lg transition-all duration-500">
         <video id="kioskVideo" muted playsinline class="w-full h-full object-cover"
           aria-label="Live camera feed for face recognition"></video>
-        <!-- FACE DETECTION CANVAS OVERLAY - Green square box --> <canvas id="kioskFaceCanvas"
-          class="absolute inset-0 w-full h-full pointer-events-none z-40"></canvas>
+        <!-- Scanning Bar -->
+        <div id="scanningBar" class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-70 z-10 hidden" style="animation: scan 3s linear infinite;"></div>
         <!-- Real-time Status - Moved outside camera view -->
         <div class="absolute top-4 left-4 right-4 pointer-events-none z-20 hidden">
           <!-- Placeholder - indicators moved outside --> </div> <!-- Scan Overlay -->
@@ -96,17 +92,32 @@
             </div>
           </div>
         </div> <!-- Guidance Text -->
-        <div class="absolute bottom-4 left-0 right-0 text-center pointer-events-none z-30">
-          <div
-            class="bg-black/80 backdrop-blur-sm inline-block px-6 py-3 rounded-full shadow-2xl border border-white/20">
-            <p id="guidanceText" class="text-white text-base font-bold drop-shadow-lg">Position your face in the frame
-            </p>
+        <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-center pointer-events-none z-30 w-full max-w-2xl px-4">
+          <div id="guidanceContainer"
+            class="mx-auto bg-black/50 inline-flex flex-col items-center gap-2 px-3 py-2 rounded-xl shadow-md border border-white/5">
+            <p id="guidanceText" class="text-white text-sm sm:text-base font-medium leading-snug max-w-xl">Look at the camera</p>
+            <!-- Compact Liveness Meter -->
+            <div id="livenessMeter" class="mt-2 flex items-center justify-center space-x-2 hidden" role="status" aria-live="polite">
+              <div class="w-14 h-14 rounded-full bg-white/6 flex items-center justify-center" style="border:1px solid rgba(255,255,255,0.06);">
+                <div class="w-full h-full rounded-full flex items-center justify-center bg-gradient-to-br from-indigo-600 to-emerald-400 p-0.5">
+                  <div id="confidenceValue" class="text-white font-semibold text-sm">0%</div>
+                </div>
+              </div>
+              <div class="flex-1 text-left">
+                <div id="confidenceBar" class="w-full h-2 bg-white/8 rounded-full overflow-hidden">
+                  <div id="confidenceFill" class="h-full bg-gradient-to-r from-emerald-400 to-indigo-600 w-0 transition-all duration-300"></div>
+                </div>
+                <div id="confidenceMsg" class="text-xxs text-white/80 mt-1 text-sm">Waiting for liveness…</div>
+              </div>
+            </div>
           </div>
         </div> <!-- Corner Indicators -->
         <div class="absolute top-4 left-4 w-5 h-5 border-l-2 border-t-2 border-gray-400/50 rounded-tl"></div>
         <div class="absolute top-4 right-4 w-5 h-5 border-r-2 border-t-2 border-gray-400/50 rounded-tr"></div>
         <div class="absolute bottom-4 left-4 w-5 h-5 border-l-2 border-b-2 border-gray-400/50 rounded-bl"></div>
         <div class="absolute bottom-4 right-4 w-5 h-5 border-r-2 border-b-2 border-gray-400/50 rounded-br"></div>
+        <!-- FACE DETECTION CANVAS OVERLAY - Soft oval guide --> <canvas id="kioskFaceCanvas"
+          class="absolute inset-0 w-full h-full pointer-events-none z-50"></canvas>
       </div> <!-- Status Indicators Panel - Clean, compact, below camera -->
       <div class="mt-2 flex justify-center gap-2">
         <div id="distanceMeter" class="hidden bg-gray-100 border border-gray-300 rounded px-2 py-1 text-xs"> <span
@@ -151,7 +162,8 @@
               class="fas fa-times"></i> </div>
           <div class="flex-1">
             <p class="font-semibold text-gray-900">Face Not Recognized</p>
-            <p class="text-sm text-gray-600 mt-1">Please try again or contact admin</p>
+            <p id="unknownReason" class="text-sm text-gray-600 mt-1">Please try again or contact admin</p>
+            <p id="unknownMeta" class="text-xs text-gray-400 mt-1"> </p>
           </div>
         </div>
       </div> <!-- Employee Card -->
@@ -210,7 +222,8 @@
   </div>
 </div> <!-- SETTINGS PANEL -->
 <div id="settingsPanel"
-  class="fixed inset-y-0 right-0 w-full md:w-96 bg-white border-l border-gray-200 shadow-2xl translate-x-full transition-all duration-500 ease-in-out z-50 flex flex-col">
+  class="fixed inset-y-0 right-0 w-full md:w-96 bg-white border-l border-gray-200 shadow-2xl translate-x-full transition-all duration-500 ease-in-out z-50 flex flex-col"
+  aria-hidden="true" role="dialog" aria-modal="true" aria-label="Kiosk Settings">
   <div class="p-6 border-b border-gray-200 bg-gray-50">
     <h3 class="text-xl font-bold text-gray-900 mb-1">Kiosk Settings</h3>
     <p class="text-sm text-gray-500">Administrator controls</p>
@@ -252,7 +265,8 @@
       class="w-full btn btn-secondary"> <i class="fas fa-times"></i> Close Settings </button> </div>
 </div>
 <style>
-  /* Face Detection Frame */
+/*
+  Face Detection Frame - UNUSED, commented for clean UX
   .face-guide-oval {
     position: relative;
     width: 280px;
@@ -336,6 +350,7 @@
       box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.2), 0 0 60px rgba(34, 197, 94, 0.6);
     }
   }
+*/
 
   /* Minimal animations */
   @keyframes fadeIn {
@@ -370,6 +385,29 @@
 
   .animate-spin {
     animation: spin 1s linear infinite;
+  }
+
+  /* Liveness meter premium focus and sr-only helpers */
+  .sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  #livenessMeter:focus {
+    outline: 3px solid rgba(99,102,241,0.35);
+    outline-offset: 4px;
+    border-radius: 12px;
+  }
+
+  #confidenceFill {
+    transition: width 0.45s cubic-bezier(.2,.9,.3,1);
   }
 </style> {% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='js/kiosk.js') }}"></script>

@@ -15,14 +15,6 @@ def setup_csrf_exemptions(app, csrf):
     from blueprints.admin.settings.routes import settings_api
     csrf.exempt(settings_api)
 
-    # Kiosk: Exempt recognition endpoints (operates in fullscreen kiosk mode)
-    from blueprints.kiosk.routes import (
-        kiosk_recognize, liveness_check, verify_pin,
-        kiosk_exit, set_kiosk_pin, force_unlock
-    )
-    csrf.exempt(kiosk_recognize)
-    csrf.exempt(liveness_check)
-    csrf.exempt(verify_pin)
-    csrf.exempt(kiosk_exit)
-    csrf.exempt(set_kiosk_pin)
-    csrf.exempt(force_unlock)
+    # Enroll: Exempt face detection (real-time UI feedback, doesn't modify data)
+    from blueprints.auth.routes import detect_face
+    csrf.exempt(detect_face)

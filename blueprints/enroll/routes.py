@@ -10,9 +10,8 @@ from blueprints.auth.utils import login_required, role_required
 
 from blueprints.kiosk import utils as kiosk_utils
 from utils.face_encoder import invalidate_embeddings_cache, face_encoder
-from utils.logger import logger
-import numpy as np
-import cv2
+from flask_wtf.csrf import CSRFProtect
+csrf = CSRFProtect()
 # import face_recognition  # Moved to local import to avoid startup issues
 
 
@@ -74,6 +73,7 @@ def update_enroll_page(employee_id):
 @bp.route("/capture", methods=["POST"])
 @login_required
 @role_required("admin", "hr")
+@csrf.exempt
 def capture_face():
 
     try:
@@ -239,46 +239,6 @@ def capture_face():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# -----------------------------------------------------
-# 2C. FACE DETECTION (for real-time green square)
-# -----------------------------------------------------
-@bp.route("/detect_face", methods=["POST"])
-@login_required
-def detect_face():
-    """
-    Detect if a face is present in the image for real-time UI feedback.
-    Returns: {"face_detected": true/false}
-    """
-    try:
-        data = request.get_json()
-        image_base64 = data.get("image")
-        
-        if not image_base64:
-            return jsonify({"face_detected": False})
-        
-        # Decode base64 image
-        image_data = base64.b64decode(image_base64.split(",")[1])
-        np_arr = np.frombuffer(image_data, np.uint8)
-        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-        
-        if img is None:
-            return jsonify({"face_detected": False})
-        
-        # Convert BGR to RGB
-        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        
-        # Detect faces (import face_recognition locally to avoid startup issues)
-        import face_recognition
-        face_locations = face_recognition.face_locations(rgb, model="hog")
-        face_count = len(face_locations)
-        return jsonify({
-            "face_detected": face_count > 0,
-            "face_count": face_count
-        })
-    except Exception as e:
-        logger.error(f"Face detection error: {e}")
-        return jsonify({"face_detected": False, "face_count": 0})
-
 
 # -----------------------------------------------------
 # 2B. UPDATE EXISTING ENROLLMENT
@@ -286,6 +246,7 @@ def detect_face():
 @bp.route("/update_capture", methods=["POST"])
 @login_required
 @role_required("admin", "hr")
+@csrf.exempt
 def update_capture_face():
     try:
         data = request.get_json()

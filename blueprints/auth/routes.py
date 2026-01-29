@@ -1,8 +1,9 @@
 from . import bp
 from flask import render_template, request, redirect, url_for, session, flash, jsonify, current_app
-from flask_wtf.csrf import generate_csrf
+from flask_wtf.csrf import generate_csrf, CSRFProtect
+csrf = CSRFProtect()
 from utils.extensions import limiter
-from .utils import get_user_by_username, verify_password
+from .utils import get_user_by_username, verify_password, login_required
 from db_utils import get_connection
 from db_utils import execute, log_audit
 from utils.db import get_db
@@ -10,7 +11,9 @@ import base64, io, json
 from PIL import Image
 from datetime import datetime
 import numpy as np
+import cv2
 from utils.face_encoder import face_encoder
+from utils.logger import logger
 
 
 # ============================================================
@@ -36,7 +39,7 @@ def login():
                 try:
                     # Log failed login to login_logs table
                     db = get_db()
-                    cur = db.cursor()
+                    cur = db.cursor(dictionary=True)
                     cur.execute("""
                         INSERT INTO login_logs (user_id, status, ip_address, user_agent)
                         VALUES (%s, 'failed', %s, %s)
@@ -158,6 +161,7 @@ def login():
 # ============================================================
 @bp.route("/user_login", methods=["GET", "POST"])
 @limiter.limit("5 per minute", methods=["POST"])
+@csrf.exempt
 def user_login():
     """Employee login only"""
     if request.method == "POST":
@@ -176,7 +180,7 @@ def user_login():
                 try:
                     # Log failed login to login_logs table
                     db = get_db()
-                    cur = db.cursor()
+                    cur = db.cursor(dictionary=True)
                     cur.execute("""
                         INSERT INTO login_logs (user_id, status, ip_address, user_agent)
                         VALUES (%s, 'failed', %s, %s)
@@ -434,10 +438,14 @@ def get_role(username):
 # ============================================================
 # LOGOUT
 # ============================================================
-@bp.route("/logout")
+@bp.route("/logout", methods=["POST"])
 def logout():
     """Clear session and redirect to login page"""
-    session.clear()
+    # Remove only user-related session keys so flashed messages are preserved
+    for key in ("user_id", "username", "role", "employee_id", "logged_in", "full_name", "csrf_token"):
+        session.pop(key, None)
+
+    # Now flash success message and redirect to home
     flash("Logged out successfully", "success")
     return redirect(url_for("index"))
 
@@ -727,3 +735,108 @@ def reset_password():
     # GET request - show reset form
     return render_template("reset_password.html", token=token, 
                           username=reset_data.get('username'))
+
+
+# -----------------------------------------------------
+# FACE DETECTION (for real-time UI feedback)
+# -----------------------------------------------------
+@bp.route("/detect_face", methods=["POST"])
+@login_required
+@csrf.exempt
+def detect_face():
+    """
+    Detect if a face is present in the image for real-time UI feedback.
+    Returns: {"face_count": int, "distance": "perfect|far|close", "lighting": "good|dark|bright"}
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            logger.warning("No JSON data received in detect_face request")
+            return jsonify({"face_count": 0, "distance": "unknown", "lighting": "unknown"})
+        
+        image_base64 = data.get("image")
+        if not image_base64:
+            logger.warning("No image data in detect_face request")
+            return jsonify({"face_count": 0, "distance": "unknown", "lighting": "unknown"})
+        
+        # More robust base64 decoding
+        try:
+            if "," in image_base64:
+                # Handle data URL format: "data:image/jpeg;base64,actualdata"
+                image_data = base64.b64decode(image_base64.split(",")[1])
+            else:
+                # Handle raw base64
+                image_data = base64.b64decode(image_base64)
+        except Exception as e:
+            logger.error(f"Base64 decode error: {e}")
+            return jsonify({"face_count": 0, "distance": "unknown", "lighting": "unknown"})
+        
+        # Decode image
+        try:
+            np_arr = np.frombuffer(image_data, np.uint8)
+            img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        except Exception as e:
+            logger.error(f"Image decode error: {e}")
+            return jsonify({"face_count": 0, "distance": "unknown", "lighting": "unknown"})
+        
+        if img is None:
+            logger.warning("Image decode returned None")
+            return jsonify({"face_count": 0, "distance": "unknown", "lighting": "unknown"})
+        
+        # Convert BGR to RGB
+        try:
+            rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        except Exception as e:
+            logger.error(f"Color conversion error: {e}")
+            return jsonify({"face_count": 0, "distance": "unknown", "lighting": "unknown"})
+        
+        # Detect faces
+        try:
+            import face_recognition
+            face_locations = face_recognition.face_locations(rgb, model="hog")
+            face_count = len(face_locations)
+        except Exception as e:
+            logger.error(f"Face detection error: {e}")
+            return jsonify({"face_count": 0, "distance": "unknown", "lighting": "unknown"})
+        
+        distance = "unknown"
+        lighting = "unknown"
+        
+        if face_count == 1:
+            try:
+                # Calculate distance based on face size
+                top, right, bottom, left = face_locations[0]
+                face_height = bottom - top
+                face_width = right - left
+                face_size = (face_height + face_width) / 2
+                
+                # Assuming typical face size at perfect distance is ~150-200 pixels
+                if face_size < 120:
+                    distance = "far"
+                elif face_size > 250:
+                    distance = "close"
+                else:
+                    distance = "perfect"
+                
+                # Calculate lighting based on image brightness
+                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                brightness = cv2.mean(gray)[0]
+                
+                if brightness < 80:
+                    lighting = "dark"
+                elif brightness > 180:
+                    lighting = "bright"
+                else:
+                    lighting = "good"
+            except Exception as e:
+                logger.error(f"Face analysis error: {e}")
+                # Continue with unknown values
+        
+        return jsonify({
+            "face_count": face_count,
+            "distance": distance,
+            "lighting": lighting
+        })
+    except Exception as e:
+        logger.error(f"Unexpected error in detect_face: {e}", exc_info=True)
+        return jsonify({"face_count": 0, "distance": "unknown", "lighting": "unknown"})

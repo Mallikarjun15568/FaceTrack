@@ -41,6 +41,7 @@ static/attendance_photos/
 static/snapshots/
 static/face_login_temp/
 static/images/*.png
+static/pending_faces/
 
 # -------------------------------
 # InsightFace Models (VERY LARGE)

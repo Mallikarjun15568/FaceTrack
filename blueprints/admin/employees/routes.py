@@ -315,7 +315,7 @@ def add_employee():
         
         # Create leave_balance row for new employee (MANDATORY for admin credit to work)
         cursor.execute("""
-            INSERT INTO leave_balance (employee_id, casual_leave, sick_leave, vacation_leave, work_from_home)
+            INSERT INTO leave_balance (employee_id, casual_leave, sick_leave, vacation_leave, emergency_leave)
             VALUES (%s, 0, 0, 0, 0)
         """, (employee_id,))
         
@@ -706,10 +706,15 @@ def process_face_request(request_id, action):
             # Copy from pending to faces
             shutil.copy2(request_data["image_path"], new_path)
 
-            # Encode face
-            embedding = face_encoder.encode_face_from_image(new_path)
-            if embedding is None:
-                return jsonify({"success": False, "message": "Failed to encode face"}), 500
+            # Encode face (with error logging)
+            try:
+                embedding = face_encoder.encode_face_from_image(new_path)
+                if embedding is None:
+                    logger.error(f"Failed to encode face for pending request id={request_id}, image={new_path}")
+                    return jsonify({"success": False, "message": "Failed to encode face"}), 500
+            except Exception as e:
+                logger.error(f"Exception while encoding face for request id={request_id}: {e}", exc_info=True)
+                return jsonify({"success": False, "message": "Error encoding face"}), 500
 
             # Save to face_data
             cursor.execute("""
@@ -745,8 +750,8 @@ def process_face_request(request_id, action):
 
         db.commit()
 
-        # Get employee details for email
-        cursor.execute("SELECT name, email FROM employees WHERE id = %s", (request_data["emp_id"],))
+        # Get employee details for email (use full_name column)
+        cursor.execute("SELECT full_name AS name, email FROM employees WHERE id = %s", (request_data["emp_id"],))
         employee = cursor.fetchone()
 
         # Send notification email to employee

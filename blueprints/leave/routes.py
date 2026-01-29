@@ -83,7 +83,7 @@ def adjust_balance():
     # Calculate adjustment
     adjust_days = days if operation == 'add' else -days
 
-    allowed_types = ['casual_leave', 'sick_leave', 'vacation_leave', 'work_from_home']
+    allowed_types = ['casual_leave', 'sick_leave', 'vacation_leave', 'emergency_leave']
     if leave_type not in allowed_types:
         flash('Invalid leave type.', 'error')
         return redirect(url_for('leave.index'))
@@ -97,7 +97,7 @@ def adjust_balance():
         if not balance:
             # Optionally, create a new row if missing (admin only)
             execute("""
-                INSERT INTO leave_balance (employee_id, casual_leave, sick_leave, vacation_leave, work_from_home)
+                INSERT INTO leave_balance (employee_id, casual_leave, sick_leave, vacation_leave, emergency_leave)
                 VALUES (%s, 0, 0, 0, 0)
             """, (employee_id,))
         # Update the leave balance
@@ -142,7 +142,7 @@ def apply():
             'Casual Leave': 'casual_leave',
             'Sick Leave': 'sick_leave',
             'Vacation Leave': 'vacation_leave',
-            'Work From Home': 'work_from_home'
+            'Emergency Leave': 'emergency_leave'
         }
 
         column = leave_map.get(leave_type)
@@ -252,7 +252,7 @@ def approve(leave_id):
         'Casual Leave': 'casual_leave',
         'Sick Leave': 'sick_leave',
         'Vacation Leave': 'vacation_leave',
-        'Work From Home': 'work_from_home'
+        'Emergency Leave': 'emergency_leave'
     }
 
     column = leave_map.get(leave['leave_type'])
@@ -383,7 +383,7 @@ def api_balance():
         'casual_leave': balance['casual_leave'],
         'sick_leave': balance['sick_leave'],
         'vacation_leave': balance['vacation_leave'],
-        'work_from_home': balance['work_from_home']
+        'emergency_leave': balance['emergency_leave']
     })
 
 

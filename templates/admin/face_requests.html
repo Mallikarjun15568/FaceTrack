@@ -62,9 +62,9 @@
                             {{ request.requested_at.strftime('%Y-%m-%d %H:%M') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <img src="{{ url_for('static', filename=request.image_path.replace('static/', '')) }}"
-                                 class="h-12 w-12 rounded-lg object-cover cursor-pointer image-modal-trigger"
-                                 data-image-src="{{ url_for('static', filename=request.image_path.replace('static/', '')) }}" />
+                               <img src="{{ url_for('static', filename=request.image_path) }}"
+                                   class="h-12 w-12 rounded-lg object-cover cursor-pointer image-modal-trigger"
+                                   data-image-src="{{ url_for('static', filename=request.image_path) }}" />
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             {% if request.status == 'pending' %}
@@ -194,17 +194,31 @@ function processRequest(requestId, action, reason = null) {
         formData.append('reason', reason);
     }
 
-    fetch('/employees/face_request/' + requestId + '/' + action, {
+    // Get CSRF token from meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    fetch(`/admin/employees/face_request/${requestId}/${action}`, {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                console.error('Server error:', text);
+                throw new Error('Server error');
+            });
+        }
+        return response.json();
+    })
     .then(data => {
-        if (data.success) {
+        if (data && data.success) {
             alert(data.message);
             location.reload();
-        } else {
-            alert('Error: ' + data.message);
+        } else if (data) {
+            alert('Error: ' + (data.message || 'Unknown error'));
         }
     })
     .catch(err => {
