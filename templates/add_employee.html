@@ -11,19 +11,21 @@
             Add New Employee
         </h2>
 
-        <a href="{{ url_for('employees.list_employees') }}"
+        <a href="{{ url_for('admin.employees.list_employees') }}"
            class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-300 hover:dark:bg-gray-600 transition">
             <i class="fa-solid fa-arrow-left"></i> Back
         </a>
     </div>
 
     <!-- Add Employee Card -->
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 scroll-reveal" style="transition-delay:0.1s">
+    <div class="premium-card p-8 scroll-reveal" style="--delay:0.1s">
 
-          <form action="{{ url_for('employees.add_employee') }}"
+          <form action="{{ url_for('admin.employees.add_employee') }}"
               method="POST"
               enctype="multipart/form-data"
               class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <!-- Full Name -->
             <div class="scroll-reveal" style="transition-delay:0.15s">
@@ -32,7 +34,7 @@
                     Full Name
                 </label>
                 <input name="full_name" required type="text" placeholder="Enter full name"
-                       class="input-modern" />
+                       class="input-premium" />
             </div>
 
             <!-- Email -->
@@ -42,40 +44,32 @@
                     Email
                 </label>
                 <input name="email" required type="email" placeholder="employee@company.com"
-                       class="input-modern" />
-            </div>
-
-            <!-- Phone with Country Code -->
-            <div class="scroll-reveal" style="transition-delay:0.21s">
-                <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
-                    <i class="fas fa-phone text-blue-600 text-sm"></i>
-                    Phone
-                </label>
-                <div class="flex gap-3">
-                    <select name="country_code" id="country_code" class="input-modern w-24 shrink-0" aria-label="Country code">
-                        <option value="+91" title="India">+91 India</option>
-                        <option value="+1" title="United States">+1 United States</option>
-                        <option value="+44" title="United Kingdom">+44 United Kingdom</option>
-                        <option value="+61" title="Australia">+61 Australia</option>
-                        <option value="+966" title="Saudi Arabia">+966 Saudi Arabia</option>
-                    </select>
-                          <input name="phone" id="phoneInput" type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
-                              placeholder="Enter 10 digit number" title="Enter 10 digit phone number" class="input-modern flex-1" />
-                </div>
-                <p class="text-xs text-gray-500 mt-1">Enter phone digits only (no spaces or symbols).</p>
+                       class="input-premium" />
             </div>
 
             <!-- Gender -->
-            <div class="scroll-reveal" style="transition-delay:0.24s">
+            <div class="scroll-reveal" style="transition-delay:0.21s">
                 <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
                     <i class="fas fa-venus-mars text-blue-600 text-sm"></i>
                     Gender
                 </label>
-                <select name="gender" class="input-modern">
+                <select name="gender" class="input-premium">
                     <option>Male</option>
                     <option>Female</option>
                     <option>Other</option>
                 </select>
+            </div>
+
+            <!-- Phone -->
+            <div class="scroll-reveal" style="transition-delay:0.24s">
+                <label class="block font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-phone text-blue-600 text-sm"></i>
+                    Phone
+                </label>
+                <input name="phone" type="tel" inputmode="numeric" 
+                       autocomplete="off" maxlength="10" minlength="10" pattern="\d{10}" 
+                       placeholder="9876543210" 
+                       class="input-premium" required />
             </div>
 
             <!-- Department -->
@@ -84,9 +78,11 @@
                     <i class="fas fa-building text-blue-600 text-sm"></i>
                     Department
                 </label>
-                <select name="department_id" class="input-modern">
+                <select name="department_id" class="input-premium">
                     {% for dept in departments %}
+                    {% if dept.name != 'Admin' and dept.name != 'Administration' %}
                     <option value="{{ dept.id }}">{{ dept.name }}</option>
+                    {% endif %}
                     {% endfor %}
                 </select>
             </div>
@@ -98,7 +94,7 @@
                     Job Title
                 </label>
                 <input name="job_title" type="text" placeholder="e.g., Software Engineer"
-                       class="input-modern" />
+                       class="input-premium" />
             </div>
 
             <!-- Joining Date -->
@@ -108,7 +104,7 @@
                     Joining Date
                 </label>
                 <input name="join_date" type="date"
-                       class="input-modern" />
+                       class="input-premium" />
             </div>
 
             <!-- Status -->
@@ -117,7 +113,7 @@
                     <i class="fas fa-toggle-on text-blue-600 text-sm"></i>
                     Status
                 </label>
-                <select name="status" class="input-modern">
+                <select name="status" class="input-premium">
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                 </select>
@@ -130,15 +126,15 @@
                     Upload Employee Photo
                 </label>
                 <input name="photo" type="file" accept="image/*"
-                       class="input-modern file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-600 file:font-semibold hover:file:bg-blue-100 cursor-pointer" />
+                       class="input-premium file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-600 file:font-semibold hover:file:bg-blue-100 cursor-pointer" />
             </div>
 
             <!-- Submit Button -->
             <div class="col-span-1 md:col-span-2 flex justify-end gap-3 scroll-reveal" style="transition-delay:0.42s">
-                <a href="{{ url_for('employees.list_employees') }}" class="btn-secondary">
+                <button type="button" class="btn-secondary" onclick="window.location.href='{{ url_for('admin.employees.list_employees') }}'">
                     Cancel
-                </a>
-                <button type="submit" class="btn-primary flex items-center gap-2">
+                </button>
+                <button type="submit" class="btn-premium btn-premium-primary flex items-center gap-2">
                     <i class="fa-solid fa-save"></i>
                     Save Employee
                 </button>

@@ -4,7 +4,7 @@ import logging
 from werkzeug.security import generate_password_hash, check_password_hash
 import time
 from flask import g
-import config   # ← Use config.py for all DB values
+from config import Config  # Use Config class from config.py for DB values
 
 logger = logging.getLogger('db_utils')
 
@@ -12,10 +12,10 @@ logger = logging.getLogger('db_utils')
 # DATABASE CONFIG (from config.py)
 # -------------------------------
 db_config = {
-    'host': config.DB_HOST,
-    'user': config.DB_USER,
-    'password': config.DB_PASS,
-    'database': config.DB_NAME,
+    'host': Config.DB_HOST,
+    'user': Config.DB_USER,
+    'password': Config.DB_PASSWORD,
+    'database': Config.DB_NAME,
     'connection_timeout': 10,
 }
 
@@ -201,4 +201,29 @@ def set_setting(key, value):
     except Exception as e:
         logger.error(f"Error setting {key}: {e}")
         logger.exception(e)
+        return False
+
+
+def log_audit(user_id, action, module=None, details=None, ip_address=None):
+    """Insert a row into audit_logs table. Safe wrapper to record audit events.
+
+    The `audit_logs` table schema contains `user_id`, `action`, `details`, and
+    an auto-populated `timestamp`. Avoid inserting non-existent columns.
+    """
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO audit_logs (user_id, action, details)
+            VALUES (%s, %s, %s)
+            """,
+            (user_id, action, details)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Failed to write audit log: {e}", exc_info=True)
         return False

@@ -3,9 +3,30 @@
 
 <div class="flex-1 p-6">
 
-    <h1 class="text-2xl font-bold mb-4">Enroll Face</h1>
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Face Enrollment</h1>
+        <p class="text-gray-600 mb-4">
+            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+            This page is for enrolling face data of existing employees only.
+            <strong>Employee creation happens on the Employees page.</strong>
+        </p>
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-lightbulb text-blue-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        <strong>How it works:</strong> Select an employee below and capture their face for recognition.
+                        Face enrollment is required for employees to use the attendance kiosk.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <div class="bg-white p-4 rounded-xl shadow">
+    <div class="bg-white p-6 rounded-xl shadow">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">Employee Face Enrollment Status</h2>
         <table class="w-full border-collapse">
             <thead class="bg-gray-100 text-gray-600">
                 <tr>
@@ -13,7 +34,7 @@
                     <th class="p-3 text-left">Photo</th>
                     <th class="p-3 text-left">Name</th>
                     <th class="p-3 text-left">Department</th>
-                    <th class="p-3 text-left">Enrollment</th>
+                    <th class="p-3 text-left">Face Status</th>
                     <th class="p-3 text-left">Action</th>
                 </tr>
             </thead>
@@ -33,12 +54,12 @@
 
                     <td class="p-3">
                         {% if emp.enroll_status == "Enrolled" %}
-                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
-                            Enrolled
+                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                            <i class="fas fa-check-circle mr-1"></i>Face Enrolled
                         </span>
                         {% else %}
-                        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm">
-                            Not Enrolled
+                        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
+                            <i class="fas fa-times-circle mr-1"></i>Not Enrolled
                         </span>
                         {% endif %}
                     </td>
@@ -46,13 +67,13 @@
                     <td class="p-3">
                         {% if emp.enroll_status == "Enrolled" %}
                             <a href="/enroll/update/{{ emp.id }}"
-                               class="px-3 py-1 bg-yellow-500 text-white rounded-lg">
-                                Update Face
+                               class="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors">
+                                <i class="fas fa-edit mr-1"></i>Update Face
                             </a>
                         {% else %}
                             <a href="/enroll/{{ emp.id }}"
-                               class="px-4 py-1 bg-blue-600 text-white rounded-lg">
-                                Enroll Face
+                               class="px-4 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-camera mr-1"></i>Enroll Face
                             </a>
                         {% endif %}
                     </td>

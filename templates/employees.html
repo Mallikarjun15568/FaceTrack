@@ -1,162 +1,448 @@
 {% extends "base.html" %}
 {% block page_title %}Employees{% endblock %}
+{% block extra_head %}
+<style>
+.employees-table-container::-webkit-scrollbar {
+  width: 12px !important;
+  height: 12px !important;
+}
+.employees-table-container::-webkit-scrollbar-track {
+  background: #f1f1f1 !important;
+  border-radius: 6px !important;
+}
+.employees-table-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1 !important;
+  border-radius: 6px !important;
+}
+.employees-table-container::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1 !important;
+}
+.employees-table-container {
+  scrollbar-width: auto !important;
+  -ms-overflow-style: auto !important;
+}
+</style>
+{% endblock %}
 {% block content %}
 
-<div class="space-y-8">
+<div class="max-w-7xl mx-auto">
 
   <!-- HEADER -->
-  <div class="scroll-reveal flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+  <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-8">
     <div>
-      <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Employees</h1>
-      <p class="text-sm text-gray-600 mt-2 font-medium">Manage employee records — search, filter, sort, and actions.</p>
+      <h1 class="text-2xl font-bold text-gray-900">Employees</h1>
+      <p class="text-sm text-gray-500 mt-1">Manage employee records and access</p>
     </div>
-
-    <div class="flex items-center gap-4 w-full lg:w-auto">
-      <!-- SEARCH -->
-      <div class="flex items-center gap-3 bg-white shadow-md border border-gray-200 rounded-xl px-4 py-3 hover:shadow-lg transition-shadow">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input id="globalSearch" type="text" placeholder="Search name, email, phone..."
-               class="px-2 py-1 w-72 outline-none bg-transparent text-gray-700" />
-        <button id="clearSearch" class="px-2 py-1 text-sm text-gray-400 hover:text-gray-700 transition-colors font-bold">✕</button>
-      </div>
-
-      <a href="/employees/add" class="btn-primary px-6 py-3 shadow-md hover:shadow-lg transition-all rounded-xl">
-        <i class="fas fa-plus mr-2"></i>Add Employee
+    <div class="flex gap-3">
+      <a href="{{ url_for('admin.employees.add_employee') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+        <i class="fas fa-plus mr-2"></i>
+        Add Employee
+      </a>
+      <a href="{{ url_for('admin.employees.face_requests') }}" class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors">
+        <i class="fas fa-user-plus mr-2"></i>
+        Face Requests
       </a>
     </div>
   </div>
 
-  <!-- FILTERS -->
-  <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-6 flex flex-col md:flex-row gap-6 items-center justify-between hover:shadow-xl transition-shadow" style="transition-delay: 0.2s">
+  <!-- SEARCH AND FILTERS -->
+  <div id="searchFiltersContainer" class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-8">
+    <form id="searchFiltersForm" method="GET" class="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+      <!-- SEARCH INPUT -->
+      <div class="flex-1">
+        <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="text" name="search" value="{{ search }}" placeholder="Search employees by name or email..."
+                 class="flex-1 outline-none text-sm bg-transparent" />
+        </div>
+      </div>
 
-    <div class="flex gap-4 items-center flex-wrap">
+      <!-- FILTERS -->
+      <div class="flex gap-3 items-center flex-wrap">
+        <div>
+          <select name="department_id" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm">
+            <option value="">All Departments</option>
+            {% for d in departments %}
+            {% if d.name != 'Admin' and d.name != 'Administration' %}
+              <option value="{{ d.id }}"
+                {% if request.args.get('department_id') == (d.id|string) %} selected {% endif %}>
+                {{ d.name }}
+              </option>
+            {% endif %}
+            {% endfor %}
+          </select>
+        </div>
 
-      <select id="filterDept" class="input-modern text-sm py-3 px-4 rounded-xl border-gray-300 shadow-sm">
-        <option value="">All Departments</option>
-        {% for d in departments %}
-          <option value="{{ d.id }}"
-            {% if request.args.get('department_id') == (d.id|string) %} selected {% endif %}>
-            {{ d.name }}
-          </option>
-        {% endfor %}
-      </select>
+        <div>
+          <select name="enrolled" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm">
+            <option value="">Enrollment Status</option>
+            <option value="enrolled" {% if request.args.get('enrolled')=='enrolled' %}selected{% endif %}>Enrolled</option>
+            <option value="not_enrolled" {% if request.args.get('enrolled')=='not_enrolled' %}selected{% endif %}>Not Enrolled</option>
+          </select>
+        </div>
 
-      <select id="filterEnroll" class="input-modern text-sm py-3 px-4 rounded-xl border-gray-300 shadow-sm">
-        <option value="">Enrollment Status</option>
-        <option value="enrolled" {% if request.args.get('enrolled')=='enrolled' %}selected{% endif %}>Enrolled</option>
-        <option value="not_enrolled" {% if request.args.get('enrolled')=='not_enrolled' %}selected{% endif %}>Not Enrolled</option>
-      </select>
+        <div>
+          <select name="sort" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm">
+            <option value="newest"     {% if sort=='newest' %}selected{% endif %}>Newest First</option>
+            <option value="oldest"     {% if sort=='oldest' %}selected{% endif %}>Oldest First</option>
+            <option value="name_asc"   {% if sort=='name_asc' %}selected{% endif %}>Name A–Z</option>
+            <option value="name_desc"  {% if sort=='name_desc' %}selected{% endif %}>Name Z–A</option>
+          </select>
+        </div>
 
-      <select id="sortBy" class="input-modern text-sm py-3 px-4 rounded-xl border-gray-300 shadow-sm">
-        <option value="newest"     {% if sort=='newest' %}selected{% endif %}>Newest First</option>
-        <option value="oldest"     {% if sort=='oldest' %}selected{% endif %}>Oldest First</option>
-        <option value="name_asc"   {% if sort=='name_asc' %}selected{% endif %}>Name A–Z</option>
-        <option value="name_desc"  {% if sort=='name_desc' %}selected{% endif %}>Name Z–A</option>
-      </select>
-
-      <button id="applyFilters" class="btn-primary px-5 py-3 rounded-xl shadow-md hover:shadow-lg transition-all">
-        <i class="fas fa-filter mr-2"></i>Apply
-      </button>
-      <button id="resetFilters" class="px-5 py-3 rounded-xl border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold transition-all shadow-sm hover:shadow-md">
-        <i class="fas fa-redo mr-2"></i>Reset
-      </button>
-
-    </div>
-
-    <div class="flex items-center gap-4">
-      <div class="text-sm font-medium text-gray-700">Selected: <span id="selectedCount" class="font-bold text-blue-600 text-lg">0</span></div>
-      <button id="bulkDeleteBtn" class="btn-danger px-5 py-3 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-        <i class="fas fa-trash mr-2"></i>Delete Selected
-      </button>
-    </div>
-
+        <button type="submit" id="searchBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium transition-colors duration-150">
+          <i class="fas fa-search mr-2"></i>
+          <span id="searchText">Search & Filter</span>
+        </button>
+        <a href="{{ url_for('admin.employees.list_employees') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium transition-colors duration-150">
+          <i class="fas fa-redo mr-2"></i>Reset All
+        </a>
+      </div>
+    </form>
   </div>
 
-  <!-- TABLE -->
-  <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 overflow-x-auto hover:shadow-xl transition-shadow" style="transition-delay: 0.3s">
-    <table class="table-modern">
-      <thead>
-        <tr class="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-          <th class="rounded-tl-xl"><input id="selectAll" type="checkbox" class="rounded"></th>
-          <th>Photo</th>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Department</th>
-          <th>Phone</th>
-          <th>Join Date</th>
-          <th>Enrollment</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-
-      <tbody id="employeesTbody">
-        {% for emp in employees %}
-        <tr>
-
-          <td>
-            <input class="rowCheckbox rounded" type="checkbox" value="{{ emp.id }}">
-          </td>
-
-          <td>
-            {% set emp_photo_path = emp.photo_path %}
-            {% if emp_photo_path and not emp_photo_path.startswith('/') %}
-              {% set emp_photo_path = '/' ~ emp_photo_path %}
+  <!-- EMPLOYEES TABLE -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <!-- Table Header with Stats -->
+    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Employee Directory</h3>
+          <p class="text-sm text-gray-600 mt-1">
+            <span class="font-medium text-indigo-600">{{ total }}</span> total employees
+            {% if search %}
+              • Filtered by "<span class="font-medium">{{ search }}</span>"
             {% endif %}
-            <img src="{{ emp_photo_path if emp_photo_path else url_for('static', filename='default_user.png') }}"
-                 class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
-          </td>
+          </p>
+        </div>
+        <div class="flex items-center gap-4 text-sm text-gray-500">
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+            <span>Active</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+            <span>Enrolled</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
-          <td class="font-semibold text-gray-800">{{ emp.full_name }}</td>
-          <td class="text-gray-600">{{ emp.email }}</td>
-          <td class="text-gray-700">{{ emp.department or '-' }}</td>
-          <td class="text-gray-600">{{ emp.phone or '-' }}</td>
-          <td class="text-gray-600">{{ emp.join_date or '-' }}</td>
+    <!-- Table Container -->
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Employee</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Contact</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Department</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for emp in employees %}
+          <tr class="hover:bg-gray-50 transition-colors duration-150">
+            <!-- Employee Info -->
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-4">
+                <div class="relative">
+                  {% set emp_photo = emp.photo %}
+                  {% if emp_photo and not emp_photo.startswith('/') %}
+                    {% set emp_photo = '/' ~ emp_photo %}
+                  {% endif %}
+                  <img class="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                       src="{{ emp_photo if emp_photo else url_for('static', filename='images/default-avatar.png') }}"
+                       alt="{{ emp.full_name }}"
+                       data-fallback="{{ url_for('static', filename='images/default-avatar.png') }}"
+                       onerror="this.src = this.dataset.fallback">
+                  {% if emp.enrolled %}
+                    <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center">
+                      <i class="fas fa-camera text-white text-xs"></i>
+                    </div>
+                  {% endif %}
+                </div>
+                <div>
+                  <div class="font-semibold text-gray-900">{{ emp.full_name }}</div>
+                </div>
+              </div>
+            </td>
 
-          <td>
-            {% if emp.enrolled %}
-              <span class="badge badge-success">✓ Enrolled</span>
-            {% else %}
-              <span class="badge bg-gray-100 text-gray-600">Not Enrolled</span>
-            {% endif %}
-          </td>
+            <!-- Contact Info -->
+            <td class="px-6 py-4">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2 text-sm">
+                  <i class="fas fa-envelope text-gray-400 w-4"></i>
+                  <span class="text-gray-900">{{ emp.email }}</span>
+                </div>
+                {% if emp.phone %}
+                <div class="flex items-center gap-2 text-sm">
+                  <i class="fas fa-phone text-gray-400 w-4"></i>
+                  <span class="text-gray-600">{{ emp.phone }}</span>
+                </div>
+                {% endif %}
+              </div>
+            </td>
 
-          <td class="flex gap-2">
-            <a href="/employees/view/{{ emp.id }}" class="text-blue-600 hover:text-blue-700 font-medium">View</a>
-            <a href="/employees/edit/{{ emp.id }}" class="text-green-600 hover:text-green-700 font-medium">Edit</a>
-            <button onclick="deleteSingle({{ emp.id }})" class="text-red-600 hover:text-red-700 font-medium">Delete</button>
-          </td>
+            <!-- Department -->
+            <td class="px-6 py-4">
+              <span class="inline-flex px-3 py-1 text-sm font-medium bg-gray-100 text-gray-800 rounded-full">
+                {{ emp.department or 'Not Assigned' }}
+              </span>
+            </td>
 
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+            <!-- Status -->
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                {% if emp.status == 'active' %}
+                  <span class="inline-flex items-center px-3 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-full">
+                    <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    Active
+                  </span>
+                {% else %}
+                  <span class="inline-flex items-center px-3 py-1 text-sm font-medium bg-red-100 text-red-800 rounded-full">
+                    <div class="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                    Inactive
+                  </span>
+                {% endif %}
+              </div>
+            </td>
+
+            <!-- Actions: compact dropdown menu -->
+            <td class="px-6 py-4">
+              <div class="relative">
+                <button type="button" class="actions-toggle inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 text-gray-600" aria-expanded="false" aria-controls="actions-{{ emp.id }}">
+                  <span class="sr-only">Open actions</span>
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+
+                <div id="actions-{{ emp.id }}" class="actions-menu hidden absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                  <a href="{{ url_for('admin.employees.view_employee', emp_id=emp.id) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">View</a>
+                  {% if current_role != 'employee' %}
+                    <a href="{{ url_for('admin.employees.edit_employee', emp_id=emp.id) }}" class="block px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50 font-medium">Edit</a>
+                    {% if emp.status == 'active' %}
+                      <button type="button" onclick="toggleEmployee('{{ emp.id }}', 'deactivate')" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Deactivate</button>
+                    {% else %}
+                      <button type="button" onclick="toggleEmployee('{{ emp.id }}', 'activate')" class="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50">Activate</button>
+                    {% endif %}
+                  {% endif %}
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty State -->
+    {% if not employees %}
+    <div class="text-center py-12">
+      <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-users text-gray-400 text-3xl"></i>
+      </div>
+      <h3 class="text-lg font-medium text-gray-900 mb-2">No employees found</h3>
+      <p class="text-gray-600 mb-6">
+        {% if search or department_id or enrolled %}
+          No employees match your current filters. Try adjusting your search criteria.
+        {% else %}
+          Get started by adding your first employee to the system.
+        {% endif %}
+      </p>
+      {% if current_role != 'employee' %}
+      <a href="{{ url_for('admin.employees.add_employee') }}"
+         class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+        <i class="fas fa-plus mr-2"></i>
+        Add First Employee
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
 
   <!-- PAGINATION -->
-  <div class="flex items-center justify-between card-modern p-4 animate-fadeIn">
-    <div class="text-sm text-gray-600 font-medium">
-      Showing <span class="text-blue-600 font-bold">{{ start + 1 }}</span> – <span class="text-blue-600 font-bold">{{ (end if end < total else total) }}</span> of <span class="text-blue-600 font-bold">{{ total }}</span> employees
-    </div>
+  {% if total > 0 %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4 mt-6">
+    <div class="flex items-center justify-between">
+      <div class="text-sm text-gray-600">
+        Showing <span class="font-semibold text-gray-900">{{ start + 1 }}</span> to <span class="font-semibold text-gray-900">{{ (end if end < total else total) }}</span> of <span class="font-semibold text-gray-900">{{ total }}</span> employees
+      </div>
 
-    <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2">
+        {% if page > 1 %}
+          <a href="?page={{ page - 1 }}&{{ querystring }}"
+             class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors duration-150">
+            <i class="fas fa-chevron-left mr-2"></i>
+            Previous
+          </a>
+        {% else %}
+          <span class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-50 border border-gray-200 rounded-lg cursor-not-allowed">
+            <i class="fas fa-chevron-left mr-2"></i>
+            Previous
+          </span>
+        {% endif %}
 
-      {% if page > 1 %}
-        <a href="?page={{ page - 1 }}&{{ querystring }}" class="btn-secondary">← Prev</a>
-      {% endif %}
+        <div class="flex items-center gap-1">
+          {% set start_page = [1, page - 2]|max %}
+          {% set end_page = [total_pages, page + 2]|min %}
 
-      <div class="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl font-bold">{{ page }}</div>
+          {% if start_page > 1 %}
+            <a href="?page=1&{{ querystring }}"
+               class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors duration-150">
+              1
+            </a>
+            {% if start_page > 2 %}
+              <span class="px-2 py-2 text-sm font-medium text-gray-400">...</span>
+            {% endif %}
+          {% endif %}
 
-      {% if end < total %}
-        <a href="?page={{ page + 1 }}&{{ querystring }}" class="btn-secondary">Next →</a>
-      {% endif %}
+          {% for page_num in range(start_page, end_page + 1) %}
+            {% if page_num == page %}
+              <span class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-indigo-600 border border-indigo-600 rounded-lg">
+                {{ page_num }}
+              </span>
+            {% else %}
+              <a href="?page={{ page_num }}&{{ querystring }}"
+                 class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors duration-150">
+                {{ page_num }}
+              </a>
+            {% endif %}
+          {% endfor %}
 
+          {% if end_page < total_pages %}
+            {% if end_page < total_pages - 1 %}
+              <span class="px-2 py-2 text-sm font-medium text-gray-400">...</span>
+            {% endif %}
+            <a href="?page={{ total_pages }}&{{ querystring }}"
+               class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors duration-150">
+              {{ total_pages }}
+            </a>
+          {% endif %}
+        </div>
+
+        {% if end < total %}
+          <a href="?page={{ page + 1 }}&{{ querystring }}"
+             class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors duration-150">
+            Next
+            <i class="fas fa-chevron-right ml-2"></i>
+          </a>
+        {% else %}
+          <span class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-50 border border-gray-200 rounded-lg cursor-not-allowed">
+            Next
+            <i class="fas fa-chevron-right ml-2"></i>
+          </span>
+        {% endif %}
+      </div>
     </div>
   </div>
+  {% endif %}
 
 </div>
 
 <script src="/static/js/employees.js"></script>
+
+<script>
+// Keep search/filter bar visible — observe mutations and undo hiding
+document.addEventListener('DOMContentLoaded', function() {
+  const container = document.getElementById('searchFiltersContainer');
+  const form = document.getElementById('searchFiltersForm');
+  if (!container) return;
+
+  function ensureVisible() {
+    // Remove Tailwind's hidden class if applied and reset styles
+    container.classList.remove('hidden');
+    container.style.display = '';
+    container.style.visibility = '';
+    if (form) {
+      form.classList.remove('hidden');
+      form.style.display = '';
+      form.style.visibility = '';
+    }
+  }
+
+  ensureVisible();
+
+  // Observe attribute changes on the container to revert hiding
+  const obs = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      if (m.type === 'attributes' && (m.attributeName === 'class' || m.attributeName === 'style')) {
+        ensureVisible();
+      }
+    }
+  });
+
+  obs.observe(container, { attributes: true, attributeFilter: ['class', 'style'] });
+  if (form) obs.observe(form, { attributes: true, attributeFilter: ['class', 'style'] });
+
+  // Also ensure on common events
+  window.addEventListener('resize', ensureVisible);
+  window.addEventListener('scroll', ensureVisible);
+});
+</script>
+
+<script>
+// Small actions dropdown handling: toggle per-row menu and close on outside click
+document.addEventListener('DOMContentLoaded', function () {
+  // Toggle when clicking the three-dot button
+  document.querySelectorAll('.actions-toggle').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const menuId = btn.getAttribute('aria-controls');
+      const menu = document.getElementById(menuId);
+      if (!menu) return;
+      const isHidden = menu.classList.contains('hidden');
+      // close any other open menus
+      document.querySelectorAll('.actions-menu').forEach(m => { if (m !== menu) m.classList.add('hidden'); });
+      if (isHidden) menu.classList.remove('hidden'); else menu.classList.add('hidden');
+    });
+  });
+
+  // Close menus when clicking elsewhere
+  document.addEventListener('click', function () {
+    document.querySelectorAll('.actions-menu').forEach(m => m.classList.add('hidden'));
+  });
+
+  // Prevent menu clicks from closing immediately
+  document.querySelectorAll('.actions-menu').forEach(menu => {
+    menu.addEventListener('click', function (e) { e.stopPropagation(); });
+  });
+});
+</script>
+
+<!-- Deactivate Modal -->
+<div id="deactivateModal" class="fixed inset-0 z-50 hidden pointer-events-auto">
+  <div class="fixed inset-0 bg-black/40" onclick="closeDeactivateModal()"></div>
+  <div class="fixed inset-0 flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl w-[420px] p-6 animate-scaleIn pointer-events-auto">
+      <div class="flex items-center justify-center w-14 h-14 rounded-full bg-orange-100 mx-auto mb-4">
+        <span class="text-orange-600 text-3xl">!</span>
+      </div>
+      <h2 class="text-xl font-semibold text-center text-gray-800">
+        Deactivate Employee
+      </h2>
+      <p class="text-sm text-gray-600 text-center mt-3 leading-relaxed">
+        This will temporarily disable the employee account.<br><br>
+        <b>Login, attendance and leave access will be blocked.</b><br><br>
+        <span class="text-green-600 font-medium">
+          Employee data will NOT be deleted.
+        </span>
+      </p>
+      <div class="flex justify-center gap-4 mt-6">
+        <button
+          id="confirmDeactivateBtn"
+          class="px-5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium">
+          Deactivate
+        </button>
+        <button
+          onclick="closeDeactivateModal()"
+          class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% endblock %}

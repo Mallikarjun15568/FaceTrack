@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Employee Login - FaceTrack</title>
+
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/professional.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body class="bg-soft-mist min-h-screen flex items-center justify-center px-4">
+
+  <!-- ================= LOGIN CARD ================= -->
+  <div class="w-full max-w-md">
+
+    <!-- HEADER -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4 shadow-lg">
+        <i class="fas fa-user text-2xl text-white"></i>
+      </div>
+      <h1 class="text-3xl font-bold text-gray-900 mb-2" style="color: #0F172A;">Employee Login</h1>
+      <p class="text-blue-600">Sign in to access your dashboard</p>
+      <div class="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full text-xs text-blue-700 border border-blue-200">
+        <i class="fas fa-clock text-blue-600"></i>
+        <span>Attendance Portal</span>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-2xl border border-gray-200 p-8">
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="space-y-3 mb-6">
+        {% for category, msg in messages %}
+        <div class="flex items-center gap-3 p-3 rounded-lg border text-sm {% if category=='error' %}bg-red-50 border-red-200 text-red-800{% else %}bg-green-50 border-green-200 text-green-800{% endif %}">
+          <i class="{% if category=='error' %}fas fa-exclamation-circle{% else %}fas fa-check-circle{% endif %}"></i>
+          <span class="font-medium">{{ msg }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      <!-- EMPLOYEE LOGIN FORM -->
+      <form method="POST" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2" style="color: #334155;">
+            <i class="fas fa-user mr-2 text-blue-600"></i>Username
+          </label>
+          <input type="text" name="username" required autocomplete="off"
+                 class="input-premium focus:border-blue-600 focus:ring-blue-600" 
+                 placeholder="Enter your username" value=""
+                 style="color: #020617;">
+          <style>
+            .input-premium::placeholder { color: #94A3B8; }
+          </style>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2" style="color: #334155;">
+            <i class="fas fa-key mr-2 text-blue-600"></i>Password
+          </label>
+          <input type="password" name="password" required
+                 class="input-premium focus:border-blue-600 focus:ring-blue-600" 
+                 placeholder="Enter your password"
+                 style="color: #020617;">
+          <style>
+            .input-premium::placeholder { color: #94A3B8; }
+          </style>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
+            <span class="text-sm font-medium" style="color: #475569;">Remember me</span>
+          </label>
+          <a href="{{ url_for('auth.forgot_password') }}"
+            class="text-sm font-medium transition hover:text-blue-800" style="color: #3B82F6;">
+            <i class="fas fa-key mr-1"></i>Forgot password?
+          </a>
+        </div>
+
+        <button type="submit" class="w-full text-lg py-3 font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]" 
+                style="background-color: #2563EB; color: white; border: 2px solid #2563EB;">
+          <i class="fas fa-sign-in-alt mr-2"></i>
+          Login
+        </button>
+
+      </form>
+      
+      <div class="relative my-6">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-gray-200"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+          <span class="px-3 bg-white text-gray-500">Or continue with</span>
+        </div>
+      </div>
+
+      <!-- FACE ID BUTTON -->
+      <button id="loginFaceID" type="button" class="w-full text-lg py-3 font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] mt-4"
+              style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; border: 2px solid #7c3aed;">
+        <i class="fas fa-user-circle mr-2"></i>
+        Login with Face ID
+      </button>
+
+      <p class="mt-6 text-center text-sm text-gray-600">
+        New user?
+        <a href="/auth/signup" class="font-semibold hover:text-blue-800 transition" style="color: #3B82F6;">
+          Create account
+        </a>
+      </p>
+
+    </div>
+
+    <p class="text-center text-xs text-gray-500 mt-6">
+      © 2026 FaceTrack Pro. Employee Attendance Portal.
+    </p>
+
+  </div>
+
+
+  <!-- ================= FACE ID MODAL ================= -->
+  <div id="faceModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+
+    <!-- BACKDROP -->
+    <div id="faceBackdrop" class="absolute inset-0 bg-black/50"></div>
+
+    <!-- MODAL BOX -->
+    <div class="relative z-10 w-full max-w-md bg-white rounded-lg shadow-xl p-6 mx-4">
+
+      <div class="text-center mb-5">
+        <h3 class="text-xl font-bold text-gray-900">Face ID Login</h3>
+        <p class="text-sm text-gray-500 mt-1">Position your face in the camera</p>
+      </div>
+
+      <!-- CAMERA + SCAN -->
+      <div class="flex flex-col items-center gap-4">
+
+        <div class="relative w-56 h-56">
+          <div class="relative w-full h-full rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-300">
+            <video id="modalFaceCam"
+                   autoplay playsinline muted
+                   class="w-full h-full object-cover"></video>
+            <!-- FACE DETECTION CANVAS OVERLAY -->
+            <canvas id="faceCanvas" 
+                    class="absolute inset-0 w-full h-full pointer-events-none z-10"></canvas>
+          </div>
+
+          <!-- SCANNING ANIMATION -->
+          <div id="scanningOverlay" class="absolute inset-0 hidden items-center justify-center pointer-events-none z-20">
+            <div class="absolute inset-0 rounded-lg border-4 border-indigo-500 animate-pulse"></div>
+            <div class="absolute inset-4 rounded-lg border-2 border-indigo-400 opacity-60"></div>
+            <div class="absolute w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent animate-scan"></div>
+          </div>
+
+          <!-- PROCESSING OVERLAY -->
+          <div id="processingOverlay" class="absolute inset-0 hidden items-center justify-center bg-indigo-900/80 rounded-lg">
+            <div class="text-center">
+              <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mb-3"></div>
+              <p class="text-white text-sm font-semibold">Processing...</p>
+            </div>
+          </div>
+
+          <!-- SUCCESS OVERLAY -->
+          <div id="faceSuccess"
+               class="absolute inset-0 hidden items-center justify-center bg-green-500/90 rounded-lg">
+            <div class="text-center">
+              <svg class="w-20 h-20 text-white mx-auto animate-bounce-once"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                      d="M5 13l4 4L19 7"/>
+              </svg>
+              <p class="text-white text-sm font-bold mt-2">Recognized!</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="modalStatus" class="text-sm font-medium text-gray-700 min-h-[22px] text-center">
+          <i class="fas fa-circle-notch fa-spin text-indigo-600 mr-2"></i>Initializing camera…
+        </div>
+
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="flex gap-3 mt-6">
+        <button id="modalCancel" class="flex-1 btn btn-secondary">
+          Cancel
+        </button>
+        <button id="modalForceCapture" class="flex-1 btn btn-primary">
+          Capture
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FACE LOGIN JS -->
+  <script src="{{ url_for('static', filename='js/face_login.js') }}"></script>
+
+</body>
+</html>

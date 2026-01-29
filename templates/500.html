@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 - Server Error | FaceTrack Pro</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="stylesheet" href="/static/css/output.css">
+    <link rel="stylesheet" href="/static/css/premium.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 min-h-screen flex items-center justify-center p-6">
+
+<!-- Animated Background Elements -->
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+  <div class="absolute top-20 left-20 w-72 h-72 bg-red-400/20 rounded-full blur-3xl animate-pulse" style="animation-duration: 4s;"></div>
+  <div class="absolute bottom-20 right-20 w-96 h-96 bg-orange-400/20 rounded-full blur-3xl animate-pulse" style="animation-duration: 6s;"></div>
+</div>
+
+<div class="premium-card max-w-2xl w-full p-12 text-center animate-fadeInScale">
+    <!-- Logo -->
+    <div class="flex justify-center mb-8">
+        <div class="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-2xl animate-bounce-slow">
+            <i class="fas fa-exclamation-triangle text-white text-4xl"></i>
+        </div>
+    </div>
+
+    <!-- Error Code -->
+    <h1 class="text-9xl font-extrabold bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 bg-clip-text text-transparent mb-4">
+        500
+    </h1>
+
+    <!-- Error Message -->
+    <h2 class="text-3xl font-bold text-gray-800 mb-4">
+        Internal Server Error
+    </h2>
+
+    <p class="text-lg text-gray-600 mb-8">
+        Oops! Something went wrong on our end. Our team has been notified and is working on it.
+    </p>
+
+    <!-- Error Details -->
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-8 text-left">
+        <p class="text-sm text-gray-700">
+            <i class="fas fa-tools text-red-500 mr-2"></i>
+            <strong>What happened?</strong> The server encountered an unexpected condition that prevented it from fulfilling the request.
+        </p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="{{ url_for('index') }}" class="premium-btn-primary">
+            <i class="fas fa-home mr-2"></i>
+            Go to Home
+        </a>
+    </div>
+</div>
+
+<!-- Footer -->
+<div class="fixed bottom-4 left-1/2 transform -translate-x-1/2 text-center text-gray-500 text-sm">
+    <p>&copy; 2026 FaceTrack Pro. All rights reserved.</p>
+</div>
+
+</body>
+</html>

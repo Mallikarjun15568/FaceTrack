@@ -4,77 +4,118 @@
 <div class="p-6 space-y-6">
 
     <!-- Back Button -->
-    <a href="/employees" class="text-blue-600 hover:underline">&larr; Back to Employees</a>
+    <a href="/employees" class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors">
+        <i class="fas fa-arrow-left mr-2"></i>Back to Employees
+    </a>
 
     <!-- Page Header -->
-    <h1 class="text-2xl font-bold">Edit Employee</h1>
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <i class="fas fa-user-edit text-white text-xl"></i>
+        </div>
+        <h1 class="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+            Edit Employee
+        </h1>
+    </div>
 
     <!-- Edit Form -->
-    <div class="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow max-w-xl">
+    <div class="premium-card p-8 max-w-2xl scroll-reveal" style="--delay: 0.1s">
 
         <form action="/employees/edit/{{ emp.id }}" 
               method="POST" 
               enctype="multipart/form-data"
-              class="space-y-4">
+              class="space-y-6">
+
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <!-- Full Name -->
             <div>
-                <label class="block mb-1">Full Name</label>
+                <label class="block mb-2 font-medium text-gray-700">
+                    <i class="fas fa-user text-blue-600 mr-2"></i>Full Name
+                </label>
                 <input type="text" 
                        name="full_name" 
                        value="{{ emp.full_name }}" 
                        required
-                       class="w-full p-3 rounded-xl border dark:bg-gray-800 dark:text-white">
+                       class="input-premium"
+                       placeholder="Enter full name">
             </div>
 
             <!-- Email -->
             <div>
-                <label class="block mb-1">Email</label>
+                <label class="block mb-2 font-medium text-gray-700">
+                    <i class="fas fa-envelope text-blue-600 mr-2"></i>Email
+                </label>
                 <input type="email" 
                        name="email" 
                        value="{{ emp.email }}" 
                        required
-                       class="w-full p-3 rounded-xl border dark:bg-gray-800 dark:text-white">
+                       class="input-premium"
+                       placeholder="Enter email address">
             </div>
 
             <!-- Phone -->
             <div>
-                <label class="block mb-1">Phone</label>
+                <label class="block mb-2 font-medium text-gray-700">
+                    <i class="fas fa-phone text-blue-600 mr-2"></i>Phone
+                </label>
                 <input type="text" 
                        name="phone" 
                        value="{{ emp.phone }}" 
-                       class="w-full p-3 rounded-xl border dark:bg-gray-800 dark:text-white">
+                       class="input-premium"
+                       placeholder="Enter phone number">
+            </div>
+
+            <!-- Gender -->
+            <div>
+                <label class="block mb-2 font-medium text-gray-700">
+                    <i class="fas fa-venus-mars text-blue-600 mr-2"></i>Gender
+                </label>
+                <select name="gender" class="input-premium">
+                    <option value="">Select Gender</option>
+                    <option value="Male" {% if emp.gender == "Male" %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if emp.gender == "Female" %}selected{% endif %}>Female</option>
+                    <option value="Other" {% if emp.gender == "Other" %}selected{% endif %}>Other</option>
+                </select>
             </div>
 
             <!-- Department -->
             <div>
-                <label class="block mb-1">Department</label>
+                <label class="block mb-2 font-medium text-gray-700">
+                    <i class="fas fa-building text-blue-600 mr-2"></i>Department
+                </label>
                 <select name="department_id"
-                        class="w-full p-3 rounded-xl border dark:bg-gray-800 dark:text-white">
+                        class="input-premium">
                     {% for d in departments %}
+                    {% if d.name != 'Admin' and d.name != 'Administration' %}
                     <option value="{{ d.id }}" 
                         {% if d.id == emp.department_id %}selected{% endif %}>
                         {{ d.name }}
                     </option>
+                    {% endif %}
                     {% endfor %}
                 </select>
             </div>
 
             <!-- Join Date -->
             <div>
-                <label class="block mb-1">Join Date</label>
+                <label class="block mb-2 font-medium text-gray-700">
+                    <i class="fas fa-calendar text-blue-600 mr-2"></i>Join Date
+                </label>
                 <input type="date" 
                        name="join_date" 
                        value="{{ emp.join_date }}" 
                        required
-                       class="w-full p-3 rounded-xl border dark:bg-gray-800 dark:text-white">
+                       class="input-premium">
             </div>
 
             <!-- Status -->
             <div>
-                <label class="block mb-1">Status</label>
+                <label class="block mb-2 font-medium text-gray-700">
+                    <i class="fas fa-toggle-on text-blue-600 mr-2"></i>Status
+                </label>
                 <select name="status"
-                        class="w-full p-3 rounded-xl border dark:bg-gray-800 dark:text-white">
+                        class="input-premium">
                     <option value="Active"   {% if emp.status == "Active" %}selected{% endif %}>Active</option>
                     <option value="Inactive" {% if emp.status == "Inactive" %}selected{% endif %}>Inactive</option>
                 </select>
@@ -82,18 +123,29 @@
 
             <!-- Update Photo -->
             <div>
-                <label class="block mb-1">Update Photo (optional)</label>
+                <label class="block mb-2 font-medium text-gray-700">
+                    <i class="fas fa-image text-blue-600 mr-2"></i>Update Photo (optional)
+                </label>
                 <input type="file" 
                        name="photo" 
                        accept="image/*"
-                       class="w-full p-3 rounded-xl border dark:bg-gray-800 dark:text-white">
+                       class="input-premium">
+                <p class="text-sm text-gray-500 mt-2">
+                    <i class="fas fa-info-circle mr-1"></i>Accepted formats: JPG, PNG (Max 5MB)
+                </p>
             </div>
 
-            <!-- Submit -->
-            <button type="submit"
-                    class="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl">
-                Save Changes
-            </button>
+            <!-- Submit Buttons -->
+            <div class="flex gap-4 pt-4">
+                <button type="submit"
+                        class="btn-premium btn-premium-primary flex-1">
+                    <i class="fas fa-save mr-2"></i>Save Changes
+                </button>
+                <a href="/employees" 
+                   class="btn-premium btn-premium-outline flex-1 text-center">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </a>
+            </div>
 
         </form>
     </div>

@@ -11,22 +11,25 @@
     <!-- HEADER -->
     <div class="scroll-reveal flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div>
-            <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Attendance Records</h1>
-            <p class="text-sm text-gray-600 mt-2 font-medium">View and manage employee check-in/check-out logs</p>
+            <h1 class="text-4xl font-bold text-indigo-900">Attendance Records</h1>
+            <p class="text-sm text-gray-600 mt-3 font-medium">View and manage employee check-in/check-out logs</p>
         </div>
 
         {% if session.role in ['admin', 'hr'] %}
         <div class="flex items-center gap-4">
-            <button id="exportCSV" class="btn-success px-6 py-3 shadow-md hover:shadow-lg rounded-xl">
-                <i class="fa-solid fa-file-csv mr-2"></i>Export CSV
+            <button id="exportCSV" class="btn-premium btn-premium-success">
+                <i class="fa-solid fa-file-csv"></i>Export CSV
             </button>
         </div>
         {% endif %}
     </div>
 
     <!-- FILTER BAR -->
-    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow" style="transition-delay: 0.2s">
-        <h3 class="font-bold text-xl text-gray-800 mb-6">Filter Attendance</h3>
+    <div class="scroll-reveal premium-card p-8" style="--delay: 0.2s">
+        <h3 class="font-bold text-xl text-gray-900 mb-6 flex items-center gap-2">
+            <i class="fas fa-filter text-indigo-600"></i>
+            Filter Attendance
+        </h3>
         
         <div class="flex flex-wrap items-end gap-6">
 
@@ -35,7 +38,7 @@
                 <label for="userFilter" class="block text-sm font-semibold text-gray-700 mb-2">
                     <i class="fa-solid fa-user text-blue-500 mr-2"></i>Employee
                 </label>
-                <select id="userFilter" class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm">
+                <select id="userFilter" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all">
                     <option value="">All Employees</option>
                 </select>
             </div>
@@ -45,34 +48,37 @@
                 <label for="dateFilter" class="block text-sm font-semibold text-gray-700 mb-2">
                     <i class="fa-solid fa-calendar text-green-500 mr-2"></i>Date
                 </label>
-                <input type="date" id="dateFilter" class="input-modern w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm">
+                <input type="date" id="dateFilter" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all">
             </div>
 
-            <button id="applyFilters" class="btn-primary px-6 py-3 shadow-md hover:shadow-lg rounded-xl">
-                <i class="fa-solid fa-filter mr-2"></i>Apply
+            <button id="applyFilters" class="btn-premium btn-premium-primary">
+                <i class="fa-solid fa-filter"></i>Apply
             </button>
 
-            <button id="resetFilters" class="px-6 py-3 rounded-xl border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold transition-all shadow-sm hover:shadow-md">
-                <i class="fa-solid fa-redo mr-2"></i>Reset
+            <button id="resetFilters" class="btn-premium btn-premium-outline">
+                <i class="fa-solid fa-redo"></i>Reset
             </button>
 
         </div>
     </div>
 
     <!-- ATTENDANCE TABLE -->
-    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 p-8 overflow-x-auto hover:shadow-xl transition-shadow" style="transition-delay: 0.3s">
+    <div class="scroll-reveal bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow" style="transition-delay: 0.3s">
 
-        <table class="table-modern" id="attendanceTable">
+        <table class="w-full" id="attendanceTable">
 
             <thead>
-                <tr class="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                    <th class="rounded-tl-xl">Photo</th>
-                    <th>Username</th>
-                    <th>Snapshot</th>
-                    <th>Check-In</th>
-                    <th>Check-Out</th>
-                    <th>Working Hours</th>
-                    <th class="rounded-tr-xl">Status</th>
+                <tr class="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 text-gray-700 border-b border-gray-200">
+                    <th class="py-3 px-4 text-left text-sm font-medium">Photo</th>
+                    <th class="py-3 px-4 text-left text-sm font-medium">Username</th>
+                    <th class="py-3 px-4 text-left text-sm font-medium">Snapshot</th>
+                    <th class="py-3 px-4 text-left text-sm font-medium">Check-In</th>
+                    <th class="py-3 px-4 text-left text-sm font-medium">Check-Out</th>
+                    <th class="py-3 px-4 text-left text-sm font-medium">Working Hours</th>
+                    <th class="py-3 px-4 text-right text-sm font-medium">Status</th>
+                    {% if session.role in ['admin', 'hr'] %}
+                    <th class="py-3 px-4 text-center text-sm font-medium">Actions</th>
+                    {% endif %}
                 </tr>
             </thead>
 
@@ -82,6 +88,31 @@
 
         </table>
 
+    </div>
+     
+    <!-- Checkout Confirmation Modal -->
+    <div id="checkoutModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-[400px] max-w-[90vw] p-6 text-center transform transition-all duration-300 scale-95 opacity-0">
+            <div class="flex justify-center mb-6">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-lg bg-blue-100 text-blue-600">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">Complete Check-Out</h3>
+            <p class="text-gray-600 leading-relaxed mb-6">
+                Are you sure you want to complete this check-out? This will set the check-out time to now and calculate the working hours.
+            </p>
+            <div class="flex gap-4 justify-center">
+                <button id="cancelCheckout" onclick="closeCheckoutModal()"
+                    class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors duration-200">
+                    Cancel
+                </button>
+                <button id="confirmCheckout" onclick="confirmCheckout()"
+                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors duration-200 shadow-md hover:shadow-lg">
+                    <i class="fas fa-check-circle mr-2"></i>Complete Check-Out
+                </button>
+            </div>
+        </div>
     </div>
      
      <div id="attendance-popup"

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Summary - FaceTrack Employee</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/professional.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/premium.css') }}">
+
+  <!-- Icons: prefer local copy (if available), otherwise use CDN -->
+  {% if FA_LOCAL_AVAILABLE %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+  {% else %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  {% endif %}
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .admin-bg {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      background-image:
+        radial-gradient(circle at 25% 25%, rgba(37, 99, 235, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(37, 99, 235, 0.02) 0%, transparent 50%);
+    }
+    .premium-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .premium-card:hover {
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+    .summary-stat {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      color: white;
+      text-align: center;
+    }
+    .chart-container {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border-radius: 1rem;
+      border: 1px solid #e2e8f0;
+    }
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+    header { box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .attendance-progress-bar {
+      width: 0%;
+      transition: width 0.8s ease-out;
+    }
+  </style>
+</head>
+<body class="m-0 bg-soft-mist min-h-screen">
+
+  <!-- Premium Header (copied from dashboard for consistent branding) -->
+    <header class="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-100 shadow-sm">
+      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <!-- Logo only (compact) -->
+        <div class="flex items-center gap-2">
+          <a href="/" class="block">
+            <img src="{{ url_for('static', filename='images/FaceTrack_logo.png') }}" alt="FaceTrack Logo" class="h-16 w-auto">
+          </a>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="flex items-center gap-6">
+          <a href="{{ url_for('employee.dashboard') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.dashboard' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-home mr-2"></i>Dashboard
+          </a>
+          <a href="{{ url_for('employee.attendance') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.attendance' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-clipboard-list mr-2"></i>Attendance
+          </a>
+          <a href="{{ url_for('employee.face_request') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.face_request' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-camera mr-2"></i>Face Request
+          </a>
+          <a href="{{ url_for('employee.leave') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.leave' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-calendar-plus mr-2"></i>Leave
+          </a>
+          <a href="{{ url_for('employee.summary') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.summary' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-chart-bar mr-2"></i>Summary
+          </a>
+        </nav>
+
+        <!-- User Section (compact dropdown) -->
+        <div class="relative">
+          <button id="userMenuBtn" onclick="toggleUserMenu(event)" class="flex items-center gap-3 focus:outline-none">
+            <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-sm">
+              <i class="fas fa-user text-white text-sm"></i>
+            </div>
+            <span class="ml-2 hidden sm:inline text-sm font-medium text-gray-800">{{ session.get('full_name', 'Employee') }}</span>
+            <i class="fas fa-caret-down ml-1 text-gray-500"></i>
+          </button>
+          <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-md py-2 z-50">
+            <a href="{{ url_for('employee.profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-user mr-2"></i>Profile</a>
+            <a href="{{ url_for('employee.settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-cog mr-2"></i>Settings</a>
+            <form action="{{ url_for('auth.logout') }}" method="post" style="display: inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <script>
+      function toggleUserMenu(e){ e.stopPropagation(); const m=document.getElementById('userMenu'); if(m) m.classList.toggle('hidden'); }
+      document.addEventListener('click', function(){ const m=document.getElementById('userMenu'); if(m && !m.classList.contains('hidden')) m.classList.add('hidden'); });
+    </script>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+
+    <!-- Header Section -->
+    <div class="mb-8 scroll-reveal">
+      <div class="flex items-center gap-4 mb-4">
+        <div class="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
+          <i class="fas fa-chart-bar text-white text-lg"></i>
+        </div>
+        <div>
+          <h2 class="text-3xl font-bold text-gray-900">My Attendance Summary</h2>
+          <p class="text-gray-600 text-lg">Comprehensive overview of your attendance patterns and statistics</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div class="summary-stat scroll-reveal">
+        <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+          <i class="fas fa-calendar-check text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold mb-1">Total Present</h3>
+        <p class="text-3xl font-bold">{{ total_present or 0 }}</p>
+        <p class="text-sm opacity-90">days this year</p>
+      </div>
+
+      <div class="summary-stat scroll-reveal" style="animation-delay: 0.1s; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+        <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+          <i class="fas fa-clock text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold mb-1">Total Hours</h3>
+        <p class="text-3xl font-bold">{{ total_hours or '0h' }}</p>
+        <p class="text-sm opacity-90">worked this year</p>
+      </div>
+
+      <div class="summary-stat scroll-reveal" style="animation-delay: 0.2s; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+        <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+          <i class="fas fa-exclamation-triangle text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold mb-1">Late Arrivals</h3>
+        <p class="text-3xl font-bold">{{ total_late or 0 }}</p>
+        <p class="text-sm opacity-90">times this year</p>
+      </div>
+
+      <div class="summary-stat scroll-reveal" style="animation-delay: 0.3s; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+        <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+          <i class="fas fa-times-circle text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold mb-1">Absent Days</h3>
+        <p class="text-3xl font-bold">{{ total_absent or 0 }}</p>
+        <p class="text-sm opacity-90">days this year</p>
+      </div>
+    </div>
+
+    <!-- Monthly Chart -->
+    <div class="chart-container p-8 mb-8 scroll-reveal" style="animation-delay: 0.4s">
+      <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+        <div class="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
+          <i class="fas fa-chart-line text-white text-sm"></i>
+        </div>
+        Monthly Attendance Overview
+      </h3>
+
+      <div class="relative">
+        <canvas id="attendanceChart"
+                width="400"
+                height="200"
+                data-labels="{{ summary|map(attribute='month')|list|tojson }}"
+                data-present="{{ summary|map(attribute='present')|list|tojson }}"
+                data-late="{{ summary|map(attribute='late')|list|tojson }}">
+        </canvas>
+      </div>
+    </div>
+
+    <!-- Monthly Breakdown Table -->
+    <div class="premium-card p-6 scroll-reveal" style="animation-delay: 0.5s">
+      <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+        <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+          <i class="fas fa-table text-white text-sm"></i>
+        </div>
+        Monthly Breakdown
+      </h3>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+              <tr>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <i class="fas fa-calendar mr-2"></i>Month
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <i class="fas fa-check-circle mr-2 text-green-600"></i>Present
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <i class="fas fa-clock mr-2 text-yellow-600"></i>Late
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <i class="fas fa-times-circle mr-2 text-red-600"></i>Absent
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <i class="fas fa-percentage mr-2 text-blue-600"></i>Attendance Rate
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              {% for month in summary %}
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center mr-3">
+                      <i class="fas fa-calendar text-blue-600 text-xs"></i>
+                    </div>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">{{ month.month }}</div>
+                      <div class="text-xs text-gray-500">{{ month.year }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                    <i class="fas fa-check mr-1"></i>{{ month.present or 0 }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800">
+                    <i class="fas fa-clock mr-1"></i>{{ month.late or 0 }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
+                    <i class="fas fa-times mr-1"></i>{{ month.absent or 0 }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="flex-1 bg-gray-200 rounded-full h-2 mr-3">
+                      <div class="attendance-progress-bar bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full" data-percentage="{{ month.attendance_rate }}"></div>
+                    </div>
+                    <span class="text-sm font-medium text-gray-900">{{ month.attendance_rate }}%</span>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+      </div>
+    </div>
+
+    <!-- Download PDF Section -->
+    <div class="premium-card p-6 scroll-reveal" style="animation-delay: 0.6s">
+      <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+        <div class="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+          <i class="fas fa-download text-white text-sm"></i>
+        </div>
+        Download Report
+      </h3>
+
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-600">Get a detailed PDF report of your attendance summary.</p>
+        </div>
+        <a href="{{ url_for('employee.export_summary_pdf') }}"
+           class="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 shadow-lg hover:shadow-xl inline-flex items-center">
+          <i class="fas fa-file-pdf mr-2"></i>Download PDF
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Add scroll reveal animations
+    document.addEventListener('DOMContentLoaded', function() {
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      };
+
+      const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.style.animationDelay = entry.target.style.getPropertyValue('--delay') || '0s';
+            entry.target.classList.add('animate-in');
+          }
+        });
+      }, observerOptions);
+
+      document.querySelectorAll('.scroll-reveal').forEach(el => {
+        observer.observe(el);
+      });
+    });
+
+    // Animate progress bars
+    document.querySelectorAll('.attendance-progress-bar').forEach(bar => {
+      const percentage = bar.getAttribute('data-percentage');
+      if (percentage) {
+        setTimeout(() => {
+          bar.style.width = percentage + '%';
+        }, 500);
+      }
+    });
+  </script>
+
+  <script>
+    // Chart.js for attendance visualization
+    const chartCanvas = document.getElementById('attendanceChart');
+    if (chartCanvas) {
+      const chartLabels = (() => {
+        try {
+          const labels = chartCanvas.getAttribute('data-labels');
+          return labels ? JSON.parse(labels) : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        } catch (e) {
+          return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        }
+      })();
+
+      const presentData = (() => {
+        try {
+          const data = chartCanvas.getAttribute('data-present');
+          return data ? JSON.parse(data) : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        } catch (e) {
+          return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        }
+      })();
+
+      const lateData = (() => {
+        try {
+          const data = chartCanvas.getAttribute('data-late');
+          return data ? JSON.parse(data) : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        } catch (e) {
+          return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        }
+      })();
+
+      const ctx = chartCanvas.getContext('2d');
+      const attendanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartLabels,
+          datasets: [{
+            label: 'Present Days',
+            data: presentData,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#3b82f6',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8
+          }, {
+            label: 'Late Days',
+            data: lateData,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#f59e0b',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                usePointStyle: true,
+                padding: 20,
+                font: {
+                  size: 12,
+                  weight: '500'
+                }
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: '#ffffff',
+              bodyColor: '#ffffff',
+              cornerRadius: 8,
+              displayColors: true
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              },
+              ticks: {
+                font: {
+                  size: 12
+                }
+              }
+            },
+            x: {
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              },
+              ticks: {
+                font: {
+                  size: 12
+                }
+              }
+            }
+          },
+          elements: {
+            point: {
+              hoverBorderWidth: 3
+            }
+          },
+          animation: {
+            duration: 2000,
+            easing: 'easeInOutQuart'
+          }
+        }
+      });
+    }
+  </script>
+
+  <script>
+    // Animate progress bars
+    document.querySelectorAll('.attendance-progress-bar').forEach(bar => {
+      const percentage = bar.getAttribute('data-percentage');
+      if (percentage) {
+        setTimeout(() => {
+          bar.style.width = percentage + '%';
+        }, 500);
+      }
+    });
+  </script>
+
+</body>
+</html>

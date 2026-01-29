@@ -40,6 +40,8 @@ static/faces/
 static/attendance_photos/
 static/snapshots/
 static/face_login_temp/
+static/images/*.png
+static/pending_faces/
 
 # -------------------------------
 # InsightFace Models (VERY LARGE)
@@ -84,22 +86,30 @@ ERD_FaceTrack.svg
 wireframes_index.md
 demo_data.sql
 
+# Documentation files (keep only README.md and DEPLOYMENT.md)
+*.md
+!README.md
+!DEPLOYMENT.md
+CHANGELOG.md
+COMPLETE_FIX_REPORT.md
+DEEP_ANALYSIS_REPORT.md
+HONEST_FEEDBACK.md
+PREMIUM_UI_GUIDE.md
+REFACTORING_SUMMARY.md
+SUMMARY.md
+UI_TRANSFORMATION_SUMMARY.md
+UI_UX_ENHANCEMENTS.md
+WIREFRAMES.md
+MOBILE_CAMERA_TESTING.md
+VSCODE_PORT_FORWARDING.md
+PASSWORD_RESET_IMPLEMENTATION.md
+current_wireframe.md
+
 # runtime uploads
 static/uploads/
 static/faces/
 static/snapshots/
-
-scripts/
-# design/docs to ignore
-docs/diagrams/
-
-# DFD and mobile testing documents
-DFD_Documentation.md
-MOBILE_CAMERA_TESTING.md
-
-# images and temp folders
-static/images/
 static/temp/
-
-# template backups
+scripts/
 templates/backups/
+docs/diagrams/

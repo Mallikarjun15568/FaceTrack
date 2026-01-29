@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const passwordInput = document.getElementById("password");
   const togglePassword = document.querySelector(".toggle-password");
   const refreshList = document.getElementById("refreshList");
+  const webcamInactiveOverlay = document.getElementById('webcamInactiveOverlay');
 
   let stream = null;
 
@@ -26,7 +27,18 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       video.srcObject = stream;
       captureBtn.disabled = false;
+      // Hide overlay only when video is actually playing
+      video.onloadeddata = () => {
+        if (webcamInactiveOverlay) webcamInactiveOverlay.style.display = 'none';
+      };
+      // If the stream ends (camera closed), show overlay again
+      stream.getTracks().forEach(track => {
+        track.addEventListener('ended', () => {
+          if (webcamInactiveOverlay) webcamInactiveOverlay.style.display = 'flex';
+        });
+      });
     } catch (err) {
+      if (webcamInactiveOverlay) webcamInactiveOverlay.style.display = 'flex';
       console.error("Webcam error:", err);
       showNotification("Could not access webcam. Please check permissions.", "error");
       captureBtn.disabled = true;

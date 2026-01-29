@@ -5,14 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Kiosk{% endblock %}</title>
 
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
-    <link rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/kiosk_smooth.css') }}">
+        <!-- Icons: prefer local copy (if available), otherwise use CDN -->
+        {% if FA_LOCAL_AVAILABLE %}
+        <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+        {% else %}
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        {% endif %}
 
     {% block head %}{% endblock %}
 </head>
 
-<body class="bg-[#07121f] text-white overflow-hidden">
+<body class="h-screen overflow-hidden bg-soft-mist">
     {% block content %}{% endblock %}
     {% block scripts %}{% endblock %}
 </body>

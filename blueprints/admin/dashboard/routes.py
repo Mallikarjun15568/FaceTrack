@@ -1,23 +1,21 @@
 from . import bp
-from flask import render_template, session, redirect, url_for
+from flask import render_template, session, redirect, url_for, jsonify
 from utils.db import get_db
 from blueprints.auth.utils import login_required
+from datetime import date, timedelta
 
 
 # ================================
 # ADMIN DASHBOARD (FINAL CLEAN)
 # ================================
-@bp.route("/")
-@bp.route("/admin")
 @bp.route("")
-@bp.route("/dashboard")
 @login_required
 def admin_dashboard():
     role = session.get('role')
 
-    # If user is not admin/hr, show employee dashboard
+    # If user is not admin/hr, redirect to employee dashboard
     if role not in ["admin", "hr"]:
-        return render_template("dashboard_employee.html")
+        return redirect(url_for("employee.dashboard"))
 
     db = get_db()
     cursor = db.cursor(dictionary=True)
@@ -31,7 +29,7 @@ def admin_dashboard():
     total_departments = cursor.fetchone()["total"]
 
     # 3) Present today
-    cursor.execute("SELECT COUNT(*) AS present FROM attendance WHERE date = CURDATE()")
+    cursor.execute("SELECT COUNT(DISTINCT employee_id) AS present FROM attendance WHERE DATE(check_in_time) = CURDATE() AND check_in_time IS NOT NULL")
     today_present = cursor.fetchone()["present"]
 
     # 4) Recognition Today
@@ -44,10 +42,14 @@ def admin_dashboard():
 
     # 5) Recent Attendance (last 5)
     cursor.execute("""
-        SELECT e.full_name, a.date, a.time 
+        SELECT e.full_name, 
+               DATE(a.check_in_time) AS date, 
+               TIME(a.check_in_time) AS time,
+               a.status
         FROM attendance a
         JOIN employees e ON e.id = a.employee_id
-        ORDER BY a.id DESC
+        WHERE a.check_in_time IS NOT NULL
+        ORDER BY a.check_in_time DESC
         LIMIT 5
     """)
     recent_attendance = cursor.fetchall()
@@ -62,19 +64,30 @@ def admin_dashboard():
     """)
     recent_recognitions = cursor.fetchall()
 
-    # 7) Weekly Attendance Chart Data
-    cursor.execute("""
-        SELECT DATE(date) AS day, COUNT(*) AS count
-        FROM attendance
-        WHERE date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-        GROUP BY DATE(date)
-    """)
-    weekly_rows = cursor.fetchall()
+    # 7) Weekly Attendance Chart Data (last 7 days)
+    def _fetch_weekly_attendance(cur, lookback_days=6):
+        cur.execute(f"""
+            SELECT DATE(date) AS day, COUNT(*) AS count
+            FROM attendance
+            WHERE date >= DATE_SUB(CURDATE(), INTERVAL {lookback_days} DAY)
+              AND check_in_time IS NOT NULL
+            GROUP BY DATE(date)
+        """)
+        rows = cur.fetchall()
 
-    weekly_data = {
-        "labels": [str(row["day"]) for row in weekly_rows],
-        "data": [row["count"] for row in weekly_rows]
-    }
+        counts = {str(r['day']): r['count'] for r in rows}
+        labels = []
+        data = []
+        for i in range(lookback_days, -1, -1):
+            d = date.today() - timedelta(days=i)
+            s = d.isoformat()
+            labels.append(s)
+            data.append(counts.get(s, 0))
+
+        return labels, data
+
+    labels, data = _fetch_weekly_attendance(cursor)
+    weekly_data = {"labels": labels, "data": data}
 
     # 8) Department Employee Distribution
     cursor.execute("""
@@ -101,3 +114,30 @@ def admin_dashboard():
         weekly_data=weekly_data,
         department_data=department_data
     )
+
+
+@bp.route('/debug/weekly-attendance')
+def debug_weekly_attendance():
+    """Return JSON of last 7 days attendance counts for debugging."""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT DATE(date) AS day, COUNT(*) AS count
+        FROM attendance
+        WHERE date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+          AND check_in_time IS NOT NULL
+        GROUP BY DATE(date)
+    """)
+    rows = cursor.fetchall()
+
+    counts = {str(r['day']): r['count'] for r in rows}
+    labels = []
+    data = []
+    for i in range(6, -1, -1):
+        d = date.today() - timedelta(days=i)
+        s = d.isoformat()
+        labels.append(s)
+        data.append(counts.get(s, 0))
+
+    return jsonify({"labels": labels, "data": data})

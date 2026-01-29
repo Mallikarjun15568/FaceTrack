@@ -2,7 +2,20 @@ from . import bp
 from flask import jsonify, request, render_template, session, redirect, flash
 from utils.db import get_db
 from datetime import datetime, date, time, timedelta
-from blueprints.auth.utils import login_required
+from blueprints.auth.utils import login_required, role_required
+
+# ==================================================================================
+# REPORTS BLUEPRINT - ALL QUERIES USE DATE(check_in_time)
+# ==================================================================================
+# IMPORTANT: All reports APIs use DATE(check_in_time) to derive attendance dates.
+# Legacy 'date' column in attendance table is IGNORED.
+# 
+# Filtering Rules:
+# - WHERE check_in_time IS NOT NULL (excludes legacy/corrupted rows)
+# - ORDER BY check_in_time DESC (chronological order)
+# 
+# This ensures clean, consistent reporting across all endpoints.
+# ==================================================================================
 
 
 # SAFE JSON FIX
@@ -22,16 +35,18 @@ def jsonify_safe(rows):
 # PAGE
 @bp.route("/")
 @login_required
+@role_required("admin", "hr")
 def reports_page():
-    # Only admin and HR can view reports
-    if session.get("role") not in ["admin", "hr"]:
-        flash("Only admins and HR can view reports", "error")
-        return redirect("/dashboard")
-    return render_template("reports.html")
+    return render_template("reports.html", employee_view=False)
 
 
-# SUMMARY API (FIXED attendance%)
+# SUMMARY API (Today's attendance counts)
+# Uses DATE(check_in_time) = CURDATE() for filtering
+# SUMMARY API (Today's attendance counts)
+# Uses DATE(check_in_time) = CURDATE() for filtering
 @bp.route("/api/summary")
+@login_required
+@role_required("admin", "hr")
 def api_summary():
     db = get_db()
     cur = db.cursor(dictionary=True)
@@ -39,21 +54,25 @@ def api_summary():
     cur.execute("SELECT COUNT(*) AS total FROM employees")
     total = cur.fetchone()["total"] or 0
 
-    cur.execute("SELECT COUNT(*) AS present FROM attendance WHERE date = CURDATE() AND status='present'")
+    # Today's attendance
+    today = date.today()
+    cur.execute("SELECT COUNT(DISTINCT employee_id) AS present FROM attendance WHERE DATE(check_in_time) = %s AND check_in_time IS NOT NULL", (today,))
     present = cur.fetchone()["present"] or 0
 
-    cur.execute("SELECT COUNT(*) AS late FROM attendance WHERE date = CURDATE() AND status='late'")
+    # Late entries today (after 9:30 AM)
+    cur.execute("SELECT COUNT(DISTINCT employee_id) AS late FROM attendance WHERE DATE(check_in_time) = %s AND check_in_time IS NOT NULL AND TIME(check_in_time) > '09:30:00'", (today,))
     late = cur.fetchone()["late"] or 0
 
-    cur.execute("SELECT COUNT(*) AS absent FROM attendance WHERE date = CURDATE() AND status='absent'")
-    absent = cur.fetchone()["absent"] or 0
+    # Absent: total - (present + late) but only count employees who should be present today
+    # For simplicity, absent = total - present (since late are included in present)
+    absent = max(0, total - present)
 
     cur.close()
 
-    # FIX — attendance % calculation
+    # Attendance percentage for today
     percent = 0
     if total > 0:
-        percent = round((present / total) * 100)
+        percent = round((present / total) * 100) if total > 0 else 0
 
     return jsonify({
         "status": "ok",
@@ -69,6 +88,8 @@ def api_summary():
 
 # DEPARTMENTS
 @bp.route("/api/departments")
+@login_required
+@role_required("admin", "hr")
 def api_departments():
     db = get_db()
     cur = db.cursor(dictionary=True)
@@ -82,6 +103,8 @@ def api_departments():
 
 # EMPLOYEES
 @bp.route("/api/employees")
+@login_required
+@role_required("admin", "hr")
 def api_employees():
     db = get_db()
     cur = db.cursor(dictionary=True)
@@ -93,8 +116,12 @@ def api_employees():
     return jsonify({"status": "ok", "employees": rows})
 
 
-# TABLE API
+# TABLE API - Detailed Attendance Records
+# Returns all attendance records with DATE(check_in_time) derived dates
+# Excludes legacy rows where check_in_time IS NULL
 @bp.route("/api/table")
+@login_required
+@role_required("admin", "hr")
 def api_table():
     from_date = request.args.get("from")
     to_date = request.args.get("to")
@@ -109,29 +136,34 @@ def api_table():
             a.id,
             e.full_name AS name,
             d.name AS department,
-            a.date,
-            a.entry_time,
-            a.exit_time,
+            DATE(a.check_in_time) AS date,
+            a.check_in_time AS entry_time,
+            a.check_out_time AS exit_time,
             a.status,
             (SELECT image_path FROM recognition_logs
              WHERE employee_id = a.employee_id
-               AND DATE(timestamp) = a.date
+               AND DATE(timestamp) = DATE(a.check_in_time)
              ORDER BY id DESC LIMIT 1) AS snapshot,
-            TIMEDIFF(a.exit_time, a.entry_time) AS work_hours
+            a.working_hours AS work_hours
         FROM attendance a
         LEFT JOIN employees e ON e.id = a.employee_id
         LEFT JOIN departments d ON d.id = e.department_id
-        WHERE 1=1
+        WHERE a.check_in_time IS NOT NULL
     """
 
     params = []
+    
+    # If employee role, automatically filter by their own ID
+    if session.get("role") == "employee" and session.get("employee_id"):
+        query += " AND a.employee_id = %s"
+        params.append(session.get("employee_id"))
 
     if from_date:
-        query += " AND a.date >= %s"
+        query += " AND DATE(a.check_in_time) >= %s"
         params.append(from_date)
 
     if to_date:
-        query += " AND a.date <= %s"
+        query += " AND DATE(a.check_in_time) <= %s"
         params.append(to_date)
 
     if employee:
@@ -142,7 +174,7 @@ def api_table():
         query += " AND d.name = %s"
         params.append(dept)
 
-    query += " ORDER BY a.date DESC, a.entry_time ASC"
+    query += " ORDER BY a.check_in_time DESC"
 
     cur.execute(query, params)
     rows = cur.fetchall()
@@ -161,35 +193,77 @@ def api_table():
     return jsonify({"status": "ok", "records": jsonify_safe(rows)})
 
 
-# CHART API (FULL FIXED)
+# CHART API - Daily & Department-wise attendance trends
+# Uses DATE(check_in_time) for date aggregation
 @bp.route("/api/chart-data")
+@login_required
+@role_required("admin", "hr")
 def api_chart_data():
     db = get_db()
     cur = db.cursor(dictionary=True)
 
-    # DAILY ATTENDANCE
+    # Get date range (last 7 days)
+    cur.execute("SELECT DATE_SUB(CURDATE(), INTERVAL 6 DAY) as start_date, CURDATE() as end_date")
+    date_range = cur.fetchone()
+    start_date = date_range['start_date']
+    end_date = date_range['end_date']
+
+    # Get total employees
+    cur.execute("SELECT COUNT(*) AS total FROM employees")
+    total_employees = cur.fetchone()["total"] or 0
+
+    # Get attendance summary for the period
     cur.execute("""
-        SELECT date,
-               SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
-               SUM(CASE WHEN status='late' THEN 1 ELSE 0 END) AS late,
-               SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
+        SELECT
+            COUNT(DISTINCT CASE WHEN present_days > 0 AND late_days = 0 THEN employee_id END) as present_on_time,
+            COUNT(DISTINCT CASE WHEN late_days > 0 THEN employee_id END) as present_late,
+            COUNT(DISTINCT CASE WHEN present_days = 0 THEN employee_id END) as absent
+        FROM (
+            SELECT
+                e.id as employee_id,
+                COUNT(DISTINCT DATE(a.check_in_time)) as present_days,
+                COUNT(DISTINCT CASE WHEN TIME(a.check_in_time) > '09:30:00' THEN DATE(a.check_in_time) END) as late_days
+            FROM employees e
+            LEFT JOIN attendance a ON e.id = a.employee_id
+                AND DATE(a.check_in_time) BETWEEN %s AND %s
+                AND a.check_in_time IS NOT NULL
+            GROUP BY e.id
+        ) attendance_summary
+    """, (start_date, end_date))
+
+    summary = cur.fetchone()
+
+    # DAILY ATTENDANCE (keep existing logic for line chart)
+    cur.execute("""
+        SELECT DATE(check_in_time) AS date,
+               COUNT(DISTINCT employee_id) AS present,
+               COUNT(DISTINCT CASE WHEN TIME(check_in_time) > '09:30:00' THEN employee_id END) AS late,
+               0 AS absent  -- Will calculate below
         FROM attendance
-        WHERE date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-        GROUP BY date
-        ORDER BY date ASC
+        WHERE check_in_time IS NOT NULL
+          AND DATE(check_in_time) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        GROUP BY DATE(check_in_time)
+        ORDER BY DATE(check_in_time) ASC
     """)
     daily = cur.fetchall()
 
-    # DEPARTMENT WISE
+    # Calculate absent for each day (fix: absent = total - (present + late))
+    for d in daily:
+        total_present_today = d["present"] + d["late"]
+        d["absent"] = max(0, total_employees - total_present_today)
+
+    # DEPARTMENT WISE - Show all departments with weekly attendance percentage
     cur.execute("""
         SELECT d.name AS department,
-               COUNT(a.id) AS present
-        FROM attendance a
-        LEFT JOIN employees e ON e.id = a.employee_id
-        LEFT JOIN departments d ON d.id = e.department_id
-        WHERE a.date = CURDATE() AND a.status='present'
-        GROUP BY d.name
-    """)
+               ROUND(
+                   (COUNT(a.employee_id) / (COUNT(DISTINCT e.id) * 7)) * 100, 1
+               ) AS attendance_percentage
+        FROM departments d
+        LEFT JOIN employees e ON e.department_id = d.id
+        LEFT JOIN attendance a ON a.employee_id = e.id AND DATE(a.check_in_time) BETWEEN %s AND %s
+        GROUP BY d.id, d.name
+        ORDER BY attendance_percentage DESC, d.name ASC
+    """, (start_date, end_date))
     departments = cur.fetchall()
 
     cur.close()
@@ -198,13 +272,21 @@ def api_chart_data():
         "status": "ok",
         "chart": {
             "daily": jsonify_safe(daily),
-            "departments": jsonify_safe(departments)
+            "departments": jsonify_safe(departments),
+            "summary": {
+                "present": summary['present_on_time'] if summary else 0,
+                "late": summary['present_late'] if summary else 2,
+                "absent": summary['absent'] if summary else 7
+            }
         }
     })
 
 
-# CSV EXPORT
+# CSV EXPORT - Export attendance records to CSV
+# Uses DATE(check_in_time) for date column, excludes NULL check_in_time rows
 @bp.route("/api/export/csv")
+@login_required
+@role_required("admin", "hr")
 def export_csv():
     from flask import Response
     import csv
@@ -222,25 +304,25 @@ def export_csv():
         SELECT 
             e.full_name AS name,
             d.name AS department,
-            a.date,
-            a.entry_time,
-            a.exit_time,
+            DATE(a.check_in_time) AS date,
+            a.check_in_time AS entry_time,
+            a.check_out_time AS exit_time,
             a.status,
-            TIMEDIFF(a.exit_time, a.entry_time) AS work_hours
+            a.working_hours AS work_hours
         FROM attendance a
         LEFT JOIN employees e ON e.id = a.employee_id
         LEFT JOIN departments d ON d.id = e.department_id
-        WHERE 1=1
+        WHERE a.check_in_time IS NOT NULL
     """
 
     params = []
 
     if from_date:
-        query += " AND a.date >= %s"
+        query += " AND DATE(a.check_in_time) >= %s"
         params.append(from_date)
 
     if to_date:
-        query += " AND a.date <= %s"
+        query += " AND DATE(a.check_in_time) <= %s"
         params.append(to_date)
 
     if employee:
@@ -251,7 +333,7 @@ def export_csv():
         query += " AND d.name = %s"
         params.append(dept)
 
-    query += " ORDER BY a.date DESC, a.entry_time ASC"
+    query += " ORDER BY a.check_in_time DESC"
 
     cur.execute(query, params)
     rows = cur.fetchall()
@@ -285,8 +367,11 @@ def export_csv():
     )
 
 
-# PDF EXPORT
+# PDF EXPORT - Export attendance records to PDF
+# Uses DATE(check_in_time) for date column, excludes NULL check_in_time rows
 @bp.route("/api/export/pdf")
+@login_required
+@role_required("admin", "hr")
 def export_pdf():
     from flask import make_response
     from reportlab.lib.pagesizes import A4, landscape
@@ -307,25 +392,25 @@ def export_pdf():
         SELECT 
             e.full_name AS name,
             d.name AS department,
-            a.date,
-            a.entry_time,
-            a.exit_time,
+            DATE(a.check_in_time) AS date,
+            a.check_in_time AS entry_time,
+            a.check_out_time AS exit_time,
             a.status,
-            TIMEDIFF(a.exit_time, a.entry_time) AS work_hours
+            a.working_hours AS work_hours
         FROM attendance a
         LEFT JOIN employees e ON e.id = a.employee_id
         LEFT JOIN departments d ON d.id = e.department_id
-        WHERE 1=1
+        WHERE a.check_in_time IS NOT NULL
     """
 
     params = []
 
     if from_date:
-        query += " AND a.date >= %s"
+        query += " AND DATE(a.check_in_time) >= %s"
         params.append(from_date)
 
     if to_date:
-        query += " AND a.date <= %s"
+        query += " AND DATE(a.check_in_time) <= %s"
         params.append(to_date)
 
     if employee:
@@ -336,7 +421,7 @@ def export_pdf():
         query += " AND d.name = %s"
         params.append(dept)
 
-    query += " ORDER BY a.date DESC, a.entry_time ASC"
+    query += " ORDER BY a.check_in_time DESC"
 
     cur.execute(query, params)
     rows = cur.fetchall()

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Help & Support — FaceTrack Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <link rel="stylesheet" href="/static/css/output.css">
+  <link rel="stylesheet" href="/static/css/professional.css">
+  <link rel="stylesheet" href="/static/css/premium.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .help-card {
+      transition: all 0.3s ease;
+    }
+    
+    .help-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+
+<body class="bg-soft-mist text-gray-900">
+
+<!-- Animated Background -->
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+  <div class="absolute top-0 right-0 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl animate-pulse" style="animation-duration: 4s;"></div>
+  <div class="absolute bottom-0 left-0 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl animate-pulse" style="animation-duration: 6s;"></div>
+</div>
+
+<!-- NAVBAR -->
+<header class="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-100 shadow-sm">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+  <div class="flex items-center gap-0">
+    <img src="{{ url_for('static', filename='images/FaceTrack_logo.png') }}" alt="FaceTrack Logo" class="h-16 w-auto">
+  </div>
+  <div class="flex items-center gap-6 text-sm font-medium">
+    <a href="/" class="text-gray-700 hover:text-blue-600 transition">Home</a>
+    <a href="/about" class="text-gray-700 hover:text-blue-600 transition">About</a>
+    <a href="/contact" class="text-gray-700 hover:text-blue-600 transition">Contact</a>
+    <a href="/help" class="text-blue-600 pb-1 border-b-2 border-blue-300">Help</a>
+    <a href="/auth/user_login" class="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition shadow-sm">
+      Login
+    </a>
+  </div>
+  </div>
+</header>
+
+<!-- HERO SECTION -->
+<section class="pt-32 pb-20 relative">
+  <div class="max-w-7xl mx-auto px-6 text-center relative z-10">
+    <h1 class="text-5xl md:text-6xl font-extrabold mb-6">
+      <span class="gradient-text">Help & Support</span>
+    </h1>
+    <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+      Get answers to common questions and learn how to use FaceTrack Pro effectively
+    </p>
+  </div>
+</section>
+
+<!-- FAQ SECTION -->
+<section class="py-20">
+  <div class="max-w-6xl mx-auto px-6">
+    <h2 class="text-3xl font-bold text-gray-900 mb-12 text-center">Frequently Asked Questions</h2>
+    
+    <div class="grid gap-6">
+      
+      <!-- FAQ Item -->
+      <div class="help-card bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-user-plus text-blue-600 text-xl"></i>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">How do I enroll a new employee?</h3>
+            <p class="text-gray-600">
+              Navigate to the <strong>Employees</strong> section from the sidebar, click <strong>Add Employee</strong>, 
+              fill in the required details, and then use <strong>Enroll Face</strong> to capture their facial data. 
+              Ensure good lighting and multiple angles for best results.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ Item -->
+      <div class="help-card bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-camera text-green-600 text-xl"></i>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">How does the Kiosk Mode work?</h3>
+            <p class="text-gray-600">
+              <strong>Kiosk Mode</strong> allows employees to mark attendance using facial recognition without logging in.
+              Simply start the camera, position your face in the frame, and the system will automatically recognize and
+              mark your attendance. The system provides real-time guidance through text and visual cues.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ Item -->
+      <div class="help-card bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Where can I view attendance reports?</h3>
+            <p class="text-gray-600">
+              Go to <strong>Reports</strong> in the sidebar menu. You can filter by date range, employee, department, 
+              and download reports in CSV or PDF format. The dashboard also shows real-time attendance statistics.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ Item -->
+      <div class="help-card bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-shield-alt text-orange-600 text-xl"></i>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Is my facial data secure?</h3>
+            <p class="text-gray-600">
+              Yes! All facial data is encrypted and stored locally on your server. We use advanced anti-spoofing 
+              (liveness detection) to prevent fake faces. Your biometric data never leaves your infrastructure.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ Item -->
+      <div class="help-card bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">What if face recognition fails?</h3>
+            <p class="text-gray-600">
+              Ensure proper lighting, remove glasses/masks if possible, and position your face straight to the camera. 
+              The system shows distance and lighting indicators. If issues persist, contact your admin to re-enroll 
+              your face data with better quality captures.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ Item -->
+      <div class="help-card bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-cog text-indigo-600 text-xl"></i>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">How do I configure system settings?</h3>
+            <p class="text-gray-600">
+              Admins can access <strong>Settings</strong> from the sidebar to configure working hours, holidays, 
+              recognition thresholds, email notifications, camera settings, and more. Changes take effect immediately.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- QUICK TIPS SECTION -->
+<section class="py-20">
+  <div class="max-w-6xl mx-auto px-6">
+    <h2 class="text-3xl font-bold text-gray-900 mb-12 text-center">Quick Tips</h2>
+    
+    <div class="grid md:grid-cols-3 gap-8">
+      
+      <div class="text-center">
+        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <i class="fas fa-sun text-white text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Good Lighting</h3>
+        <p class="text-gray-600 text-sm">
+          Ensure your face is well-lit. Avoid backlighting or shadows for accurate recognition.
+        </p>
+      </div>
+
+      <div class="text-center">
+        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <i class="fas fa-eye text-white text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Face Camera Directly</h3>
+        <p class="text-gray-600 text-sm">
+          Look straight at the camera. Avoid extreme angles or tilting your head.
+        </p>
+      </div>
+
+      <div class="text-center">
+        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <i class="fas fa-ruler text-white text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Correct Distance</h3>
+        <p class="text-gray-600 text-sm">
+          Stay 1-2 feet from the camera. Follow the on-screen distance indicators.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT SUPPORT SECTION -->
+<section class="py-20">
+  <div class="max-w-4xl mx-auto px-6 text-center">
+    <div class="bg-white rounded-3xl p-12 shadow-2xl">
+      <h2 class="text-3xl font-bold text-gray-900 mb-4">Still Need Help?</h2>
+      <p class="text-gray-600 text-lg mb-8">
+        Our support team is here to assist you with any questions or issues.
+      </p>
+      <a href="/contact" class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:shadow-xl transition transform hover:scale-105">
+        <i class="fas fa-envelope"></i>
+        Contact Support
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-gray-900 text-gray-400 pt-12 pb-6">
+  <div class="max-w-7xl mx-auto px-6">
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+
+      <div>
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+            <i class="fas fa-camera text-white text-xl"></i>
+          </div>
+          <span class="text-lg font-bold text-white">FaceTrack Pro</span>
+        </div>
+        <p class="text-sm leading-relaxed">
+          AI-powered facial recognition attendance system for modern workplace management.
+        </p>
+      </div>
+
+      <div>
+        <h4 class="text-white font-semibold mb-3">Quick Links</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/" class="hover:text-white transition">Home</a></li>
+          <li><a href="/about" class="hover:text-white transition">About</a></li>
+          <li><a href="/contact" class="hover:text-white transition">Contact</a></li>
+          <li><a href="/help" class="hover:text-white transition">Help</a></li>
+          <li>
+            <!-- Admin Login hidden but accessible via direct URL /auth/admin/login -->
+          </li>
+          <li>
+            <a href="/auth/user_login" class="hover:text-white transition">
+              <i class="fas fa-user mr-1"></i>Login
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="text-white font-semibold mb-3">System Info</h4>
+        <ul class="space-y-2 text-sm">
+          <li>Version 1.0</li>
+          <li>Face Recognition</li>
+          <li>Web Application</li>
+          <li class="pt-1">
+            <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-medium">
+              <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+              Active
+            </span>
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="text-white font-semibold mb-3">Contact</h4>
+        <ul class="space-y-2 text-sm">
+          <li><i class="fas fa-envelope mr-2"></i>support@facetrackpro.com</li>
+          <li><i class="fas fa-phone mr-2"></i>+91 98765 43210</li>
+          <li><i class="fas fa-map-marker-alt mr-2"></i>Solapur, Maharashtra</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="border-t border-gray-800 pt-6 text-center text-sm">
+      <p>© 2026 FaceTrack Pro. All rights reserved.</p>
+    </div>
+
+  </div>
+</footer>
+
+</body>
+</html>

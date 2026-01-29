@@ -46,6 +46,10 @@ def login_required(f):
     def wrapper(*args, **kwargs):
         if not session.get("logged_in"):
             flash("Please login first", "error")
+            # Check if this is an employee route, redirect accordingly
+            from flask import request
+            if request.endpoint and request.endpoint.startswith("employee."):
+                return redirect(url_for("auth.user_login"))
             return redirect(url_for("auth.login"))
         return f(*args, **kwargs)
     return wrapper
@@ -64,10 +68,22 @@ def role_required(*roles):
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
+            # First check if user is logged in
+            if not session.get("logged_in"):
+                flash("Please login first", "error")
+                # Check if this is an employee route, redirect accordingly
+                from flask import request
+                if request.endpoint and request.endpoint.startswith("employee."):
+                    return redirect(url_for("auth.user_login"))
+                return redirect(url_for("auth.login"))
+            
             user_role = session.get("role")
 
             if user_role not in roles:
-                flash("Access denied", "error")
+                flash("⛔ Access Denied: You don't have permission to access this page", "error")
+                # Redirect based on role
+                if user_role == "employee":
+                    return redirect(url_for("employee.dashboard"))
                 return redirect(url_for("auth.login"))
 
             return f(*args, **kwargs)

@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leave Management - FaceTrack Employee</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/professional.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/premium.css') }}">
+
+  <!-- Icons: prefer local copy (if available), otherwise use CDN -->
+  {% if FA_LOCAL_AVAILABLE %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+  {% else %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  {% endif %}
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .admin-bg {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      background-image:
+        radial-gradient(circle at 25% 25%, rgba(37, 99, 235, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(37, 99, 235, 0.02) 0%, transparent 50%);
+    }
+    .premium-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .premium-card:hover {
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+    .leave-balance-card {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+    .request-form {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border-radius: 1rem;
+      border: 1px solid #e2e8f0;
+    }
+    .status-approved { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .status-pending { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+    .status-rejected { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+    header { box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .leave-usage-bar {
+      width: 0%;
+      transition: width 0.8s ease-out;
+    }
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="m-0 bg-soft-mist min-h-screen">
+
+  <!-- Premium Header (copied from dashboard for consistent branding) -->
+    <header class="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-100 shadow-sm">
+      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <!-- Logo only (homepage style) -->
+        <div class="flex items-center gap-4">
+          <a href="/" class="block">
+            <img src="{{ url_for('static', filename='images/FaceTrack_logo.png') }}" alt="FaceTrack Logo" class="h-16 w-auto">
+          </a>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="flex items-center gap-6">
+          <a href="{{ url_for('employee.dashboard') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.dashboard' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-home mr-2"></i>Dashboard
+          </a>
+          <a href="{{ url_for('employee.attendance') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.attendance' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-clipboard-list mr-2"></i>Attendance
+          </a>
+          <a href="{{ url_for('employee.face_request') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.face_request' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-camera mr-2"></i>Face Request
+          </a>
+          <a href="{{ url_for('employee.leave') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.leave' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-calendar-plus mr-2"></i>Leave
+          </a>
+          <a href="{{ url_for('employee.summary') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.summary' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
+            <i class="fas fa-chart-bar mr-2"></i>Summary
+          </a>
+        </nav>
+
+        <!-- User Section (compact dropdown) -->
+        <div class="relative">
+          <button id="userMenuBtn" onclick="toggleUserMenu(event)" class="flex items-center gap-3 focus:outline-none">
+            <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-sm">
+              <i class="fas fa-user text-white text-sm"></i>
+            </div>
+            <span class="ml-2 hidden sm:inline text-sm font-medium text-gray-800">{{ session.get('full_name', 'Employee') }}</span>
+            <i class="fas fa-caret-down ml-1 text-gray-500"></i>
+          </button>
+          <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-md py-2 z-50">
+            <a href="{{ url_for('employee.profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-user mr-2"></i>Profile</a>
+            <a href="{{ url_for('employee.settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-cog mr-2"></i>Settings</a>
+            <form action="{{ url_for('auth.logout') }}" method="post" style="display: inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <script>
+      function toggleUserMenu(e){ e.stopPropagation(); const m=document.getElementById('userMenu'); if(m) m.classList.toggle('hidden'); }
+      document.addEventListener('click', function(){ const m=document.getElementById('userMenu'); if(m && !m.classList.contains('hidden')) m.classList.add('hidden'); });
+    </script>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+
+    <!-- Header Section -->
+    <div class="mb-8 scroll-reveal">
+      <div class="flex items-center gap-4 mb-4">
+        <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+          <i class="fas fa-calendar-alt text-white text-lg"></i>
+        </div>
+        <div>
+          <h2 class="text-3xl font-bold text-gray-900">Leave Management</h2>
+          <p class="text-gray-600 text-lg">Request leave and track your leave balance</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <!-- Leave Balance Cards -->
+      <div class="lg:col-span-1">
+        <div class="premium-card p-6 mb-6 scroll-reveal">
+          <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-calendar-check text-blue-500"></i>
+            Your Leave Balance
+          </h3>
+          <div class="grid grid-cols-1 gap-4">
+            <!-- Casual Leave -->
+            <div class="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div class="flex items-center justify-center mb-2">
+                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-2">
+                  <i class="fas fa-briefcase text-blue-600 text-sm"></i>
+                </div>
+                <p class="text-2xl font-bold text-blue-600">{{ balance.casual_leave }}</p>
+              </div>
+              <p class="text-xs text-gray-600 font-medium">Casual Leave</p>
+              <div class="w-full bg-blue-200 rounded-full h-2 mt-2">
+                <div class="bg-blue-600 h-2 rounded-full" style="width: {{ (balance.casual_leave / 12 * 100) if balance.casual_leave <= 12 else 100 }}%"></div>
+              </div>
+            </div>
+            <!-- Sick Leave -->
+            <div class="text-center p-3 bg-red-50 rounded-lg border border-red-200">
+              <div class="flex items-center justify-center mb-2">
+                <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-2">
+                  <i class="fas fa-thermometer-half text-red-600 text-sm"></i>
+                </div>
+                <p class="text-2xl font-bold text-red-600">{{ balance.sick_leave }}</p>
+              </div>
+              <p class="text-xs text-gray-600 font-medium">Sick Leave</p>
+              <div class="w-full bg-red-200 rounded-full h-2 mt-2">
+                <div class="bg-red-600 h-2 rounded-full" style="width: {{ (balance.sick_leave / 12 * 100) if balance.sick_leave <= 12 else 100 }}%"></div>
+              </div>
+            </div>
+            <!-- Vacation Leave -->
+            <div class="text-center p-3 bg-green-50 rounded-lg border border-green-200">
+              <div class="flex items-center justify-center mb-2">
+                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-2">
+                  <i class="fas fa-plane text-green-600 text-sm"></i>
+                </div>
+                <p class="text-2xl font-bold text-green-600">{{ balance.vacation_leave }}</p>
+              </div>
+              <p class="text-xs text-gray-600 font-medium">Vacation Leave</p>
+              <div class="w-full bg-green-200 rounded-full h-2 mt-2">
+                <div class="bg-green-600 h-2 rounded-full" style="width: {{ (balance.vacation_leave / 15 * 100) if balance.vacation_leave <= 15 else 100 }}%"></div>
+              </div>
+            </div>
+            <!-- Work From Home -->
+            <div class="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
+              <div class="flex items-center justify-center mb-2">
+                <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-2">
+                  <i class="fas fa-home text-purple-600 text-sm"></i>
+                </div>
+                <p class="text-2xl font-bold text-purple-600">{{ balance.emergency_leave }}</p>
+              </div>
+              <p class="text-xs text-gray-600 font-medium">Work From Home</p>
+              <div class="w-full bg-purple-200 rounded-full h-2 mt-2">
+                <div class="bg-purple-600 h-2 rounded-full" style="width: {{ (balance.emergency_leave / 10 * 100) if balance.emergency_leave <= 10 else 100 }}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Request Leave Form -->
+      <div class="lg:col-span-2">
+        <div class="request-form p-6 scroll-reveal" style="animation-delay: 0.1s">
+          <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <i class="fas fa-plus text-white text-sm"></i>
+            </div>
+            Request New Leave
+          </h3>
+
+          <form method="POST" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label for="start_date" class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-calendar-start mr-1 text-blue-500"></i>Start Date
+                </label>
+                <input type="date" id="start_date" name="start_date" required
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all">
+              </div>
+
+              <div>
+                <label for="end_date" class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-calendar-end mr-1 text-green-500"></i>End Date
+                </label>
+                <input type="date" id="end_date" name="end_date" required
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all">
+              </div>
+            </div>
+
+            <div id="total-days-display" class="text-sm text-gray-600 text-center hidden">
+              Total days: <span id="total-days-count" class="font-semibold text-blue-600">0</span>
+            </div>
+
+            <div>
+              <label for="leave_type" class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-tag mr-1 text-purple-500"></i>Leave Type
+              </label>
+              <select id="leave_type" name="leave_type" required
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all">
+                <option value="">Select leave type</option>
+                <option value="annual">Annual Leave</option>
+                <option value="sick">Sick Leave</option>
+                <option value="personal">Personal Leave</option>
+                <option value="emergency">Emergency Leave</option>
+                <option value="casual_leave">Casual Leave</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="reason" class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-comment mr-1 text-indigo-500"></i>Reason
+              </label>
+              <textarea id="reason" name="reason" rows="4" required
+                        placeholder="Please provide a reason for your leave request..."
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all resize-none"></textarea>
+            </div>
+
+            <div class="flex gap-4">
+              <button type="submit" class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-lg hover:shadow-xl">
+                <i class="fas fa-paper-plane mr-2"></i>Submit Request
+              </button>
+              <button type="button" onclick="clearForm()" class="px-4 py-2 text-sm border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                <i class="fas fa-times mr-1"></i>Clear
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leave History -->
+    <div class="mt-8">
+      <div class="premium-card p-6 scroll-reveal" style="animation-delay: 0.2s">
+        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+          <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-lg flex items-center justify-center">
+            <i class="fas fa-history text-white text-sm"></i>
+          </div>
+          Leave History
+        </h3>
+
+        {% if leave_history %}
+          <!-- Desktop Table View -->
+          <div class="hidden md:block overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+              <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <i class="fas fa-calendar mr-1"></i>Duration
+                  </th>
+                  <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <i class="fas fa-tag mr-1"></i>Type
+                  </th>
+                  <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <i class="fas fa-comment mr-1"></i>Reason
+                  </th>
+                  <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <i class="fas fa-info-circle mr-1"></i>Status
+                  </th>
+                  <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <i class="fas fa-clock mr-1"></i>Applied
+                  </th>
+                  <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-20">
+                    <i class="fas fa-cogs mr-1"></i>Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                {% for request in leave_history %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                  <td class="px-3 py-3 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">
+                      {{ request.start_date.strftime('%b %d') }} - {{ request.end_date.strftime('%b %d, %Y') }}
+                    </div>
+                    <div class="text-xs text-gray-500">
+                      {{ ((request.end_date - request.start_date).days + 1) }} days
+                    </div>
+                  </td>
+                  <td class="px-3 py-3 whitespace-nowrap">
+                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                      {{ request.leave_type.title() }}
+                    </span>
+                  </td>
+                  <td class="px-3 py-3 max-w-xs">
+                    <div class="text-sm text-gray-900 truncate max-w-32" title="{{ request.reason }}">
+                      {{ request.reason }}
+                    </div>
+                  </td>
+                  <td class="px-3 py-3 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold
+                      {% if request.status == 'approved' %}status-approved text-white
+                      {% elif request.status == 'pending' %}status-pending text-white
+                      {% elif request.status == 'rejected' %}status-rejected text-white
+                      {% elif request.status == 'cancelled' %}bg-gray-100 text-gray-800
+                      {% else %}bg-gray-100 text-gray-800{% endif %}">
+                      <i class="fas fa-circle mr-1 text-xs"></i>
+                      {{ request.status.title() }}
+                    </span>
+                  </td>
+                  <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                    {{ request.created_at.strftime('%b %d, %Y') }}
+                  </td>
+                  <td class="px-3 py-3 whitespace-nowrap w-20">
+                    {% if request.status == 'pending' %}
+                      <button data-leave-id="{{ request.id }}"
+                              class="cancel-leave-btn inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors">
+                        <i class="fas fa-times mr-1"></i>Cancel
+                      </button>
+                    {% else %}
+                      <span class="text-gray-400 text-xs">-</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Mobile Card View -->
+          <div class="md:hidden space-y-4">
+            {% for request in leave_history %}
+            <div class="bg-white rounded-lg border p-4 shadow-sm">
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <div class="text-sm font-medium text-gray-900">
+                    {{ request.start_date.strftime('%b %d') }} - {{ request.end_date.strftime('%b %d, %Y') }}
+                  </div>
+                  <div class="text-xs text-gray-500">
+                    {{ ((request.end_date - request.start_date).days + 1) }} days
+                  </div>
+                </div>
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold
+                  {% if request.status == 'approved' %}status-approved text-white
+                  {% elif request.status == 'pending' %}status-pending text-white
+                  {% elif request.status == 'rejected' %}status-rejected text-white
+                  {% elif request.status == 'cancelled' %}bg-gray-100 text-gray-800
+                  {% else %}bg-gray-100 text-gray-800{% endif %}">
+                  <i class="fas fa-circle mr-1 text-xs"></i>
+                  {{ request.status.title() }}
+                </span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <span class="text-xs text-gray-500 uppercase tracking-wider">Type</span>
+                  <div class="text-sm font-medium">
+                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                      {{ request.leave_type.title() }}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <span class="text-xs text-gray-500 uppercase tracking-wider">Applied</span>
+                  <div class="text-sm text-gray-900">{{ request.created_at.strftime('%b %d, %Y') }}</div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <span class="text-xs text-gray-500 uppercase tracking-wider">Reason</span>
+                <div class="text-sm text-gray-900 line-clamp-2" title="{{ request.reason }}">{{ request.reason }}</div>
+              </div>
+
+              {% if request.status == 'pending' %}
+              <button data-leave-id="{{ request.id }}"
+                      class="cancel-leave-btn w-full inline-flex items-center justify-center px-3 py-2 rounded text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors">
+                <i class="fas fa-times mr-2"></i>Cancel Leave Request
+              </button>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center py-12">
+            <div class="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-calendar-times text-gray-400 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No leave records found</h3>
+            <p class="text-gray-600">Your leave request history will appear here.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Add scroll reveal animations
+    document.addEventListener('DOMContentLoaded', function() {
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      };
+
+      const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.style.animationDelay = entry.target.style.getPropertyValue('--delay') || '0s';
+            entry.target.classList.add('animate-in');
+          }
+        });
+      }, observerOptions);
+
+      document.querySelectorAll('.scroll-reveal').forEach(el => {
+        observer.observe(el);
+      });
+    });
+
+    // Form validation and enhancements
+    document.getElementById('start_date').addEventListener('change', function() {
+      const endDate = document.getElementById('end_date');
+      if (this.value) {
+        endDate.min = this.value;
+        if (endDate.value && endDate.value < this.value) {
+          endDate.value = this.value;
+        }
+      }
+    });
+
+    function clearForm() {
+      document.querySelector('form').reset();
+    }
+
+    // Cancel leave request
+    function cancelLeave(leaveId) {
+      showLeaveCancelModal(leaveId);
+    }
+
+    // Event delegation for cancel buttons
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('cancel-leave-btn') || e.target.closest('.cancel-leave-btn')) {
+        const button = e.target.classList.contains('cancel-leave-btn') ? e.target : e.target.closest('.cancel-leave-btn');
+        const leaveId = button.getAttribute('data-leave-id');
+        if (leaveId) {
+          cancelLeave(leaveId);
+        }
+      }
+    });
+
+    // Auto-calculate leave days
+    function calculateDays() {
+      const start = new Date(document.getElementById('start_date').value);
+      const end = new Date(document.getElementById('end_date').value);
+      const display = document.getElementById('total-days-display');
+      const count = document.getElementById('total-days-count');
+
+      if (start && end && start <= end && !isNaN(start) && !isNaN(end)) {
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        count.textContent = diffDays;
+        display.classList.remove('hidden');
+      } else {
+        display.classList.add('hidden');
+      }
+    }
+
+    document.getElementById('start_date').addEventListener('change', calculateDays);
+    document.getElementById('end_date').addEventListener('change', calculateDays);
+  </script>
+
+<!-- Leave Cancellation Confirmation Modal -->
+<div id="leaveCancelModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" onclick="if(event.target === this) hideLeaveCancelModal()">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-times-circle text-orange-600 text-xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900">Cancel Leave Request</h3>
+        </div>
+
+        <div class="mb-6">
+            <p class="text-gray-600">Are you sure you want to cancel this leave request? This action cannot be undone.</p>
+        </div>
+
+        <div class="flex gap-3">
+            <button type="button" onclick="confirmLeaveCancellation()"
+                class="flex-1 bg-gradient-to-r from-orange-600 to-orange-700 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
+                <i class="fas fa-times mr-2"></i>
+                Cancel Leave
+            </button>
+            <button type="button" onclick="hideLeaveCancelModal()"
+                class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all">
+                Keep Request
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let pendingLeaveId = null;
+
+function showLeaveCancelModal(leaveId) {
+    pendingLeaveId = leaveId;
+    document.getElementById('leaveCancelModal').classList.remove('hidden');
+}
+
+function hideLeaveCancelModal() {
+    document.getElementById('leaveCancelModal').classList.add('hidden');
+    pendingLeaveId = null;
+}
+
+function confirmLeaveCancellation() {
+    if (pendingLeaveId) {
+        fetch(`/employee/cancel-leave/${pendingLeaveId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Failed to cancel leave request: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while canceling the leave request');
+        });
+    }
+    hideLeaveCancelModal();
+}
+</script>
+

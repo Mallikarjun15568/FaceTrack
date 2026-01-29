@@ -5,12 +5,14 @@ from datetime import datetime
 import numpy as np
 from PIL import Image
 import cv2
-from flask import url_for
+from flask import url_for, request
 
 from insightface.app import FaceAnalysis
 from db_utils import fetchall, fetchone, execute
+from utils.face_encoder import face_encoder
+from utils.logger import logger
 
-from blueprints.settings.routes import load_settings
+from blueprints.admin.settings.routes import load_settings
 
 # Toggle saving snapshots globally. Default from environment variable
 # Use app.config['SAVE_SNAPSHOTS'] to override at runtime (True/False)
@@ -19,22 +21,11 @@ SAVE_SNAPSHOTS = str(_env_snap).lower() not in ("0", "false", "no", "off")
 
 
 # -------------------------------------------------------------
-# MODEL + EMBEDDING CACHES
+# EMBEDDING CACHE (With automatic expiry/refresh)
 # -------------------------------------------------------------
-recognizer = None
 embeddings_cache = None
-
-
-def get_recognizer():
-    global recognizer
-    if recognizer is not None:
-        return recognizer
-
-    model = FaceAnalysis(name="buffalo_l")
-    model.prepare(ctx_id=-1, det_size=(640, 640))
-
-    recognizer = model
-    return recognizer
+cache_timestamp = None
+CACHE_TTL = 300  # 5 minutes - refresh cache to detect new enrollments
 
 
 # -------------------------------------------------------------
@@ -82,9 +73,26 @@ def save_snapshot(img, app, filename):
 # -------------------------------------------------------------
 
 def load_embeddings():
-    global embeddings_cache
-    if embeddings_cache is not None:
-        return embeddings_cache
+    """Load face embeddings from database with automatic cache refresh.
+    
+    Cache expires after CACHE_TTL seconds to ensure new enrollments are recognized.
+    """
+    global embeddings_cache, cache_timestamp
+    import time
+    
+    now = time.time()
+    
+    # Check if cache is still valid
+    if embeddings_cache is not None and cache_timestamp is not None:
+        age = now - cache_timestamp
+        if age < CACHE_TTL:
+            logger.debug(f"Using cached embeddings (age: {age:.1f}s)")
+            return embeddings_cache
+        else:
+            logger.info(f"Cache expired ({age:.1f}s > {CACHE_TTL}s), reloading embeddings")
+    
+    # Cache miss or expired - reload from database
+    logger.info("Loading face embeddings from database...")
 
     rows = fetchall("""
         SELECT
@@ -96,6 +104,7 @@ def load_embeddings():
         FROM employees e
         LEFT JOIN departments d ON e.department_id = d.id
         JOIN face_data f ON f.emp_id = e.id
+        WHERE e.status = 'active'
     """)
 
     embeddings = []
@@ -126,15 +135,26 @@ def load_embeddings():
         })
 
     embeddings_cache = embeddings
+    cache_timestamp = now  # Update cache timestamp
+    logger.info(f"Loaded {len(embeddings)} face embeddings successfully")
+    
     return embeddings_cache
 
 
-def reload_embeddings(force=False):
-    """Force reload the cached embeddings from the database.
+def clear_embedding_cache():
+    """
+    Clears cache timestamp to force immediate reload on next access.
+    Useful when new employee is enrolled or face data is updated.
+    """
+    global embeddings_cache, cache_timestamp
+    embeddings_cache = None
+    cache_timestamp = None
+    logger.info("Embedding cache cleared, will reload on next access")
 
-    `force` is kept for backward compatibility. This function will
-    clear the in-memory cache and reload from the DB so kiosk
-    recognition uses a single source of truth.
+
+def reload_embeddings():
+    """
+    Forces immediate reload of embeddings from database.
     """
     global embeddings_cache
     embeddings_cache = None
@@ -176,6 +196,7 @@ def mark_attendance(emp_id, snap_path, app=None):
         """, (emp_id, today_date, now, "check-in", snap_path, now))
         return {"status": "check-in", "timestamp": now}
 
+    # cooldown_seconds controlled by app.config['KIOSK_COOLDOWN_SECONDS'] (seconds)
     cooldown_seconds = float(app.config.get("KIOSK_COOLDOWN_SECONDS", 5)) if app else 5
     last_timestamp = previous.get("timestamp") or previous.get("check_in_time") or now
 
@@ -209,99 +230,166 @@ def mark_attendance(emp_id, snap_path, app=None):
 
 def recognize_and_mark(frame_b64, app):
     from flask import session
-    
-    now_str = datetime.now().strftime("%I:%M %p")
-    pil_img, np_img = decode_frame(frame_b64)
-    rec = get_recognizer()
-    faces = rec.get(np_img)
 
-    # Thread-safe cooldown using session (per-client)
-    last_unknown_str = session.get("kiosk_last_unknown")
-    unknown_cooldown = float(app.config.get("KIOSK_UNKNOWN_COOLDOWN", 3))
-    now = datetime.now()
+    try:
+        now_str = datetime.now().strftime("%I:%M %p")
+        pil_img, np_img = decode_frame(frame_b64)
+        
+        # Use centralized face_encoder
+        faces = face_encoder.app.get(np_img)
+        
+        # DEBUG: Log face detection
+        logger.info(f"Kiosk: Detected {len(faces)} face(s) in frame")
 
-    if last_unknown_str:
+        # Thread-safe cooldown using session (per-client)
+        last_unknown_str = session.get("kiosk_last_unknown")
+        unknown_cooldown = float(app.config.get("KIOSK_UNKNOWN_COOLDOWN", 3))
+        now = datetime.now()
+
+        if last_unknown_str:
+            try:
+                last_unknown = datetime.fromisoformat(last_unknown_str)
+                if (now - last_unknown).total_seconds() < unknown_cooldown:
+                    return {"status": "ignore", "recognized": False}
+            except:
+                pass
+
+        if not faces:
+            snap = save_snapshot(
+                pil_img, app, f"unknown_{datetime.now().strftime('%H%M%S')}.jpg")
+            session["kiosk_last_unknown"] = now.isoformat()
+            return {
+                "status": "unknown",
+                "recognized": False,
+                "face_detected": False,
+                "name": "Unknown",
+                "dept": "",
+                "photoUrl": url_for("static", filename="default_user.png"),
+                "time": now_str,
+                "snapshot": snap
+            }
+
+        # Filter faces by minimum confidence
+        min_confidence = float(app.config.get("MIN_CONFIDENCE", 85)) / 100.0
+        faces = [f for f in faces if getattr(f, 'det_score', 1.0) >= min_confidence]
+        
+        logger.info(f"Kiosk: After confidence filter ({min_confidence:.2f}): {len(faces)} face(s)")
+
+        if not faces:
+            snap = save_snapshot(
+                pil_img, app, f"low_conf_{datetime.now().strftime('%H%M%S')}.jpg")
+            session["kiosk_last_unknown"] = now.isoformat()
+            return {
+                "status": "unknown",
+                "recognized": False,
+                "face_detected": False,
+                "name": "Low Confidence",
+                "dept": "",
+                "photoUrl": url_for("static", filename="default_user.png"),
+                "time": now_str,
+                "snapshot": snap
+            }
+
+        face = max(
+            faces,
+            key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1])
+        )
+
+        embedding = face.normed_embedding.astype("float32")
+        
+        # Extract face box for UI feedback
+        bbox = face.bbox
+        face_box = {
+            "x": float(bbox[0]),
+            "y": float(bbox[1]),
+            "width": float(bbox[2] - bbox[0]),
+            "height": float(bbox[3] - bbox[1])
+        }
+        
+        # Use centralized face_encoder.match() for consistency
+        threshold = float(app.config.get("EMBED_THRESHOLD", 0.75))
+        result = face_encoder.match(embedding, threshold=threshold)
+        
+        logger.info(f"Kiosk: Threshold={threshold}, Match result={result}")
+
+        if result is None:
+            match = None
+            sim_score = 0.0
+            logger.info(f"Kiosk: No match found (similarity below {threshold})")
+        else:
+            emp_id_match, similarity = result
+            sim_score = float(similarity)
+            logger.info(f"Kiosk: Matched employee_id={emp_id_match}, similarity={sim_score:.3f}")
+            # Find full employee details from cache
+            db_entries = load_embeddings()
+            match = next((e for e in db_entries if e["emp_id"] == emp_id_match), None)
+
+        x1, y1, x2, y2 = map(int, face.bbox)
+        face_crop = pil_img.crop((x1, y1, x2, y2))
+        snap = save_snapshot(
+            face_crop, app, f"face_{datetime.now().strftime('%H%M%S')}.jpg")
+
+        if not match:
+            session["kiosk_last_unknown"] = now.isoformat()
+            return {
+                "status": "unknown",
+                "recognized": False,
+                "face_detected": True,
+                "face_box": face_box,
+                "name": "Unknown",
+                "dept": "",
+                "photoUrl": url_for("static", filename="default_user.png"),
+                "time": now_str,
+                "snapshot": snap,
+                "similarity": float(sim_score)
+            }
+
+        emp_id = match["emp_id"]
+        name = match["name"]
+        dept = match["dept"]
+        db_photo = match["photo"]
+
+        if db_photo and db_photo.startswith("static/"):
+            photo_url = "/" + db_photo.replace("\\", "/")
+        else:
+            photo_url = url_for("static", filename="default_user.png")
+
+        attendance_result = mark_attendance(emp_id, snap, app)
+        status = attendance_result.get("status", "unknown")
+        display_timestamp = attendance_result.get("timestamp") or datetime.now()
+        display_time = display_timestamp.strftime("%I:%M %p")
+
+        # Audit attendance marking
         try:
-            last_unknown = datetime.fromisoformat(last_unknown_str)
-            if (now - last_unknown).total_seconds() < unknown_cooldown:
-                return {"status": "ignore"}
-        except:
+            from db_utils import log_audit
+            log_audit(
+                user_id=emp_id,
+                action="ATTENDANCE",
+                module="kiosk",
+                details=f"status={status} similarity={sim_score}",
+                ip_address=request.remote_addr if request else None
+            )
+        except Exception:
+            # best-effort; do not fail recognition flow on audit errors
             pass
 
-    if not faces:
-        snap = save_snapshot(
-            pil_img, app, f"unknown_{datetime.now().strftime('%H%M%S')}.jpg")
-        session["kiosk_last_unknown"] = now.isoformat()
         return {
-            "status": "unknown",
-            "name": "Unknown",
-            "dept": "",
-            "photoUrl": url_for("static", filename="default_user.png"),
-            "time": now_str,
-            "snapshot": snap
-        }
-
-    face = max(
-        faces,
-        key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1])
-    )
-
-    embedding = face.normed_embedding.astype("float32")
-    
-    # Use centralized face_encoder.match() for consistency
-    from utils.face_encoder import face_encoder
-    threshold = float(app.config.get("EMBED_THRESHOLD", 0.75))
-    result = face_encoder.match(embedding, threshold=threshold)
-    
-    if result is None:
-        match = None
-        sim_score = 0.0
-    else:
-        emp_id_match, distance = result
-        # Convert distance back to similarity for display
-        sim_score = 1.0 - distance
-        # Find full employee details from cache
-        db_entries = load_embeddings()
-        match = next((e for e in db_entries if e["emp_id"] == emp_id_match), None)
-
-    x1, y1, x2, y2 = map(int, face.bbox)
-    face_crop = pil_img.crop((x1, y1, x2, y2))
-    snap = save_snapshot(
-        face_crop, app, f"face_{datetime.now().strftime('%H%M%S')}.jpg")
-
-    if not match:
-        session["kiosk_last_unknown"] = now.isoformat()
-        return {
-            "status": "unknown",
-            "name": "Unknown",
-            "dept": "",
-            "photoUrl": url_for("static", filename="default_user.png"),
-            "time": now_str,
+            "status": status,
+            "recognized": True,
+            "face_detected": True,
+            "face_box": face_box,
+            "name": name,
+            "dept": dept,
+            "photoUrl": photo_url,
+            "time": display_time,
             "snapshot": snap,
             "similarity": float(sim_score)
         }
-
-    emp_id = match["emp_id"]
-    name = match["name"]
-    dept = match["dept"]
-    db_photo = match["photo"]
-
-    if db_photo and db_photo.startswith("static/"):
-        photo_url = "/" + db_photo.replace("\\", "/")
-    else:
-        photo_url = url_for("static", filename="default_user.png")
-
-    attendance_result = mark_attendance(emp_id, snap, app)
-    status = attendance_result.get("status", "unknown")
-    display_timestamp = attendance_result.get("timestamp") or datetime.now()
-    display_time = display_timestamp.strftime("%I:%M %p")
-
-    return {
-        "status": status,
-        "name": name,
-        "dept": dept,
-        "photoUrl": photo_url,
-        "time": display_time,
-        "snapshot": snap,
-        "similarity": float(sim_score)
-    }
+    except Exception as e:
+        logger.error(f"recognize_and_mark error: {e}", exc_info=True)
+        # Ensure we always return a dictionary expected by the frontend
+        return {
+            "status": "WAIT",
+            "recognized": False,
+            "message": "Scanning..."
+        }

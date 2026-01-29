@@ -1,20 +1,32 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{% block title %}FaceTrack {% endblock %}</title>
+</head>
 
-  <link rel="icon" type="image/png" href="{{ url_for('favicon') }}">
+<body class="bg-gray-50 text-gray-900 antialiased">
+  <title>{% block title %}FaceTrack {% endblock %}</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <link rel="stylesheet" href="/static/css/output.css">
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Icons -->
+  <link rel="stylesheet" href="/static/css/output.css">
+  <link rel="stylesheet" href="/static/css/professional.css">
+  <link rel="stylesheet" href="/static/css/premium.css">
+
+  <!-- Icons: prefer local copy (if available), otherwise use CDN -->
+  {% if FA_LOCAL_AVAILABLE %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+  {% else %}
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  {% endif %}
   <script src="https://unpkg.com/feather-icons"></script>
+  <script src="{{ url_for('static', filename='js/feather-fallback.js') }}"></script>
 
   <!-- Alerts -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -22,35 +34,35 @@
   {% block head %}{% endblock %}
 </head>
 
-<body class="bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 text-gray-800">
+<body class="bg-gray-50 text-gray-900 antialiased">
 
 <!-- Mobile Menu Toggle -->
-<button id="mobileMenuBtn" class="lg:hidden fixed top-4 left-4 z-50 w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl shadow-xl flex items-center justify-center text-white">
-  <i class="fas fa-bars text-xl"></i>
-</button>
+<!-- <button id="mobileMenuBtn" class="lg:hidden fixed top-4 left-4 z-50 w-11 h-11 bg-indigo-600 rounded-lg shadow-lg flex items-center justify-center text-white hover:bg-indigo-700 transition-colors">
+  <i class="fas fa-bars text-lg"></i>
+</button> -->
 
-<div id="app" class="flex h-screen overflow-hidden">
+<div id="app" class="flex h-screen">
 
   <!-- SIDEBAR -->
-  <aside id="sidebar" class="w-72 bg-white/80 backdrop-blur-xl border-r border-gray-200 shadow-xl fixed lg:static inset-y-0 left-0 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
-    <div class="p-6 border-b border-gray-200">
-      <a href="/" class="flex items-center gap-3">
-        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-          <i class="fas fa-fingerprint text-white text-2xl"></i>
-        </div>
-        <div>
-          <div class="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">FaceTrack</div>
-          <div class="text-xs text-gray-500 font-medium">AI Attendance System</div>
+  <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 shadow-sm fixed inset-y-0 left-0 z-40 transform translate-x-0 transition-transform duration-300 ease-in-out flex flex-col">
+    <div class="p-4 border-b border-gray-200 bg-white">
+      <a href="/" class="block group">
+        <div class="text-center">
+          <img src="{{ url_for('static', filename='images/FaceTrack_logo.png') }}" alt="FaceTrack Logo" class="mx-auto h-44 w-auto group-hover:opacity-80 transition-opacity duration-300">
+          <p class="text-xs text-gray-500 mt-4 group-hover:text-indigo-600 transition-colors duration-300">
+            AI Attendance
+          </p>
+          <div class="w-12 h-0.5 bg-indigo-600 mx-auto mt-2 group-hover:w-16 transition-all duration-300"></div>
         </div>
       </a>
     </div>
 
-    <nav class="px-4 pb-6 pt-4">
-      <ul class="space-y-2">
+    <nav class="px-3 pb-6 pt-4 overflow-y-auto flex-1">
+      <ul class="space-y-1 flex flex-col justify-between h-full">
 
         {% if session.role in ['admin', 'hr'] %}
         <li>
-          <a href="/dashboard" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+          <a href="{{ url_for('admin.dashboard.admin_dashboard') }}" class="nav-link {% if request.endpoint == 'admin.dashboard.admin_dashboard' %}active{% endif %}">
             <i data-feather="grid"></i>
             <span class="text-sm font-medium">Dashboard</span>
           </a>
@@ -60,31 +72,39 @@
         <!-- Admin & HR only -->
         {% if session.role in ['admin', 'hr'] %}
         <li>
-          <a href="/employees" class="nav-link {% if 'employees' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.employees.list_employees') }}" class="nav-link {% if request.endpoint == 'admin.employees.list_employees' %}active{% endif %}">
             <i data-feather="users"></i>
             <span class="text-sm font-medium">Employees</span>
           </a>
         </li>
 
         <li>
-          <a href="/enroll" class="nav-link {% if 'enroll' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.employees.face_requests') }}" class="nav-link {% if request.endpoint == 'admin.employees.face_requests' %}active{% endif %}">
+            <i data-feather="user-plus"></i>
+            <span class="text-sm font-medium">Face Requests</span>
+          </a>
+        </li>
+
+        <li>
+          <a href="/enroll/" class="nav-link {% if 'enroll' in request.endpoint %}active{% endif %}">
             <i data-feather="camera"></i>
             <span class="text-sm font-medium">Enroll Face</span>
           </a>
         </li>
         {% endif %}
 
-        {% if session.role in ['admin', 'hr'] %}
+        {% if session.role in ['admin'] %}
         <li>
-          <a href="/kiosk" class="nav-link {% if 'kiosk' in request.endpoint or 'recognition' in request.endpoint %}active{% endif %}">
+          <a href="/kiosk/" class="nav-link {% if 'kiosk' in request.endpoint or 'recognition' in request.endpoint %}active{% endif %}">
           <i data-feather="monitor"></i>
           <span class="text-sm font-medium">Kiosk Mode</span>
          </a>
         </li>
         {% endif %}
 
+        {% if session.role in ['admin', 'hr'] %}
         <li>
-          <a href="/attendance" class="nav-link {% if 'attendance' in request.endpoint %}active{% endif %}">
+          <a href="/attendance/" class="nav-link {% if 'attendance' in request.endpoint %}active{% endif %}">
             <i data-feather="check-circle"></i>
             <span class="text-sm font-medium">Attendance</span>
           </a>
@@ -98,71 +118,84 @@
           </a>
         </li>
 
-        <!-- Admin & HR only -->
-        {% if session.role in ['admin', 'hr'] %}
+        <!-- Reports - Admin & HR only -->
         <li>
-          <a href="/reports" class="nav-link {% if 'reports' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.reports.reports_page') }}" class="nav-link {% if 'reports' in request.endpoint %}active{% endif %}">
             <i data-feather="bar-chart-2"></i>
             <span class="text-sm font-medium">Reports</span>
           </a>
         </li>
         {% endif %}
 
-        <li>
-          <a href="/auth/logout" class="nav-link hover:bg-red-50 hover:text-red-600">
-            <i data-feather="log-out"></i>
-            <span class="text-sm font-medium">Logout</span>
-          </a>
-        </li>
-
         <!-- Admin only -->
         {% if session.role == 'admin' %}
         <li>
-          <a href="/settings" class="nav-link {% if 'settings' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.settings.settings_page') }}" class="nav-link {% if 'settings' in request.endpoint %}active{% endif %}">
           <i data-feather="settings"></i>
           <span class="text-sm font-medium">Settings</span>
           </a>
         </li>
+
+        <li>
+          <a href="{{ url_for('admin.employees.user_management') }}" class="nav-link {% if 'user_management' in request.endpoint %}active{% endif %}">
+          <i data-feather="user-check"></i>
+          <span class="text-sm font-medium">User Management</span>
+          </a>
+        </li>
         {% endif %}
+
+        <li class="pt-2 mt-2 border-t border-gray-200">
+          <form action="/auth/logout" method="post" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="nav-link text-red-600 hover:bg-red-50 w-full text-left">
+              <i data-feather="log-out"></i>
+              <span class="text-sm font-medium">Logout</span>
+            </button>
+          </form>
+        </li>
 
       </ul>
     </nav>
   </aside>
 
-  <div class="flex-1 flex flex-col overflow-auto">
+  <!-- <div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-30 hidden lg:hidden"></div> -->
 
-    <header class="hidden lg:flex items-center justify-between bg-white/70 backdrop-blur-xl border-b border-gray-200 p-5 shadow-sm">
+  <div class="flex-1 flex flex-col overflow-auto ml-64">
+
+    <header class="flex items-center justify-between bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
       <div>
-        <h1 class="text-2xl font-bold text-gray-800">{% block page_title %}Dashboard{% endblock %}</h1>
+        <h1 class="text-xl font-bold text-gray-900">{% block page_title %}Dashboard{% endblock %}</h1>
         <!-- Breadcrumbs -->
-        <nav class="flex items-center gap-2 text-sm text-gray-600 mt-1">
-          <a href="/dashboard" class="hover:text-blue-600 transition-colors">Home</a>
-          <span class="text-gray-400">/</span>
-          <span class="text-gray-800 font-medium">{% block breadcrumb %}Dashboard{% endblock %}</span>
+        <nav class="flex items-center gap-2 text-sm text-gray-500 mt-1">
+          <a href="{{ url_for('admin.dashboard.admin_dashboard') }}" class="hover:text-indigo-600 transition-colors">Home</a>
+          <span>/</span>
+          <span class="text-gray-900">{% block breadcrumb %}Dashboard{% endblock %}</span>
         </nav>
       </div>
       
       <!-- User info -->
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-3">
         <div class="text-right">
-          <div class="text-sm font-semibold text-gray-800">{{ session.get('full_name', 'User') }}</div>
-          <div class="text-xs text-gray-500">{{ session.get('role', 'employee').title() }}</div>
+          <div class="text-sm font-semibold text-gray-900">{{ session.get('full_name', 'User') }}</div>
+          <div class="text-xs text-gray-500 flex items-center justify-end gap-1.5">
+            <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+            {{ session.get('role', 'employee').title() }}
+          </div>
         </div>
-        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+        <div class="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-sm">
           {{ session.get('full_name', 'U')[0] }}
         </div>
       </div>
     </header>
 
-    <main class="p-8">
+    <main class="p-6 overflow-auto relative z-10">
       {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-      <div class="space-y-2 mb-6">
+      <div class="space-y-3 mb-6" id="flashMessages">
         {% for category, msg in messages %}
-        <div class="p-3 rounded-lg 
-          {% if category=='error' %}bg-red-50 text-red-700
-          {% else %}bg-green-50 text-green-700{% endif %}">
-          {{ msg }}
+        <div class="flex items-center gap-3 p-4 rounded-lg border {% if category=='error' %}bg-red-50 border-red-200 text-red-800{% else %}bg-green-50 border-green-200 text-green-800{% endif %} animate-slideIn">
+          <i class="{% if category=='error' %}fas fa-exclamation-circle{% else %}fas fa-check-circle{% endif %} text-lg"></i>
+          <span class="font-medium text-sm">{{ msg }}</span>
         </div>
         {% endfor %}
       </div>
@@ -175,34 +208,13 @@
   </div>
 </div>
 
-<script>feather.replace();</script>
-<script src="/static/js/modal.js"></script>
-
-<!-- Mobile Menu Script -->
 <script>
-  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-  const sidebar = document.getElementById('sidebar');
-  
-  if (mobileMenuBtn) {
-    mobileMenuBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('-translate-x-full');
-      
-      // Toggle icon
-      const icon = mobileMenuBtn.querySelector('i');
-      icon.classList.toggle('fa-bars');
-      icon.classList.toggle('fa-times');
-    });
-    
-    // Close on outside click
-    document.addEventListener('click', (e) => {
-      if (!sidebar.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
-        sidebar.classList.add('-translate-x-full');
-        mobileMenuBtn.querySelector('i').classList.remove('fa-times');
-        mobileMenuBtn.querySelector('i').classList.add('fa-bars');
-      }
-    });
+  if (typeof feather !== 'undefined' && typeof feather.replace === 'function') {
+    try { feather.replace(); } catch (e) { console.warn('feather.replace() failed:', e); }
   }
 </script>
+<script src="/static/js/modal.js"></script>
+<script src="/static/js/ui-enhancements.js"></script>
 
 <!-- Scroll Reveal Animation -->
 <script>
@@ -227,29 +239,84 @@
       observer.observe(el);
     });
   });
-
-  // Toast notification system
-  window.showToast = function(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type} flex items-center gap-3`;
-    
-    const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
-    toast.innerHTML = `
-      <span class="text-2xl">${icon}</span>
-      <span class="font-medium">${message}</span>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(400px)';
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
-  };
 </script>
+
+<!-- Toast & Loading Systems -->
+<script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+<script src="{{ url_for('static', filename='js/loading.js') }}"></script>
+
+
 
 {% block scripts %}{% endblock %}
 
 </body>
+
+<!-- Status Modal (Global) -->
+<div id="statusModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl w-[400px] max-w-[90vw] p-8 text-center transform transition-all duration-300 scale-95 opacity-0"
+       style="transition: all 0.3s ease;">
+    <div class="flex justify-center mb-4">
+      <div id="modalIcon" class="w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-lg">
+        ✅
+      </div>
+    </div>
+    <h3 id="modalTitle" class="text-xl font-bold text-gray-900 mb-3">Success</h3>
+    <p id="modalMessage" class="text-gray-600 leading-relaxed mb-6"></p>
+    <button onclick="closeStatusModal()"
+      class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors duration-200 shadow-md hover:shadow-lg">
+      OK
+    </button>
+  </div>
+</div>
+
+<script>
+function showStatusModal(type, message) {
+  const modal = document.getElementById("statusModal");
+  const modalContent = modal.querySelector("div");
+  const icon = document.getElementById("modalIcon");
+  const title = document.getElementById("modalTitle");
+  const msg = document.getElementById("modalMessage");
+  
+  if (type === "success") {
+    icon.innerHTML = "✅";
+    icon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-lg bg-green-100 text-green-600";
+    title.textContent = "Success";
+    title.className = "text-xl font-bold text-gray-900 mb-3";
+  } else if (type === "warning") {
+    icon.innerHTML = "⚠️";
+    icon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-lg bg-yellow-100 text-yellow-600";
+    title.textContent = "Warning";
+    title.className = "text-xl font-bold text-gray-900 mb-3";
+  } else {
+    icon.innerHTML = "❌";
+    icon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-lg bg-red-100 text-red-600";
+    title.textContent = "Error";
+    title.className = "text-xl font-bold text-gray-900 mb-3";
+  }
+  
+  msg.textContent = message;
+  
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  
+  // Trigger animation
+  setTimeout(() => {
+    modalContent.classList.remove("scale-95", "opacity-0");
+    modalContent.classList.add("scale-100", "opacity-100");
+  }, 10);
+}
+
+function closeStatusModal() {
+  const modal = document.getElementById("statusModal");
+  const modalContent = modal.querySelector("div");
+  
+  modalContent.classList.remove("scale-100", "opacity-100");
+  modalContent.classList.add("scale-95", "opacity-0");
+  
+  setTimeout(() => {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  }, 300);
+}
+</script>
 </html>

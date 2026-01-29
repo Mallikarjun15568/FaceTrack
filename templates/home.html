@@ -2,150 +2,310 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FaceTrack Pro — AI Attendance</title>
+  <title>FaceTrack Pro — Face Recognition Attendance System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <link rel="stylesheet" href="/static/css/output.css">
+  <link rel="stylesheet" href="/static/css/professional.css">
+  <link rel="stylesheet" href="/static/css/premium.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .animate-fadeInUp {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+    
+    .animate-fadeIn {
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+    
+    .animate-slideInLeft {
+      animation: slideInLeft 0.6s ease-out forwards;
+    }
+    
+    .animate-slideInRight {
+      animation: slideInRight 0.6s ease-out forwards;
+    }
+    
+    .animate-scaleIn {
+      animation: scaleIn 0.5s ease-out forwards;
+    }
+    
+    .animate-float {
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+    .delay-500 { animation-delay: 0.5s; }
+    .delay-600 { animation-delay: 0.6s; }
+    
+    /* Hover effects */
+    .hover-lift {
+      transition: all 0.3s ease;
+    }
+    
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .hover-glow:hover {
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+    }
+  </style>
 </head>
 
-<body class="bg-gray-50 text-gray-900 overflow-x-hidden">
+<body class="bg-soft-mist text-gray-900">
 
 <!-- ================= NAVBAR ================= -->
-<header class="fixed top-0 inset-x-0 z-50 bg-white border-b border-gray-200">
+<header class="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-100 shadow-sm">
   <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-
-    <!-- Logo -->
-    <div class="flex items-center gap-2">
-      <span class="text-2xl font-extrabold text-blue-600">
-        FaceTrack <span class="text-gray-800 font-semibold">Pro</span>
-      </span>
+    
+    <div class="flex items-center gap-0">
+      <img src="{{ url_for('static', filename='images/FaceTrack_logo.png') }}" alt="FaceTrack Logo" class="h-16 w-auto">
     </div>
 
-    <!-- Menu -->
-    <nav class="hidden md:flex items-center gap-8 text-sm text-gray-600">
-
-      <a href="/"
-         class="text-gray-900 font-medium border-b-2 border-blue-600 pb-1">
-        Home
-      </a>
-
-      <a href="#features"
-         class="font-medium pb-1 border-b-2 border-transparent
-                hover:border-blue-600 hover:text-gray-900 transition">
-        Features
-      </a>
-
-      <a href="/auth/login"
-         class="font-medium pb-1 border-b-2 border-transparent
-                hover:border-blue-600 hover:text-gray-900 transition">
-        Login
+    <nav class="flex items-center gap-6 text-sm font-medium">
+      <a href="/" class="text-blue-600 pb-1 border-b-2 border-blue-300">Home</a>
+      <a href="/about" class="text-gray-700 hover:text-blue-600 transition">About</a>
+      <a href="/contact" class="text-gray-700 hover:text-blue-600 transition">Contact</a>
+      <a href="/help" class="text-gray-700 hover:text-blue-600 transition">Help</a>
+      <!-- Admin Login hidden but accessible via direct URL /auth/admin/login -->
+      <a href="/auth/user_login" 
+         class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition shadow-sm">
+        <i class="fas fa-user mr-1"></i>Login
       </a>
     </nav>
 
-    <!-- Profile -->
-    <div class="flex items-center gap-3">
-      <img src="{{ url_for('static', filename='default_user.png') }}"
-           class="w-9 h-9 rounded-full border border-gray-300">
-      <span class="text-sm text-gray-700">profile</span>
-    </div>
+    <!-- Mobile Menu Button -->
+    <button class="sm:hidden p-2">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
   </div>
 </header>
-
-<!-- ================= HERO ================= -->
-<section class="pt-40 pb-24">
-  <div class="max-w-6xl mx-auto px-6 text-center">
-
-    <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight">
-      Track Smarter.<br>
-      Work Better.
-    </h1>
-
-    <p class="mt-6 text-lg text-gray-600 max-w-2xl mx-auto">
-      AI-powered facial recognition for seamless attendance
-      and workplace insights.
-    </p>
-
-    <!-- Buttons -->
-    <div class="mt-10 flex justify-center gap-6 flex-wrap">
-      <a href="/auth/login"
-         class="px-10 py-4 text-lg font-semibold rounded-xl
-                bg-blue-600 text-white hover:bg-blue-700 transition">
-        Launch Dashboard
-      </a>
-      <a href="/kiosk"
-         class="px-10 py-4 text-lg font-semibold rounded-xl
-                border border-gray-300 bg-white hover:bg-gray-100 transition">
-        Try Kiosk Mode
-      </a>
-    </div>
-
-    <!-- Stats -->
-    <div class="mt-14 grid grid-cols-2 md:grid-cols-4 gap-6">
-
-      <div class="card-modern p-6 text-left">
-        <div class="text-3xl mb-3">👤</div>
-        <p class="text-sm text-gray-500">Total Employees</p>
-        <p class="mt-1 text-3xl font-bold">419</p>
-      </div>
-
-      <div class="card-modern p-6 text-left">
-        <div class="text-3xl mb-3">🔁</div>
-        <p class="text-sm text-gray-500">Daily Scans</p>
-        <p class="mt-1 text-3xl font-bold">991</p>
-      </div>
-
-      <div class="card-modern p-6 text-left">
-        <div class="text-3xl mb-3">💻</div>
-        <p class="text-sm text-gray-500">Active Devices</p>
-        <p class="mt-1 text-3xl font-bold">199</p>
-      </div>
-
-      <div class="card-modern p-6 text-left border-blue-200 bg-blue-50">
-        <div class="text-3xl mb-3">✅</div>
-        <p class="text-sm text-blue-700">Accuracy</p>
-        <p class="mt-1 text-3xl font-bold text-blue-700">99.8%</p>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ================= DEMO SECTION ================= -->
-<section class="py-24 bg-white" id="features">
+<!-- ================= HERO SECTION ================= -->
+<section class="pt-24 pb-16">
   <div class="max-w-7xl mx-auto px-6">
+    
+    <!-- Hero Content -->
+    <div class="text-center mb-12">
+      <div class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-full text-sm font-medium text-blue-700 mb-6 animate-fadeIn">
+        <i class="fas fa-shield-alt"></i>
+        Face Recognition Attendance System
+      </div>
+      
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight animate-fadeInUp delay-100">
+        FaceTrack Pro
+        <span class="block gradient-text mt-2">Automated Attendance Management</span>
+      </h1>
 
-    <h2 class="text-3xl font-bold mb-16 text-center">
-      See FaceTrack in Action
-    </h2>
+      <p class="text-lg md:text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed animate-fadeInUp delay-200">
+        AI-powered facial recognition system for accurate, secure, and contactless employee attendance tracking. 
+        Real-time monitoring with comprehensive analytics.
+      </p>
 
-    <div class="grid md:grid-cols-3 gap-8">
+      <div class="flex flex-wrap gap-4 justify-center mb-12 animate-fadeInUp delay-300">
+        <!-- Admin Access hidden but accessible via direct URL /auth/admin/login -->
+        <a href="/auth/user_login"
+           class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-md hover:shadow-lg hover-glow">
+          <i class="fas fa-user mr-2"></i>Employee Portal
+        </a>
+        <a href="/about"
+           class="px-8 py-3 bg-white text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition border-2 border-gray-300">
+          <i class="fas fa-info-circle mr-2"></i>Learn More
+        </a>
+      </div>
 
-      <div class="card-modern p-6">
-        <div class="aspect-[4/3] bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
-          Demo Screenshot
+      <!-- Quick Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+        <div class="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl border border-blue-100 hover-lift animate-scaleIn delay-400">
+          <div class="text-3xl font-bold text-blue-600 mb-1">99.9%</div>
+          <div class="text-sm text-gray-600">Recognition Accuracy</div>
         </div>
-        <h3 class="mt-5 font-semibold">Realtime Recognition</h3>
-        <p class="mt-2 text-sm text-gray-600">
-          Instant face detection with live feedback.
+        <div class="bg-gradient-to-br from-green-50 to-white p-6 rounded-xl border border-green-100 hover-lift animate-scaleIn delay-500">
+          <div class="text-3xl font-bold text-green-600 mb-1">&lt;1s</div>
+          <div class="text-sm text-gray-600">Detection Speed</div>
+        </div>
+        <div class="bg-gradient-to-br from-purple-50 to-white p-6 rounded-xl border border-purple-100 hover-lift animate-scaleIn delay-600">
+          <div class="text-3xl font-bold text-purple-600 mb-1">24/7</div>
+          <div class="text-sm text-gray-600">System Uptime</div>
+        </div>
+        <div class="bg-gradient-to-br from-orange-50 to-white p-6 rounded-xl border border-orange-100 hover-lift animate-scaleIn delay-600">
+          <div class="text-3xl font-bold text-orange-600 mb-1">100%</div>
+          <div class="text-sm text-gray-600">Contactless</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<section class="py-4">
+  <div class="max-w-4xl mx-auto px-6">
+    {% for category, message in messages %}
+    <div class="flex items-center gap-3 p-4 rounded-lg border text-sm mb-4 {% if category=='error' %}bg-red-50 border-red-200 text-red-800{% else %}bg-green-50 border-green-200 text-green-800{% endif %}">
+      <i class="{% if category=='error' %}fas fa-exclamation-circle{% else %}fas fa-check-circle{% endif %} text-lg"></i>
+      <span class="font-medium">{{ message }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endwith %}
+
+<!-- ================= FEATURES SECTION ================= -->
+<section class="py-16">
+  <div class="max-w-7xl mx-auto px-6">
+    
+    <div class="text-center mb-12">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 animate-fadeInUp">
+        Core Features
+      </h2>
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto animate-fadeInUp delay-100">
+        Comprehensive attendance management with advanced AI capabilities
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <!-- Feature 1 -->
+      <div class="bg-white rounded-xl p-6 border border-gray-200 hover-lift">
+        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 animate-float">
+          <i class="fas fa-user-check text-blue-600 text-xl"></i>
+        </div>
+        <h3 class="font-bold text-lg mb-2 text-gray-900">Face Recognition</h3>
+        <p class="text-gray-600 text-sm">
+          Advanced deep learning algorithms for instant employee identification with high accuracy.
         </p>
       </div>
 
-      <div class="card-modern p-6">
-        <div class="aspect-[4/3] bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
-          Demo Screenshot
+      <!-- Feature 2 -->
+      <div class="bg-white rounded-xl p-6 border border-gray-200 hover-lift">
+        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4 animate-float" style="animation-delay: 0.2s">
+          <i class="fas fa-clock text-green-600 text-xl"></i>
         </div>
-        <h3 class="mt-5 font-semibold">Automated Attendance</h3>
-        <p class="mt-2 text-sm text-gray-600">
-          Accurate check-in and check-out logs.
+        <h3 class="font-bold text-lg mb-2 text-gray-900">Real-Time Tracking</h3>
+        <p class="text-gray-600 text-sm">
+          Automatic attendance logging with timestamps, location data, and live status updates.
         </p>
       </div>
 
-      <div class="card-modern p-6">
-        <div class="aspect-[4/3] bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
-          Demo Screenshot
+      <!-- Feature 3 -->
+      <div class="bg-white rounded-xl p-6 border border-gray-200 hover-lift">
+        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 animate-float" style="animation-delay: 0.4s">
+          <i class="fas fa-chart-bar text-purple-600 text-xl"></i>
         </div>
-        <h3 class="mt-5 font-semibold">Smart Reports</h3>
-        <p class="mt-2 text-sm text-gray-600">
-          Analytics-driven workforce insights.
+        <h3 class="font-bold text-lg mb-2 text-gray-900">Analytics Dashboard</h3>
+        <p class="text-gray-600 text-sm">
+          Comprehensive reports, attendance trends, and workforce analytics in real-time.
+        </p>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="bg-white rounded-xl p-6 border border-gray-200 hover-lift">
+        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4 animate-float" style="animation-delay: 0.6s">
+          <i class="fas fa-shield-alt text-orange-600 text-xl"></i>
+        </div>
+        <h3 class="font-bold text-lg mb-2 text-gray-900">Secure & Private</h3>
+        <p class="text-gray-600 text-sm">
+          Encrypted facial data storage with anti-spoofing liveness detection technology.
+        </p>
+      </div>
+
+      <!-- Feature 5 -->
+      <div class="bg-white rounded-xl p-6 border border-gray-200 hover-lift">
+        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4 animate-float" style="animation-delay: 0.8s">
+          <i class="fas fa-desktop text-red-600 text-xl"></i>
+        </div>
+        <h3 class="font-bold text-lg mb-2 text-gray-900">Kiosk Mode</h3>
+        <p class="text-gray-600 text-sm">
+          Dedicated kiosk interface for employee self-service attendance marking.
+        </p>
+      </div>
+
+      <!-- Feature 6 -->
+      <div class="bg-white rounded-xl p-6 border border-gray-200 hover-lift">
+        <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4 animate-float" style="animation-delay: 1s">
+          <i class="fas fa-file-export text-indigo-600 text-xl"></i>
+        </div>
+        <h3 class="font-bold text-lg mb-2 text-gray-900">Export Reports</h3>
+        <p class="text-gray-600 text-sm">
+          Download attendance data in multiple formats (CSV, PDF, Excel) for payroll integration.
         </p>
       </div>
 
@@ -153,103 +313,145 @@
   </div>
 </section>
 
-<!-- ================= FEATURE STRIP ================= -->
-<section class="pb-28 bg-gray-50">
-  <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-8">
-
-    <div class="card-modern p-8">
-      <h3 class="text-xl font-semibold mb-3">Face Enrollment</h3>
-      <p class="text-gray-600 text-sm">
-        Securely register employees using AI embeddings.
+<!-- ================= SYSTEM WORKFLOW ================= -->
+<section class="py-16">
+  <div class="max-w-7xl mx-auto px-6">
+    
+    <div class="text-center mb-12">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 animate-fadeInUp">
+        How It Works
+      </h2>
+      <p class="text-lg text-gray-600 animate-fadeInUp delay-100">
+        Simple three-step process for seamless attendance management
       </p>
     </div>
 
-    <div class="card-modern p-8">
-      <h3 class="text-xl font-semibold mb-3">Audit & Recognition Logs</h3>
-      <p class="text-gray-600 text-sm">
-        Complete traceability for security and compliance.
-      </p>
-    </div>
+    <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      
+      <div class="text-center group animate-fadeInUp delay-200">
+        <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform">
+          <span class="text-2xl font-bold text-white">1</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 text-gray-900">Enroll Employees</h3>
+        <p class="text-gray-600">
+          Add employee details and capture facial data for recognition database
+        </p>
+      </div>
 
+      <div class="text-center group animate-fadeInUp delay-400">
+        <div class="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform">
+          <span class="text-2xl font-bold text-white">2</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 text-gray-900">Face Detection</h3>
+        <p class="text-gray-600">
+          System automatically detects and verifies employee faces in real-time
+        </p>
+      </div>
+
+      <div class="text-center group animate-fadeInUp delay-600">
+        <div class="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform">
+          <span class="text-2xl font-bold text-white">3</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 text-gray-900">Track & Report</h3>
+        <p class="text-gray-600">
+          View attendance logs, generate reports, and monitor workforce metrics
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA SECTION ================= -->
+<section class="py-16 bg-soft-mist text-gray-900">
+  <div class="max-w-4xl mx-auto px-6 text-center">
+    <h2 class="text-3xl md:text-4xl font-bold mb-4 animate-fadeInUp">
+      Ready to Get Started?
+    </h2>
+    <p class="text-lg mb-8 animate-fadeInUp delay-200">
+      Access the system to manage attendance, view reports, and monitor workforce efficiently
+    </p>
+    
+    <div class="flex flex-wrap gap-4 justify-center animate-fadeInUp delay-300">
+      <!-- Admin Login hidden but accessible via direct URL /auth/admin/login -->
+      <a href="/auth/user_login"
+         class="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition border-2 border-blue-600 hover:scale-105 transform">
+        <i class="fas fa-user mr-2"></i>Login
+      </a>
+      <a href="/contact"
+         class="px-8 py-3 bg-gray-100 text-blue-600 font-semibold rounded-lg hover:bg-gray-200 transition shadow-lg border-2 border-gray-300 hover:scale-105 transform">
+        <i class="fas fa-envelope mr-2"></i>Contact Support
+      </a>
+    </div>
   </div>
 </section>
 
 <!-- ================= FOOTER ================= -->
-<footer class="border-t border-gray-200 bg-gray-900 text-gray-300 mt-24">
-  <div class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-10">
+<footer class="bg-gray-900 text-gray-400 pt-12 pb-6">
+  <div class="max-w-7xl mx-auto px-6">
+    
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
 
-    <!-- 1️⃣ FaceTrack Pro -->
-    <div>
-      <h3 class="text-xl font-bold text-blue-400">
-        FaceTrack <span class="text-gray-300">Pro</span>
-      </h3>
-      <p class="mt-3 text-sm text-gray-400 max-w-xs">
-        AI-powered facial recognition attendance system designed for secure
-        and efficient attendance management.
-      </p>
+      <div>
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+            <i class="fas fa-camera text-white text-xl"></i>
+          </div>
+          <span class="text-lg font-bold text-white">FaceTrack Pro</span>
+        </div>
+        <p class="text-sm leading-relaxed">
+          AI-powered facial recognition attendance system for modern workplace management.
+        </p>
+      </div>
+
+      <div>
+        <h4 class="text-white font-semibold mb-3">Quick Links</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/" class="hover:text-white transition">Home</a></li>
+          <li><a href="/about" class="hover:text-white transition">About</a></li>
+          <li><a href="/contact" class="hover:text-white transition">Contact</a></li>
+          <li><a href="/help" class="hover:text-white transition">Help</a></li>
+          <li>
+            <!-- Admin Login hidden but accessible via direct URL /auth/admin/login -->
+          </li>
+          <li>
+            <a href="/auth/user_login" class="hover:text-white transition">
+              <i class="fas fa-user mr-1"></i>Login
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="text-white font-semibold mb-3">System Info</h4>
+        <ul class="space-y-2 text-sm">
+          <li>Version 1.0</li>
+          <li>Face Recognition</li>
+          <li>Web Application</li>
+          <li class="pt-1">
+            <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-medium">
+              <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+              Active
+            </span>
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="text-white font-semibold mb-3">Contact</h4>
+        <ul class="space-y-2 text-sm">
+          <li><i class="fas fa-envelope mr-2"></i>support@facetrackpro.com</li>
+          <li><i class="fas fa-phone mr-2"></i>+91 98765 43210</li>
+          <li><i class="fas fa-map-marker-alt mr-2"></i>Solapur, Maharashtra</li>
+        </ul>
+      </div>
+
     </div>
 
-    <!-- 2️⃣ Product -->
-    <div>
-      <h4 class="text-sm font-semibold mb-4 uppercase tracking-wider">
-        Product
-      </h4>
-      <ul class="space-y-2 text-sm text-gray-400">
-        <li><a href="/" class="hover:text-white">Home</a></li>
-        <li><a href="#features" class="hover:text-white">Features</a></li>
-        <li><a href="/auth/login" class="hover:text-white">Login</a></li>
-      </ul>
+    <div class="border-t border-gray-800 pt-6 text-center text-sm">
+      <p>© 2026 FaceTrack Pro. All rights reserved.</p>
     </div>
 
-    <!-- 3️⃣ Support -->
-    <div>
-      <h4 class="text-sm font-semibold mb-4 uppercase tracking-wider">
-        Support
-      </h4>
-      <ul class="space-y-2 text-sm text-gray-400">
-        <li>
-          <strong>Developer:</strong><br>
-          Mallikarjun S. Asapure
-        </li>
-        <li>
-          <a href="mailto:asapuremallikarjun23@gmail.com" class="hover:text-white">
-            📧 asapuremallikarjun23@gmail.com
-          </a>
-        </li>
-        <li>
-          <a href="tel:+919579688201" class="hover:text-white">
-            📞 +91 95796 88201
-          </a>
-        </li>
-        <li class="text-gray-500">
-          Face recognition system support and assistance
-        </li>
-      </ul>
-    </div>
-
-    <!-- 4️⃣ Project & Legal -->
-    <div>
-      <h4 class="text-sm font-semibold mb-4 uppercase tracking-wider">
-        Project & Legal
-      </h4>
-      <ul class="space-y-2 text-sm text-gray-400">
-        <li>Face Recognition System</li>
-        <li>Web-Based Application</li>
-        <li>Version 1.0</li>
-        <li>
-          <a href="#"
-             class="hover:text-white cursor-not-allowed"
-             title="LinkedIn profile will be added soon">
-            LinkedIn (Developer)
-          </a>
-        </li>
-      </ul>
-    </div>
-
-  </div>
-
-  <div class="border-t border-gray-800 py-5 text-center text-xs text-gray-500">
-    © 2025 FaceTrack Pro | Version 1.0
   </div>
 </footer>
 

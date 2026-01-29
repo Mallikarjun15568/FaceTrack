@@ -6,41 +6,76 @@
 {% block title %}Apply for Leave{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-8">
+<div class="min-h-screen py-8">
     <div class="max-w-3xl mx-auto px-4">
         
         <!-- Header -->
-        <div class="mb-6">
-            <a href="{{ url_for('leave.index') }}" class="text-blue-600 hover:text-blue-800 flex items-center gap-2 mb-4">
+        <div class="mb-6 scroll-reveal">
+            <a href="{{ url_for('leave.index') }}" class="text-blue-600 hover:text-blue-700 flex items-center gap-2 mb-4 font-semibold transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                 </svg>
                 Back to Leave List
             </a>
-            <h1 class="text-3xl font-bold text-gray-900">Apply for Leave</h1>
-            <p class="text-gray-600 mt-1">Submit your leave application</p>
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Apply for Leave</h1>
+            <p class="text-gray-600 mt-2 font-medium">Submit your leave application</p>
         </div>
 
         <!-- Leave Balance Display -->
         {% if balance %}
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h3 class="text-sm font-semibold text-blue-900 mb-3">Your Leave Balance</h3>
+        <div class="premium-card p-6 mb-6 scroll-reveal" style="--delay: 0.1s">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <i class="fas fa-calendar-check text-blue-500"></i>
+                Your Leave Balance
+            </h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="text-center">
-                    <p class="text-2xl font-bold text-blue-600">{{ balance.casual_leave }}</p>
-                    <p class="text-xs text-gray-600">Casual</p>
+                <div class="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="flex items-center justify-center mb-2">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-2">
+                            <i class="fas fa-briefcase text-blue-600 text-sm"></i>
+                        </div>
+                        <p class="text-2xl font-bold text-blue-600">{{ balance.casual_leave }}</p>
+                    </div>
+                    <p class="text-xs text-gray-600 font-medium">Casual Leave</p>
+                    <div class="w-full bg-blue-200 rounded-full h-2 mt-2">
+                        <div class="bg-blue-600 h-2 rounded-full" style="width: {{ (balance.casual_leave / 12 * 100) if balance.casual_leave <= 12 else 100 }}%"></div>
+                    </div>
                 </div>
-                <div class="text-center">
-                    <p class="text-2xl font-bold text-red-600">{{ balance.sick_leave }}</p>
-                    <p class="text-xs text-gray-600">Sick</p>
+                <div class="text-center p-3 bg-red-50 rounded-lg border border-red-200">
+                    <div class="flex items-center justify-center mb-2">
+                        <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-2">
+                            <i class="fas fa-thermometer-half text-red-600 text-sm"></i>
+                        </div>
+                        <p class="text-2xl font-bold text-red-600">{{ balance.sick_leave }}</p>
+                    </div>
+                    <p class="text-xs text-gray-600 font-medium">Sick Leave</p>
+                    <div class="w-full bg-red-200 rounded-full h-2 mt-2">
+                        <div class="bg-red-600 h-2 rounded-full" style="width: {{ (balance.sick_leave / 12 * 100) if balance.sick_leave <= 12 else 100 }}%"></div>
+                    </div>
                 </div>
-                <div class="text-center">
-                    <p class="text-2xl font-bold text-green-600">{{ balance.vacation_leave }}</p>
-                    <p class="text-xs text-gray-600">Vacation</p>
+                <div class="text-center p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div class="flex items-center justify-center mb-2">
+                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-2">
+                            <i class="fas fa-plane text-green-600 text-sm"></i>
+                        </div>
+                        <p class="text-2xl font-bold text-green-600">{{ balance.vacation_leave }}</p>
+                    </div>
+                    <p class="text-xs text-gray-600 font-medium">Vacation Leave</p>
+                    <div class="w-full bg-green-200 rounded-full h-2 mt-2">
+                        <div class="bg-green-600 h-2 rounded-full" style="width: {{ (balance.vacation_leave / 15 * 100) if balance.vacation_leave <= 15 else 100 }}%"></div>
+                    </div>
                 </div>
-                <div class="text-center">
-                    <p class="text-2xl font-bold text-purple-600">{{ balance.work_from_home }}</p>
-                    <p class="text-xs text-gray-600">WFH</p>
+                <div class="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
+                    <div class="flex items-center justify-center mb-2">
+                        <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-2">
+                            <i class="fas fa-home text-purple-600 text-sm"></i>
+                        </div>
+                        <p class="text-2xl font-bold text-purple-600">{{ balance.emergency_leave }}</p>
+                    </div>
+                    <p class="text-xs text-gray-600 font-medium">Work From Home</p>
+                    <div class="w-full bg-purple-200 rounded-full h-2 mt-2">
+                        <div class="bg-purple-600 h-2 rounded-full" style="width: {{ (balance.emergency_leave / 10 * 100) if balance.emergency_leave <= 10 else 100 }}%"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -58,66 +93,167 @@
         {% endwith %}
 
         <!-- Leave Application Form -->
-        <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="premium-card p-8 scroll-reveal" style="--delay: 0.2s">
+            <div class="mb-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Leave Application Details</h3>
+                <p class="text-gray-600 text-sm">Fill in the details below to submit your leave request</p>
+            </div>
+
             <form method="POST" id="leaveForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <!-- Leave Type -->
                 <div class="mb-6">
-                    <label for="leave_type" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="leave_type" class="block text-sm font-semibold text-gray-700 mb-3">
                         Leave Type <span class="text-red-500">*</span>
                     </label>
-                    <select name="leave_type" id="leave_type" required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Select leave type</option>
-                        <option value="Casual Leave">Casual Leave ({{ balance.casual_leave }} available)</option>
-                        <option value="Sick Leave">Sick Leave ({{ balance.sick_leave }} available)</option>
-                        <option value="Vacation Leave">Vacation Leave ({{ balance.vacation_leave }} available)</option>
-                        <option value="Work From Home">Work From Home ({{ balance.work_from_home }} available)</option>
-                    </select>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="leave-type-option" data-type="Casual Leave" data-balance="{{ balance.casual_leave }}">
+                            <input type="radio" name="leave_type" value="Casual Leave" id="casual" required class="hidden">
+                            <label for="casual" class="block p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-300 transition-all leave-type-label">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-briefcase text-blue-600"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-semibold text-gray-900">Casual Leave</div>
+                                            <div class="text-sm text-gray-600">Personal time off</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-lg font-bold text-blue-600">{{ balance.casual_leave }}</div>
+                                        <div class="text-xs text-gray-500">available</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="leave-type-option" data-type="Sick Leave" data-balance="{{ balance.sick_leave }}">
+                            <input type="radio" name="leave_type" value="Sick Leave" id="sick" required class="hidden">
+                            <label for="sick" class="block p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-red-300 transition-all leave-type-label">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-thermometer-half text-red-600"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-semibold text-gray-900">Sick Leave</div>
+                                            <div class="text-sm text-gray-600">Medical emergencies</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-lg font-bold text-red-600">{{ balance.sick_leave }}</div>
+                                        <div class="text-xs text-gray-500">available</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="leave-type-option" data-type="Vacation Leave" data-balance="{{ balance.vacation_leave }}">
+                            <input type="radio" name="leave_type" value="Vacation Leave" id="vacation" required class="hidden">
+                            <label for="vacation" class="block p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-green-300 transition-all leave-type-label">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-plane text-green-600"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-semibold text-gray-900">Vacation Leave</div>
+                                            <div class="text-sm text-gray-600">Extended holidays</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-lg font-bold text-green-600">{{ balance.vacation_leave }}</div>
+                                        <div class="text-xs text-gray-500">available</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="leave-type-option" data-type="Emergency Leave" data-balance="{{ balance.emergency_leave }}">
+                            <input type="radio" name="leave_type" value="Work From Home" id="wfh" required class="hidden">
+                            <label for="wfh" class="block p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-purple-300 transition-all leave-type-label">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-home text-purple-600"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-semibold text-gray-900">Work From Home</div>
+                                            <div class="text-sm text-gray-600">Remote work days</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-lg font-bold text-purple-600">{{ balance.emergency_leave }}</div>
+                                        <div class="text-xs text-gray-500">available</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Date Range -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <!-- Start Date -->
-                    <div>
-                        <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">
-                            Start Date <span class="text-red-500">*</span>
-                        </label>
-                        <input type="date" name="start_date" id="start_date" required
-                            min="{{ today }}"
-                            onchange="calculateDays()"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <!-- Date Selection -->
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">
+                        Select Dates <span class="text-red-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="start_date" class="block text-sm text-gray-600 mb-2">From</label>
+                            <input type="date" name="start_date" id="start_date" required
+                                min="{{ today }}"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                        </div>
+                        <div>
+                            <label for="end_date" class="block text-sm text-gray-600 mb-2">To</label>
+                            <input type="date" name="end_date" id="end_date" required
+                                min="{{ today }}"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                        </div>
                     </div>
-
-                    <!-- End Date -->
-                    <div>
-                        <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
-                            End Date <span class="text-red-500">*</span>
-                        </label>
-                        <input type="date" name="end_date" id="end_date" required
-                            min="{{ today }}"
-                            onchange="calculateDays()"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                </div>
-
-                <!-- Total Days Display -->
-                <div id="daysDisplay" class="hidden mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-gray-700">Total Days:</span>
-                        <span id="totalDays" class="text-2xl font-bold text-blue-600">0</span>
+                    
+                    <!-- Leave Duration Display -->
+                    <div id="leaveDuration" class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-calendar-day text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-700">Leave Duration</div>
+                                    <div class="text-xs text-gray-600">Total days you'll be on leave</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-3xl font-bold text-blue-600" id="totalDays">0</div>
+                                <div class="text-sm text-gray-600">days</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Reason -->
                 <div class="mb-6">
-                    <label for="reason" class="block text-sm font-medium text-gray-700 mb-2">
-                        Reason <span class="text-red-500">*</span>
+                    <label for="reason" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Reason for Leave <span class="text-red-500">*</span>
                     </label>
                     <textarea name="reason" id="reason" rows="4" required
-                        placeholder="Please provide a reason for your leave..."
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
-                    <p class="text-xs text-gray-500 mt-1">Minimum 10 characters</p>
+                        placeholder="Please provide a detailed reason for your leave application..."
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-all"
+                        maxlength="500"></textarea>
+                    <div class="flex justify-between items-center mt-2">
+                        <p class="text-xs text-gray-500">Minimum 10 characters</p>
+                        <p class="text-xs text-gray-500"><span id="charCount">0</span>/500 characters</p>
+                    </div>
+                </div>
+
+                <!-- Balance Check Alert -->
+                <div id="balanceAlert" class="hidden mb-6 p-4 rounded-lg border">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-exclamation-triangle text-yellow-600"></i>
+                        <div>
+                            <p class="text-sm font-medium text-yellow-800" id="balanceMessage"></p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Guidelines -->
@@ -179,15 +315,45 @@
 </div>
 
 <script>
-// Set minimum date to today
+// Set minimum date to today and initialize
 document.addEventListener('DOMContentLoaded', function() {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('start_date').setAttribute('min', today);
     document.getElementById('end_date').setAttribute('min', today);
+    
+    // Initialize leave type selection
+    initLeaveTypeSelection();
+    
+    // Initialize date change listeners
+    document.getElementById('start_date').addEventListener('change', handleDateChange);
+    document.getElementById('end_date').addEventListener('change', handleDateChange);
+    
+    // Initialize reason character count
+    document.getElementById('reason').addEventListener('input', updateCharCount);
 });
 
-// Calculate total days
-function calculateDays() {
+// Leave type selection
+function initLeaveTypeSelection() {
+    const leaveTypeLabels = document.querySelectorAll('.leave-type-label');
+    leaveTypeLabels.forEach(label => {
+        label.addEventListener('click', function() {
+            // Remove selected class from all
+            leaveTypeLabels.forEach(l => l.classList.remove('border-blue-500', 'bg-blue-50'));
+            // Add selected class to clicked
+            this.classList.add('border-blue-500', 'bg-blue-50');
+            
+            // Check the radio button
+            const radio = this.previousElementSibling;
+            radio.checked = true;
+            
+            // Update balance check
+            checkBalance();
+        });
+    });
+}
+
+// Handle date changes
+function handleDateChange() {
     const startDate = document.getElementById('start_date').value;
     const endDate = document.getElementById('end_date').value;
     
@@ -197,44 +363,208 @@ function calculateDays() {
         
         if (end >= start) {
             const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+            
+            // Update the prominent leave duration display
             document.getElementById('totalDays').textContent = days;
-            document.getElementById('daysDisplay').classList.remove('hidden');
             
             // Update end date minimum
             document.getElementById('end_date').setAttribute('min', startDate);
+            
+            // Check balance
+            checkBalance();
         } else {
-            document.getElementById('daysDisplay').classList.add('hidden');
-            alert('End date must be after or same as start date');
+            document.getElementById('totalDays').textContent = '0';
+            showAlert('End date must be after or same as start date', 'error');
         }
+    } else {
+        document.getElementById('totalDays').textContent = '0';
     }
 }
 
-// Form validation
-document.getElementById('leaveForm').addEventListener('submit', function(e) {
-    const reason = document.getElementById('reason').value;
+// Check leave balance
+function checkBalance() {
+    const selectedType = document.querySelector('input[name="leave_type"]:checked');
+    if (!selectedType) return;
     
-    if (reason.length < 10) {
-        e.preventDefault();
-        alert('Please provide a detailed reason (minimum 10 characters)');
-        return false;
-    }
+    const leaveType = selectedType.value;
+    const balanceElement = selectedType.closest('.leave-type-option');
+    const availableBalance = parseInt(balanceElement.dataset.balance);
     
     const startDate = document.getElementById('start_date').value;
     const endDate = document.getElementById('end_date').value;
     
+    if (!startDate || !endDate) return;
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    
+    const alertDiv = document.getElementById('balanceAlert');
+    const messageDiv = document.getElementById('balanceMessage');
+    
+    if (days > availableBalance) {
+        alertDiv.className = 'mb-6 p-4 rounded-lg border border-red-200 bg-red-50';
+        messageDiv.textContent = `Insufficient balance. You need ${days} days but only have ${availableBalance} available.`;
+        alertDiv.classList.remove('hidden');
+    } else if (days === availableBalance) {
+        alertDiv.className = 'mb-6 p-4 rounded-lg border border-yellow-200 bg-yellow-50';
+        messageDiv.textContent = `This will use all your remaining ${leaveType.toLowerCase()} balance (${days} days).`;
+        alertDiv.classList.remove('hidden');
+    } else {
+        alertDiv.classList.add('hidden');
+    }
+}
+
+// Update character count
+function updateCharCount() {
+    const textarea = document.getElementById('reason');
+    const counter = document.getElementById('charCount');
+    counter.textContent = textarea.value.length;
+    
+    if (textarea.value.length > 450) {
+        counter.className = 'text-red-600';
+    } else {
+        counter.className = '';
+    }
+}
+
+// Show alert
+function showAlert(message, type = 'info') {
+    // Simple alert for now, could be enhanced with toast notifications
+    alert(message);
+}
+
+// Form validation
+document.getElementById('leaveForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const leaveType = document.querySelector('input[name="leave_type"]:checked');
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    const reason = document.getElementById('reason').value;
+    
+    // Validation
+    if (!leaveType) {
+        showAlert('Please select a leave type');
+        return false;
+    }
+    
     if (!startDate || !endDate) {
-        e.preventDefault();
-        alert('Please select both start and end dates');
+        showAlert('Please select both start and end dates');
         return false;
     }
     
     if (new Date(endDate) < new Date(startDate)) {
-        e.preventDefault();
-        alert('End date cannot be before start date');
+        showAlert('End date cannot be before start date');
         return false;
     }
     
-    return confirm('Submit this leave application?');
+    if (reason.length < 10) {
+        showAlert('Please provide a detailed reason (minimum 10 characters)');
+        return false;
+    }
+    
+    // Check balance
+    const balanceElement = leaveType.closest('.leave-type-option');
+    const availableBalance = parseInt(balanceElement.dataset.balance);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    
+    if (days > availableBalance) {
+        showAlert('Insufficient leave balance for the selected period');
+        return false;
+    }
+    
+    // Show confirmation modal
+    showLeaveConfirmModal(this);
+    return false;
 });
+</script>
+
+<!-- Leave Application Confirmation Modal -->
+<div id="leaveConfirmModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" onclick="if(event.target === this) hideLeaveConfirmModal()">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-calendar-check text-green-600 text-xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900">Confirm Leave Application</h3>
+        </div>
+
+        <div class="mb-6">
+            <p class="text-gray-600 mb-4">Are you sure you want to submit this leave application?</p>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm text-gray-600">Start Date:</span>
+                    <span class="font-semibold text-gray-900" id="confirmStartDate">-</span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm text-gray-600">End Date:</span>
+                    <span class="font-semibold text-gray-900" id="confirmEndDate">-</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Total Days:</span>
+                    <span class="font-semibold text-blue-600" id="confirmTotalDays">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button type="button" onclick="confirmLeaveApplication()"
+                class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
+                <i class="fas fa-paper-plane mr-2"></i>
+                Submit Application
+            </button>
+            <button type="button" onclick="hideLeaveConfirmModal()"
+                class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let pendingLeaveForm = null;
+
+function showLeaveConfirmModal(form) {
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    const leaveType = document.querySelector('input[name="leave_type"]:checked').value;
+    
+    // Calculate days
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    document.getElementById('confirmStartDate').textContent = startDate;
+    document.getElementById('confirmEndDate').textContent = endDate;
+    document.getElementById('confirmTotalDays').textContent = `${days} day${days > 1 ? 's' : ''}`;
+    
+    // Add leave type to confirmation
+    const confirmDiv = document.querySelector('#leaveConfirmModal .bg-gray-50');
+    const leaveTypeDiv = document.createElement('div');
+    leaveTypeDiv.className = 'flex justify-between items-center mb-2';
+    leaveTypeDiv.innerHTML = `
+        <span class="text-sm text-gray-600">Leave Type:</span>
+        <span class="font-semibold text-gray-900">${leaveType}</span>
+    `;
+    confirmDiv.insertBefore(leaveTypeDiv, confirmDiv.lastElementChild);
+    
+    pendingLeaveForm = form;
+    document.getElementById('leaveConfirmModal').classList.remove('hidden');
+}
+
+function hideLeaveConfirmModal() {
+    document.getElementById('leaveConfirmModal').classList.add('hidden');
+    pendingLeaveForm = null;
+}
+
+function confirmLeaveApplication() {
+    if (pendingLeaveForm) {
+        pendingLeaveForm.submit();
+    }
+    hideLeaveConfirmModal();
+}
 </script>
 {% endblock %}

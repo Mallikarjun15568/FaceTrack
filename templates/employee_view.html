@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% block extra_head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
 {% block content %}
 
 <div class="p-6 space-y-6 max-w-4xl mx-auto">
@@ -7,15 +10,15 @@
 
   <h1 class="text-2xl font-bold">Employee Profile</h1>
 
-  <div class="bg-white p-6 rounded-2xl shadow flex flex-col md:flex-row gap-6">
+  <div class="premium-card p-6 flex flex-col md:flex-row gap-6">
 
     <!-- PHOTO -->
     <div>
-      {% set emp_photo_path = emp.photo_path %}
-      {% if emp_photo_path and not emp_photo_path.startswith('/') %}
-        {% set emp_photo_path = '/' ~ emp_photo_path %}
+      {% set emp_photo = emp.photo %}
+      {% if emp_photo and not emp_photo.startswith('/') %}
+        {% set emp_photo = '/' ~ emp_photo %}
       {% endif %}
-      <img src="{{ emp_photo_path if emp_photo_path else url_for('static', filename='default_user.png') }}"
+      <img src="{{ emp_photo if emp_photo else url_for('static', filename='default_user.png') }}"
            class="w-40 h-40 rounded-xl border object-cover">
     </div>
 
@@ -25,6 +28,7 @@
 
       <p><span class="font-semibold">Email:</span> {{ emp.email }}</p>
       <p><span class="font-semibold">Phone:</span> {{ emp.phone or '-' }}</p>
+      <p><span class="font-semibold">Gender:</span> {{ emp.gender or '-' }}</p>
       <p><span class="font-semibold">Department:</span> {{ emp.department or '-' }}</p>
       <p><span class="font-semibold">Join Date:</span> {{ emp.join_date or '-' }}</p>
 
@@ -43,17 +47,17 @@
   <div class="flex gap-4 pt-2">
 
     <a href="/employees/edit/{{ emp.id }}"
-       class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl">
+       class="btn-premium btn-premium-success">
       Edit
     </a>
 
     <button onclick="deleteEmp({{ emp.id }})"
-            class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl">
+            class="btn-premium btn-premium-danger">
       Delete
     </button>
 
     <button onclick="reenrollEmp({{ emp.id }})"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl">
+            class="btn-premium btn-premium-primary">
       Re-Enroll Face
     </button>
 
@@ -72,7 +76,17 @@ function deleteEmp(id) {
         confirmButtonText: "Delete"
     }).then((result) => {
         if (!result.isConfirmed) return;
-        fetch("/employees/delete/" + id, { method: "POST" })
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (!csrfToken) {
+            Swal.fire("Security error", "CSRF token missing", "error");
+            return;
+        }
+        fetch("/employees/delete/" + id, { 
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken
+            }
+        })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
