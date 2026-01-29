@@ -1,6 +1,7 @@
 from . import bp
 from flask import render_template, request, redirect, url_for, session, flash, jsonify, current_app
-from flask_wtf.csrf import generate_csrf, CSRFProtect
+from flask_wtf.csrf import generate_csrf, CSRFProtect, validate_csrf
+from wtforms import ValidationError
 csrf = CSRFProtect()
 from utils.extensions import limiter
 from .utils import get_user_by_username, verify_password, login_required
@@ -456,22 +457,28 @@ def logout():
 @bp.route("/face_login", methods=["POST"])
 def face_login_api():
     """Face recognition login - matches face embedding to authenticate user"""
-    # CSRF protection - TEMPORARILY DISABLED
-    # from flask_wtf.csrf import validate_csrf
-    # from wtforms import ValidationError
-    
-    # csrf_token = request.headers.get('X-CSRFToken')
-    # if not csrf_token:
-    #     return jsonify({"matched": False, "reason": "Security validation failed. Please refresh the page."}), 403
-    
-    # except ValidationError:
-        # Audit CSRF failure
-        # try:
-        #     from db_utils import log_audit
-        #     log_audit(None, 'FACE_LOGIN_CSRF_FAIL', 'auth', 'Invalid CSRF token', request.remote_addr)
-        # except:
-        #     pass
-        # return jsonify({"matched": False, "reason": "Security validation failed. Please refresh the page."}), 403
+    # CSRF protection: validate token sent in `X-CSRFToken` header
+    csrf_token = request.headers.get('X-CSRFToken')
+    if not csrf_token:
+        try:
+            from db_utils import log_audit
+            log_audit(None, 'FACE_LOGIN_CSRF_FAIL', 'auth', 'Missing CSRF token', request.remote_addr)
+        except Exception:
+            logger.exception('Failed to record CSRF audit for missing token')
+        return jsonify({"matched": False, "reason": "Security validation failed. Please refresh the page."}), 403
+
+    try:
+        validate_csrf(csrf_token)
+    except ValidationError:
+        try:
+            from db_utils import log_audit
+            log_audit(None, 'FACE_LOGIN_CSRF_FAIL', 'auth', 'Invalid CSRF token', request.remote_addr)
+        except Exception:
+            logger.exception('Failed to record CSRF audit for invalid token')
+        return jsonify({"matched": False, "reason": "Security validation failed. Please refresh the page."}), 403
+    except Exception as e:
+        logger.exception('Unexpected error validating CSRF token: %s', e)
+        return jsonify({"matched": False, "reason": "Security validation failed. Please refresh the page."}), 403
     
     data = request.get_json()
     if not data or "image" not in data:
