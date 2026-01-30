@@ -339,7 +339,7 @@
 
     // 🎯 FACE STABILITY & QUALITY GATES
     let stabilityStartTime = null;
-    const STABILITY_THRESHOLD_MS = 800; // 800ms stability required
+    const STABILITY_THRESHOLD_MS = 500; // Reduced from 800ms to 500ms for better UX
     let lastFaceCount = 0;
     let stabilityResetTimeout = null;
 
@@ -501,7 +501,7 @@
                     // Start/Continue stability timer
                     if (!stabilityStartTime) {
                         stabilityStartTime = Date.now();
-                        message = "Face detected - hold still...";
+                        message = "Face detected - hold still for quality capture...";
                         borderColor = "#3b82f6"; // Blue - stabilizing
                         allowCapture = false;
                     } else {
@@ -510,7 +510,7 @@
                         if (stableDuration < STABILITY_THRESHOLD_MS) {
                             // Still stabilizing
                             const progress = Math.round((stableDuration / STABILITY_THRESHOLD_MS) * 100);
-                            message = `Hold still... ${progress}%`;
+                            message = `Stabilizing... ${progress}% (hold still)`;
                             borderColor = "#3b82f6"; // Blue - stabilizing
                             allowCapture = false;
                         } else {
@@ -566,6 +566,8 @@
         detectSessionId++;
         lastDetectState = null;
         faceDetected = false;
+        resetStabilityTimer(); // 🎯 RESET STABILITY TIMER ON CAMERA START
+        isSendingRequest = false; // ⭐ ensure detection resumes
 
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => {
@@ -583,6 +585,9 @@
                 video.onloadeddata = () => drawDetectionBox("#ef4444");
                 if (detectInterval) clearInterval(detectInterval);
                 detectInterval = setInterval(detectFaceOnce, 800); // ⏰ INCREASED INTERVAL
+
+                // ⭐ YAHI PE SCROLL KARNA HAI
+                requestAnimationFrame(scrollToCamera);
             })
             .catch(err => {
                 alert('Camera access denied or not available. Please check permissions.');
@@ -623,26 +628,33 @@
     // =====================
     // Smoothly bring camera into view when starting enroll/update
     function scrollToCamera() {
-      const cam = document.getElementById("cameraSection");
-      if (cam) {
-        cam.scrollIntoView({
-          behavior: "smooth",
-          block: "center"
+        const cam = document.getElementById("cameraSection");
+        if (!cam) return;
+
+        // jab tak visible na ho, wait karo
+        if (cam.classList.contains("hidden")) {
+            requestAnimationFrame(scrollToCamera);
+            return;
+        }
+
+        const headerOffset = 100; // fixed header height
+        const elementPosition = cam.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+        window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth"
         });
-      }
     }
 
     enrollBtn?.addEventListener('click', () => {
       startCamera('enroll');
-      setTimeout(scrollToCamera, 300);
     });
     updateBtn?.addEventListener('click', () => {
       startCamera('update');
-      setTimeout(scrollToCamera, 300);
     });
     startCameraBtn?.addEventListener('click', () => {
       startCamera(requestType || 'enroll');
-      setTimeout(scrollToCamera, 300);
     });
     stopCameraBtn?.addEventListener('click', stopCamera);
 
@@ -708,26 +720,53 @@
 
             console.log("✅ Face captured successfully with stability gates");
 
+            // 🔓 ALLOW SAVE PHASE
+            isProcessing = false;
+
         }, 300); // 300ms delay for settling
     });
 
     retakeBtn?.addEventListener('click', () => {
-        isProcessing = false;        // ✅ RESET
+        // 🔥 FULL RESET
+        isProcessing = false;
+        isSendingRequest = false;   // ⭐ VERY IMPORTANT
         faceDetected = false;
         lastCapturedImage = null;
-        detectSessionId++;           // 🔥 kill old loops
 
-        // 👇 EXTRA SAFETY
-        if (!requestType) requestType = 'enroll';
+        detectSessionId++;          // kill old async loops
+        resetStabilityTimer();
+        stabilityStartTime = null;
 
-        if (guidanceText) guidanceText.textContent = "Position your face in the frame";
+        // 🧹 CLEAN UI STATE
+        captureBtn.disabled = false;   // ⭐⭐⭐ FIX
+        captureBtn.innerHTML = '<i class="fas fa-camera mr-2"></i>Capture Face';
+        captureBtn.classList.remove("opacity-75", "cursor-not-allowed");
+        captureBtn.classList.add("hidden");
+
+        guidanceText.textContent = "Position your face in the frame";
+        guidanceText.classList.remove("hidden");
+
         previewSection.classList.add("hidden");
-      startCamera(requestType);
-      setTimeout(scrollToCamera, 300);
+
+        // 🛑 HARD STOP any leftover detection loop
+        if (detectInterval) {
+            clearInterval(detectInterval);
+            detectInterval = null;
+        }
+
+        // 🎯 Restart camera cleanly
+        startCamera(requestType || 'enroll');
     });
 
     submitBtn?.addEventListener('click', async () => {
-        if (!lastCapturedImage || isProcessing) return;
+        if (!lastCapturedImage) {
+            alert("No image captured");
+            return;
+        }
+        if (isProcessing) {
+            console.warn("Submit blocked: already processing");
+            return;
+        }
 
         console.log({
             isProcessing,

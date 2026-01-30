@@ -744,10 +744,12 @@ def reset_password():
 # -----------------------------------------------------
 # FACE DETECTION (for real-time UI feedback)
 # -----------------------------------------------------
-@bp.route("/detect_face", methods=["POST"])
+@bp.route("/detect_face", methods=["GET", "POST"])
 @login_required
 @csrf.exempt
 def detect_face():
+    if request.method == "GET":
+        return jsonify({"error": "Method not allowed"}), 405
     """
     Detect if a face is present in the image for real-time UI feedback.
     Returns: {"face_count": int, "distance": "perfect|far|close", "lighting": "good|dark|bright"}

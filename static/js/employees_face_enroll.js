@@ -34,6 +34,10 @@ const STABILITY_THRESHOLD_MS = 800; // 800ms stability required
 let lastFaceCount = 0;
 let stabilityResetTimeout = null;
 
+// 🎯 REQUEST MANAGEMENT - Prevent concurrent requests
+let currentDetectionRequest = null;
+let isDetectionInProgress = false;
+
 // 🎯 STABILITY TIMER FUNCTIONS
 function resetStabilityTimer() {
     stabilityStartTime = null;
@@ -114,12 +118,22 @@ function drawDetectionBox(color = "#ef4444") {
 // Face Detection with Stability & Quality Gates
 async function detectFaceOnce() {
     const sessionAtStart = detectSessionId;
+    
+    // 🚨 Prevent concurrent requests
+    if (isDetectionInProgress) {
+        console.log("Detection already in progress - skipping");
+        return;
+    }
+    
     if (!currentStream || !video.videoWidth) {
         guidanceText.classList.add("hidden");
         captureBtn.classList.add("hidden");
         console.log("No stream or video not ready - hiding button");
         return;
     }
+
+    // 🚨 Mark request as in progress
+    isDetectionInProgress = true;
 
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
@@ -128,7 +142,9 @@ async function detectFaceOnce() {
 
     try {
         console.log("Sending face detection request...");
-        const res = await fetch("/auth/detect_face", {
+        
+        // 🚨 Store current request for potential cancellation
+        currentDetectionRequest = fetch("/auth/detect_face", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -136,6 +152,8 @@ async function detectFaceOnce() {
             },
             body: JSON.stringify({ image: canvas.toDataURL("image/jpeg") })
         });
+        
+        const res = await currentDetectionRequest;
 
         // 🔒 OLD RESPONSE → IGNORE
         if (sessionAtStart !== detectSessionId) {
@@ -245,6 +263,10 @@ async function detectFaceOnce() {
         captureBtn.classList.add("hidden");
         guidanceText.classList.add("hidden");
         console.error("Face detection error:", err);
+    } finally {
+        // 🚨 Always reset detection flag
+        isDetectionInProgress = false;
+        currentDetectionRequest = null;
     }
 }
 
@@ -252,6 +274,10 @@ async function detectFaceOnce() {
 function startCamera() {
     detectSessionId++; // 🔥 new session
     lastDetectState = null;
+    
+    // 🚨 Reset detection flags
+    isDetectionInProgress = false;
+    currentDetectionRequest = null;
     navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
             currentStream = stream;
@@ -395,6 +421,9 @@ captureBtn.onclick = () => {
 
         console.log("✅ Face captured successfully with stability gates");
 
+        // ⭐ VERY IMPORTANT - ALLOW SAVE PHASE
+        isProcessing = false;
+
         // Show buttons after settling delay
         retakeBtn.classList.remove("hidden");
         saveBtn.classList.remove("hidden");
@@ -404,6 +433,14 @@ captureBtn.onclick = () => {
 };
 
 retakeBtn.onclick = () => {
+    // ⭐ SAFETY RESET
+    isProcessing = false;
+    
+    // 🔄 Reset capture button state
+    captureBtn.textContent = "Capture Photo";
+    captureBtn.classList.remove("opacity-75", "cursor-not-allowed");
+    captureBtn.disabled = false;
+    
     lastCapturedImage = null;
     previewBox.classList.add("hidden");
     actionBtns.classList.add("hidden");
@@ -424,11 +461,17 @@ saveBtn.onclick = async () => {
 
     if (loadingBox) loadingBox.classList.remove("hidden");
 
-    let employeeId = window.location.pathname.split("/").pop();
+    let employeeId = window.EMPLOYEE_ID;
     const csrfToken = getCSRFToken();
 
+    // Use correct API based on mode
+    let apiUrl = "/enroll/capture";
+    if (window.ENROLL_MODE === "update") {
+        apiUrl = "/enroll/update_capture";
+    }
+
     try {
-        let res = await fetch("/enroll/capture", {
+        let res = await fetch(apiUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -459,6 +502,12 @@ saveBtn.onclick = async () => {
         } else if (data.status === "no_face") {
             showStatusModal("error", "No face detected");
             // 🚨 RE-ENABLE ON NO FACE
+            isProcessing = false;
+            saveBtn.disabled = false;
+            saveBtn.textContent = originalText;
+        } else if (data.status === "duplicate") {
+            // Duplicate face detected across employees
+            showStatusModal("warning", data.message || "Duplicate face detected");
             isProcessing = false;
             saveBtn.disabled = false;
             saveBtn.textContent = originalText;

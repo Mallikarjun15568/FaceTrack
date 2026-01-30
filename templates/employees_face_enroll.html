@@ -32,7 +32,7 @@
         </div>
     </div>
 
-    {% if employee.face_enrolled == 1 %}
+    {% if has_face %}
     <!-- Already Enrolled Section -->
     <div class="card">
         <div class="text-center py-12">
@@ -135,6 +135,16 @@
     {% endif %}
 </div>
 
+{% if not has_face %}
+<script type="application/json" id="enroll-config">
+  {"mode": "new", "employeeId": {{ employee.id }}}
+</script>
+<script>
+  const config = JSON.parse(document.getElementById('enroll-config').textContent);
+  window.ENROLL_MODE = config.mode;
+  window.EMPLOYEE_ID = config.employeeId;
+</script>
 <script src="/static/js/employees_face_enroll.js"></script>
+{% endif %}
 
 {% endblock %}

@@ -30,12 +30,17 @@ let faceDetected = false;
 let isCaptured = false; // 🔒 GLOBAL STATE for capture lock
 let detectSessionId = 0; // 🔒 SESSION GUARD
 let isProcessing = false; // 🚨 COOLDOWN FLAG
+let isRetaking = false; // 🎯 RETAKE FLAG
 
 // 🎯 FACE STABILITY & QUALITY GATES
 let stabilityStartTime = null;
 const STABILITY_THRESHOLD_MS = 800; // 800ms stability required
 let lastFaceCount = 0;
 let stabilityResetTimeout = null;
+
+// 🎯 REQUEST MANAGEMENT - Prevent concurrent requests
+let currentDetectionRequest = null;
+let isDetectionInProgress = false;
 
 // 🎯 STABILITY TIMER FUNCTIONS
 function resetStabilityTimer() {
@@ -87,12 +92,39 @@ function drawDetectionBox(color = "#ef4444") {
     // No box drawing - clean interface
 }
 
+// Scroll to camera function
+function scrollToCamera() {
+    const camBox = document.querySelector(".relative.w-full.h-96");
+    if (!camBox) return;
+
+    // wait until camera/video is visible
+    const video = document.getElementById("camera");
+    if (!video || video.classList.contains("hidden")) {
+        requestAnimationFrame(scrollToCamera);
+        return;
+    }
+
+    const headerOffset = 90; // fixed header height
+    const elementPosition = camBox.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+    window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+    });
+}
+
 // Start Camera
 function startCamera() {
     detectSessionId++;   // 🔥 NEW SESSION
     isCaptured = false; // 🔓 unlock UI
     faceDetected = false;
     lastDetectState = null;
+    
+    // 🚨 Reset detection flags
+    isDetectionInProgress = false;
+    currentDetectionRequest = null;
+    
     captureBtn.classList.add("hidden"); // reset state on camera start
     navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
@@ -115,6 +147,9 @@ function startCamera() {
                 clearInterval(detectInterval);
             }
             detectInterval = setInterval(detectFaceOnce, 600);
+
+            // ⭐ YAHI PE SCROLL KARNA HAI
+            requestAnimationFrame(scrollToCamera);
         })
         .catch(err => {
             cameraInactiveBox.classList.remove("hidden");
@@ -244,6 +279,9 @@ captureBtn.onclick = () => {
 
         console.log("✅ Face captured successfully with stability gates");
 
+        // 🔓 ALLOW SAVE PHASE
+        isProcessing = false;
+
         // Show buttons after settling delay
         faceCanvas.classList.add("hidden");
         cameraInactiveBox.classList.add("hidden");
@@ -253,7 +291,18 @@ captureBtn.onclick = () => {
 
 retakeBtn.onclick = () => {
     isCaptured = false;   // 🔓 UNLOCK
+    isProcessing = false; // 🔓 RESET PROCESSING STATE
+    
+    // 🔄 Reset capture button state
+    captureBtn.textContent = "Capture Photo";
+    captureBtn.classList.remove("opacity-75", "cursor-not-allowed");
+    captureBtn.disabled = false;
+    
     lastImage = null;
+    resetStabilityTimer(); // 🎯 RESET STABILITY TIMER
+    guidanceText.classList.add("hidden"); // 🎯 RESET GUIDANCE
+    guidanceText.textContent = ""; // 🎯 CLEAR TEXT
+    isRetaking = true; // 🎯 SKIP NEXT DETECT
     previewImg.classList.add("hidden");
     actionBtns.classList.add("hidden");
     saveBtn.classList.add("hidden");
@@ -262,7 +311,14 @@ retakeBtn.onclick = () => {
 };
 
 saveBtn.onclick = async () => {
-    if (!lastImage || isProcessing) return;
+    if (!lastImage) {
+        alert("No image captured");
+        return;
+    }
+    if (isProcessing) {
+        console.warn("Save blocked: already processing");
+        return;
+    }
 
     // 🚨 IMMEDIATE COOLDOWN
     isProcessing = true;
@@ -270,11 +326,14 @@ saveBtn.onclick = async () => {
     const originalText = saveBtn.textContent;
     saveBtn.textContent = "Processing...";
 
-    const employeeId = window.location.pathname.split("/").pop();
+    const employeeId = window.EMPLOYEE_ID;
     const csrfToken = getCSRFToken();
 
+    // Hard-coded for update page
+    const apiUrl = "/enroll/update_capture";
+
     try {
-        let res = await fetch("/enroll/update_capture", {
+        let res = await fetch(apiUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -303,6 +362,12 @@ saveBtn.onclick = async () => {
         } else if (data.status === "no_face") {
             showStatusModal("error", "No face detected");
             // 🚨 RE-ENABLE ON NO FACE
+            isProcessing = false;
+            saveBtn.disabled = false;
+            saveBtn.textContent = originalText;
+        } else if (data.status === "duplicate") {
+            showStatusModal("warning", data.message || "Duplicate face detected");
+            // 🚨 RE-ENABLE ON DUPLICATE
             isProcessing = false;
             saveBtn.disabled = false;
             saveBtn.textContent = originalText;
@@ -341,12 +406,23 @@ saveBtn.onclick = async () => {
 // Face Detection with Stability & Quality Gates
 async function detectFaceOnce() {
     const sessionAtStart = detectSessionId;
-    if (isCaptured || !detectInterval) return;
+    
+    // 🚨 Prevent concurrent requests
+    if (isDetectionInProgress) {
+        console.log("Detection already in progress - skipping");
+        return;
+    }
+    
+    if (isRetaking) { isRetaking = false; return; } // 🎯 SKIP AFTER RETAKE
+    if (isCaptured || !currentStream) return;
     if (!currentStream || !video.videoWidth) {
         guidanceText.classList.add("hidden");
         captureBtn.classList.add("hidden");
         return;
     }
+
+    // 🚨 Mark request as in progress
+    isDetectionInProgress = true;
 
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
@@ -354,14 +430,18 @@ async function detectFaceOnce() {
     canvas.getContext("2d").drawImage(video, 0, 0);
 
     try {
-        const { face_count, distance, lighting } = await (await fetch("/auth/detect_face", {
+        // 🚨 Store current request for potential cancellation
+        currentDetectionRequest = fetch("/auth/detect_face", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "X-CSRFToken": getCSRFToken()
             },
             body: JSON.stringify({ image: canvas.toDataURL("image/jpeg") })
-        })).json();
+        });
+        
+        const res = await currentDetectionRequest;
+        const { face_count, distance, lighting } = await res.json();
 
         // 🔒 HARD GUARD — OLD RESPONSE
         if (sessionAtStart !== detectSessionId) return;
@@ -457,5 +537,9 @@ async function detectFaceOnce() {
         captureBtn.classList.add("hidden");
         guidanceText.textContent = "Detection error";
         resetStabilityTimer();
+    } finally {
+        // 🚨 Always reset detection flag
+        isDetectionInProgress = false;
+        currentDetectionRequest = null;
     }
 }

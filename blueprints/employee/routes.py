@@ -5,7 +5,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import io
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import calendar
 import os
 from werkzeug.utils import secure_filename
@@ -36,10 +36,17 @@ def dashboard():
     """, (employee_id,))
     today_attendance = cur.fetchone()
 
-    # Recent attendance (last 5)
+    # Recent attendance (last 5) including duration when checked out
     cur.execute("""
-        SELECT DATE(check_in_time) as date, TIME(check_in_time) as check_in,
-               TIME(check_out_time) as check_out, status
+        SELECT DATE(check_in_time) as date,
+               TIME_FORMAT(TIME(check_in_time), '%H:%i') as check_in,
+               TIME_FORMAT(TIME(check_out_time), '%H:%i') as check_out,
+               status,
+               CASE
+                   WHEN check_out_time IS NOT NULL THEN
+                       TIME_FORMAT(TIMEDIFF(check_out_time, check_in_time), '%H:%i')
+                   ELSE NULL
+               END as duration
         FROM attendance
         WHERE employee_id = %s AND check_in_time IS NOT NULL
         ORDER BY check_in_time DESC LIMIT 5
@@ -210,23 +217,44 @@ def attendance():
     cur = db.cursor(dictionary=True)
     employee_id = session.get('employee_id')
 
-    # Get attendance records (last 30 days)
+    # Get attendance records for the last 30 days and include absent days
+    today_date = date.today()
+    start_date = today_date - timedelta(days=29)
+
     cur.execute("""
         SELECT DATE(check_in_time) as date,
-               TIME_FORMAT(TIME(check_in_time), '%H:%i') as check_in,
-               TIME_FORMAT(TIME(check_out_time), '%H:%i') as check_out,
+               TIME_FORMAT(TIME(check_in_time), '%%H:%%i') as check_in,
+               TIME_FORMAT(TIME(check_out_time), '%%H:%%i') as check_out,
                status,
                CASE
                    WHEN check_out_time IS NOT NULL THEN
-                       TIME_FORMAT(TIMEDIFF(check_out_time, check_in_time), '%H:%i')
+                       TIME_FORMAT(TIMEDIFF(check_out_time, check_in_time), '%%H:%%i')
                    ELSE NULL
                END as duration
         FROM attendance
         WHERE employee_id = %s
+          AND DATE(check_in_time) BETWEEN %s AND %s
         ORDER BY check_in_time DESC
-        LIMIT 30
-    """, (employee_id,))
-    attendance_records = cur.fetchall()
+    """, (employee_id, start_date, today_date))
+    rows = cur.fetchall()
+
+    # Map DB rows by date for quick lookup
+    rows_by_date = { (r['date'] if hasattr(r['date'], 'isoformat') else r['date']): r for r in rows }
+
+    attendance_records = []
+    for i in range(0, 30):
+        d = start_date + timedelta(days=i)
+        db_row = rows_by_date.get(d)
+        if db_row:
+            attendance_records.append(db_row)
+        else:
+            attendance_records.append({
+                'date': d,
+                'check_in': None,
+                'check_out': None,
+                'status': 'absent',
+                'duration': None
+            })
 
     # Get late time setting
     late_time = current_app.config.get('LATE_TIME', '09:00')
@@ -747,8 +775,53 @@ def submit_face_request():
         except Exception:
             return jsonify({'status': 'error', 'message': 'Invalid image format'}), 400
 
+        # --- YE WALA PART ADD KARO (PROPER CHECK) ---
+        import cv2
+        from utils.face_encoder import face_encoder # Ensure path is correct
+        import numpy as np
+
+        # A. Blur Check (Quality Control)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        variance = cv2.Laplacian(gray, cv2.CV_64F).var()
+        if variance < 80: # 80-100 ek accha threshold hai
+            return jsonify({'status': 'error', 'message': 'Photo dhundhli (blur) hai. Kripya saaf photo khinchein.'}), 400
+
+        # B. Face Detection (Presence Control)
+        faces = face_encoder.app.get(frame)
+        if len(faces) == 0:
+            return jsonify({'status': 'error', 'message': 'Photo mein koi chehra nahi mila.'}), 400
+        if len(faces) > 1:
+            return jsonify({'status': 'error', 'message': 'Photo mein ek se zyada log hain.'}), 400
+
+        # C. Confidence Check (Quality Control)
+        from flask import current_app
+        min_confidence = float(current_app.config.get("MIN_CONFIDENCE", 85)) / 100.0
+        faces = [f for f in faces if getattr(f, 'det_score', 1.0) >= min_confidence]
+        
+        if len(faces) == 0:
+            return jsonify({"status": "low_confidence", "message": f"No face detected with sufficient confidence (min: {min_confidence:.0%})"})
+
+        face = faces[0]
+        embedding = face.normed_embedding.astype("float32")
+
+        # D. Duplicate Check (Prevent same person multiple enrollments)
+        DUPLICATE_FACE_THRESHOLD = 0.5  # Same as admin side
+        
+        # Check existing face data
+        cur.execute("SELECT emp_id, embedding FROM face_data WHERE emp_id != %s", (employee_id,))
+        existing_faces = cur.fetchall()
+        
+        for face_row in existing_faces:
+            existing_emb = face_encoder._decode_embedding(face_row['embedding'])
+            # Compute cosine similarity (both are normalized)
+            sim = np.dot(embedding, existing_emb)
+            if sim >= DUPLICATE_FACE_THRESHOLD:
+                return jsonify({"status": "error", "message": f"Face already enrolled for employee ID {face_row['emp_id']}"}), 400
+        
+        # --- CHECK KHATAM, AB SAVE KARO ---
+
         # Save image to temp folder for pending
-        pending_folder = os.path.join('static', 'pending_faces')
+        pending_folder = os.path.join(current_app.root_path, 'static', 'pending_faces')
         ensure_folder(pending_folder)
         filename = generate_unique_filename('jpg')
         full_image_path = os.path.join(pending_folder, filename)

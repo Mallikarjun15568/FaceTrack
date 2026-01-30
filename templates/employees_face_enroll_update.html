@@ -130,6 +130,14 @@
 
 </div>
 
+<script type="application/json" id="enroll-config">
+  {"mode": "update", "employeeId": {{ employee.id }}}
+</script>
+<script>
+  const config = JSON.parse(document.getElementById('enroll-config').textContent);
+  window.ENROLL_MODE = config.mode;
+  window.EMPLOYEE_ID = config.employeeId;
+</script>
 <script src="/static/js/employees_face_enroll_update.js"></script>
 
 {% endblock %}

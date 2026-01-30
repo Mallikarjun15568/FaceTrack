@@ -14,12 +14,15 @@ from flask_wtf.csrf import CSRFProtect
 csrf = CSRFProtect()
 # import face_recognition  # Moved to local import to avoid startup issues
 
+import numpy as np
+import cv2
+from utils.logger import logger
+import logging
+log = logging.getLogger(__name__)
+
 
 # Duplicate face threshold for preventing same person enrolling multiple times
-DUPLICATE_FACE_THRESHOLD = 0.75
-
-
-# -----------------------------------------------------
+DUPLICATE_FACE_THRESHOLD = 0.5
 # 1. Load enrollment page (New Enrollment)
 # -----------------------------------------------------
 @bp.route("/<int:employee_id>")
@@ -36,7 +39,12 @@ def enroll_page(employee_id):
     if not employee:
         return "Employee not found", 404
 
-    return render_template("employees_face_enroll.html", employee=employee)
+    # Determine if this employee actually has face data recorded
+    cursor.execute("SELECT id, image_path FROM face_data WHERE emp_id = %s LIMIT 1", (employee_id,))
+    face_row = cursor.fetchone()
+    has_face = bool(face_row)
+
+    return render_template("employees_face_enroll.html", employee=employee, has_face=has_face)
 
 
 # -----------------------------------------------------
@@ -64,16 +72,28 @@ def update_enroll_page(employee_id):
     if not employee:
         return "Employee not found", 404
 
+    # HARD GUARD: Update page only if face exists
+    if not employee.get("face_image"):
+        flash("No face enrolled for this employee. Please enroll face first.", "warning")
+        return redirect(f"/enroll/{employee_id}")
+
     return render_template("employees_face_enroll_update.html", employee=employee)
 
 
 # -----------------------------------------------------
 # 2. Capture + Save face embedding (New Enrollment)
 # -----------------------------------------------------
-@bp.route("/capture", methods=["POST"])
+@bp.route("/capture", methods=["GET", "POST"])
 @login_required
 @role_required("admin", "hr")
 def capture_face():
+    if request.method == "GET":
+        return jsonify({"error": "Method not allowed"}), 405
+
+    # CSRF protection: validate token sent in `X-CSRFToken` header
+    csrf_token = request.headers.get('X-CSRFToken')
+    if not csrf_token:
+        return jsonify({"status": "error", "message": "Security validation failed. Please refresh the page."}), 403
 
     try:
         data = request.get_json()
@@ -83,11 +103,39 @@ def capture_face():
         if not employee_id or not image_base64:
             return jsonify({"status": "error", "message": "Invalid data"}), 400
 
+        # 🚨 HARD BLOCK: Check if employee already has face enrolled
+        db_check = get_db()
+        cursor_check = db_check.cursor(dictionary=True)
+        cursor_check.execute(
+            "SELECT id FROM face_data WHERE emp_id = %s LIMIT 1",
+            (employee_id,)
+        )
+        already_enrolled = cursor_check.fetchone()
+        cursor_check.close()
+
+        if already_enrolled:
+            return jsonify({
+                "status": "error",
+                "message": "Face already enrolled for this employee. Use update instead."
+            }), 400
+
         # Decode image using central helper
         try:
             pil_img, frame = kiosk_utils.decode_frame(image_base64)
         except Exception:
             return jsonify({"status": "error", "message": "Invalid image format"}), 400
+
+        # --- BLUR CHECK START ---
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
+        
+        # Agar variance 70-80 se kam hai, matlab image dhundhli hai
+        if laplacian_var < 80: 
+            return jsonify({
+                "status": "error", 
+                "message": f"Photo bahut dhundhli (blur) hai (Quality: {laplacian_var:.1f}). Kripya saaf photo khinchein."
+            }), 400
+        # --- BLUR CHECK END ---
 
         # Save temporary image
         temp_folder = os.path.join("static", "temp")
@@ -101,36 +149,7 @@ def capture_face():
             with open(temp_path, "wb") as f:
                 f.write(base64.b64decode(image_base64.split(',',1)[1] if ',' in image_base64 else image_base64))
 
-        # Run image quality checks using centralized face_encoder
-        try:
-            is_valid, quality_score, issues = face_encoder.check_image_quality(temp_path)
-        except Exception as e:
-            # If quality check fails unexpectedly, remove temp and return error
-            try:
-                os.remove(temp_path)
-            except Exception as ee:
-                from utils.logger import logger
-                logger.exception("Failed to remove temp file after quality-check failure: %s", ee)
-            return jsonify({"status": "error", "message": "Quality check failed"}), 500
-
-        if not is_valid:
-            # Cleanup and return issues
-            try:
-                os.remove(temp_path)
-            except Exception as ee:
-                from utils.logger import logger
-                logger.exception("Failed to remove temp file after quality failed: %s", ee)
-
-            feedback = face_encoder.get_quality_feedback(issues)
-            return jsonify({
-                "status": "quality_failed",
-                "message": "Image quality too low",
-                "quality_score": round(quality_score, 2),
-                "issues": issues,
-                "feedback": feedback
-            }), 400
-
-        # Quality OK - proceed to detect face and store embedding
+        # Proceed to detect face and store embedding
         faces = face_encoder.app.get(frame)
         
         # Filter faces by minimum confidence
@@ -172,12 +191,12 @@ def capture_face():
             if sim >= DUPLICATE_FACE_THRESHOLD:  # Prevent duplicate enrollment
                 # Log duplicate detection for audit
                 user_id = session.get('user_id', 'unknown')
-                logger.warning(f"DUPLICATE FACE DETECTED: User {user_id} tried to enroll employee {employee_id}, matched with existing employee {face_row['emp_id']}, similarity {sim:.3f}")
+                log.warning(f"DUPLICATE FACE DETECTED: User {user_id} tried to enroll employee {employee_id}, matched with existing employee {face_row['emp_id']}, similarity {sim:.3f}")
                 try:
                     os.remove(temp_path)
                 except Exception:
                     pass
-                return jsonify({"status": "error", "message": f"Face already enrolled for employee ID {face_row['emp_id']}"}), 400
+                return jsonify({"status": "duplicate", "message": f"Face already enrolled for employee ID {face_row['emp_id']}"}), 409
 
         emb_bytes = embedding.astype(np.float32).tobytes()
 
@@ -201,9 +220,6 @@ def capture_face():
                 """,
                 (employee_id, emb_bytes, file_path, datetime.now())
             )
-            db.commit()
-            # Update enrollment flag in employees table
-            cursor.execute("UPDATE employees SET face_enrolled = 1 WHERE id = %s", (employee_id,))
             db.commit()
         except Exception as e:
             db.rollback()
@@ -244,10 +260,18 @@ def capture_face():
 # -----------------------------------------------------
 # 2B. UPDATE EXISTING ENROLLMENT
 # -----------------------------------------------------
-@bp.route("/update_capture", methods=["POST"])
+@bp.route("/update_capture", methods=["GET", "POST"])
 @login_required
 @role_required("admin", "hr")
 def update_capture_face():
+    if request.method == "GET":
+        return jsonify({"error": "Method not allowed"}), 405
+
+    # CSRF protection: validate token sent in `X-CSRFToken` header
+    csrf_token = request.headers.get('X-CSRFToken')
+    if not csrf_token:
+        return jsonify({"status": "error", "message": "Security validation failed. Please refresh the page."}), 403
+
     try:
         data = request.get_json()
         employee_id = data.get("employee_id")
@@ -259,44 +283,63 @@ def update_capture_face():
                 "message": "Invalid request data"
             }), 400
 
+        # 🚨 HARD CHECK: Face must already exist to update
+        db_check = get_db()
+        cursor_check = db_check.cursor(dictionary=True)
+        cursor_check.execute(
+            "SELECT id FROM face_data WHERE emp_id = %s LIMIT 1",
+            (employee_id,)
+        )
+        existing_face = cursor_check.fetchone()
+        cursor_check.close()
+
+        if not existing_face:
+            return jsonify({
+                "status": "error",
+                "message": "No existing face found for this employee. Please enroll face first."
+            }), 400
+
         # BASE64 → BYTES
         header, encoded = image_data.split(",", 1)
         img_bytes = base64.b64decode(encoded)
 
-        # bytes → numpy → image
-        img_array = np.frombuffer(img_bytes, np.uint8)
-        img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+        # Decode image using central helper (same as capture_face)
+        try:
+            pil_img, frame = kiosk_utils.decode_frame(image_data)
+        except Exception:
+            return jsonify({"status": "error", "message": "Invalid image format"}), 400
 
-        if img is None:
+        # --- BLUR CHECK START ---
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
+        
+        # Agar variance 70-80 se kam hai, matlab image dhundhli hai
+        if laplacian_var < 80: 
             return jsonify({
-                "status": "error",
-                "message": "Failed to decode image"
+                "status": "error", 
+                "message": f"Photo bahut dhundhli (blur) hai (Quality: {laplacian_var:.1f}). Kripya saaf photo khinchein."
             }), 400
-
-        # BGR → RGB
-        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # --- BLUR CHECK END ---
 
         # Check for faces before embedding
-        faces_check = face_encoder.app.get(rgb)
-        if len(faces_check) == 0:
-            return jsonify({
-                "status": "error",
-                "message": "No face detected"
-            }), 400
+        faces = face_encoder.app.get(frame)
+        
+        # Filter faces by minimum confidence
+        from flask import current_app
+        min_confidence = float(current_app.config.get("MIN_CONFIDENCE", 85)) / 100.0
+        faces = [f for f in faces if getattr(f, 'det_score', 1.0) >= min_confidence]
+        
+        if len(faces) == 0:
+            return jsonify({"status": "low_confidence", "message": f"No face detected with sufficient confidence (min: {min_confidence:.0%})"})
 
-        if len(faces_check) > 1:
+        if len(faces) > 1:
             return jsonify({
                 "status": "error",
                 "message": "Multiple faces detected. Only one face allowed during enrollment."
             }), 400
 
-        embedding = face_encoder.get_embedding(rgb)
-
-        if embedding is None:
-            return jsonify({
-                "status": "error",
-                "message": "No face detected"
-            }), 400
+        face = faces[0]
+        embedding = face.normed_embedding.astype("float32")
 
         # Check for duplicate faces across other employees
         db_check = get_db()
@@ -312,8 +355,8 @@ def update_capture_face():
             if sim >= DUPLICATE_FACE_THRESHOLD:  # Prevent duplicate enrollment
                 # Log duplicate detection for audit
                 user_id = session.get('user_id', 'unknown')
-                logger.warning(f"DUPLICATE FACE DETECTED: User {user_id} tried to update enrollment for employee {employee_id}, matched with existing employee {face_row['emp_id']}, similarity {sim:.3f}")
-                return jsonify({"status": "error", "message": f"Face already enrolled for employee ID {face_row['emp_id']}"}), 400
+                log.warning(f"DUPLICATE FACE DETECTED: User {user_id} tried to update enrollment for employee {employee_id}, matched with existing employee {face_row['emp_id']}, similarity {sim:.3f}")
+                return jsonify({"status": "duplicate", "message": f"Face already enrolled for employee ID {face_row['emp_id']}"}), 409
 
         embedding_bytes = embedding.astype(np.float32).tobytes()
 
@@ -329,32 +372,37 @@ def update_capture_face():
 
 
         db = get_db()
-        cursor = db.cursor()
+        cursor = db.cursor(dictionary=True)
 
         try:
-            # Always delete old face_data for this employee to prevent duplicates
-            cursor.execute("DELETE FROM face_data WHERE emp_id = %s", (employee_id,))
-
+            # 1. Pehle purani image ka path fetch karein (sirf track rakhne ke liye)
+            cursor.execute("SELECT image_path FROM face_data WHERE emp_id = %s", (employee_id,))
+            old_face_row = cursor.fetchone()
+            
+            # 2. UPDATE query chalayein (Delete+Insert se behtar hai)
+            # Agar record nahi hai toh ye kuch nahi karega, isliye check pehle hi kar chuke hain
             cursor.execute("""
-    INSERT INTO face_data (emp_id, embedding, image_path, created_at)
-    VALUES (%s, %s, %s, %s)
-    ON DUPLICATE KEY UPDATE
-        embedding = VALUES(embedding),
-        image_path = VALUES(image_path),
-        created_at = VALUES(created_at)
-    """, (employee_id, embedding_bytes, image_path, datetime.now()))
+                UPDATE face_data 
+                SET embedding = %s, image_path = %s, created_at = %s 
+                WHERE emp_id = %s
+            """, (embedding_bytes, image_path, datetime.now(), employee_id))
 
             db.commit()
-            # Update enrollment flag in employees table
-            cursor.execute("UPDATE employees SET face_enrolled = 1 WHERE id = %s", (employee_id,))
-            db.commit()
+
+            # 3. COMMIT ke BAAD hi purani file delete karein
+            if old_face_row and old_face_row['image_path']:
+                old_path = old_face_row['image_path']
+                if os.path.exists(old_path) and old_path != image_path:
+                    try:
+                        os.remove(old_path)
+                    except Exception as e:
+                        log.error(f"Old file cleanup failed: {e}")
+
         except Exception as e:
             db.rollback()
-            # Cleanup saved file on DB failure
-            try:
+            # Nayi image delete karein kyunki DB update fail ho gaya
+            if os.path.exists(image_path):
                 os.remove(image_path)
-            except Exception:
-                pass
             return jsonify({"status": "error", "message": f"Database error: {str(e)}"}), 500
 
         # Reload embeddings
@@ -377,7 +425,7 @@ def update_capture_face():
         })
 
     except Exception as e:
-        logger.error(f"Update face failed: {e}", exc_info=True)
+        log.error(f"Update face failed: {e}", exc_info=True)
         return jsonify({
             "status": "error",
             "message": "Internal server error"
