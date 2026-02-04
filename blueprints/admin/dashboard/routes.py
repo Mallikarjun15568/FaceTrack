@@ -114,30 +114,3 @@ def admin_dashboard():
         weekly_data=weekly_data,
         department_data=department_data
     )
-
-
-@bp.route('/debug/weekly-attendance')
-def debug_weekly_attendance():
-    """Return JSON of last 7 days attendance counts for debugging."""
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-
-    cursor.execute("""
-        SELECT DATE(date) AS day, COUNT(*) AS count
-        FROM attendance
-        WHERE date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-          AND check_in_time IS NOT NULL
-        GROUP BY DATE(date)
-    """)
-    rows = cursor.fetchall()
-
-    counts = {str(r['day']): r['count'] for r in rows}
-    labels = []
-    data = []
-    for i in range(6, -1, -1):
-        d = date.today() - timedelta(days=i)
-        s = d.isoformat()
-        labels.append(s)
-        data.append(counts.get(s, 0))
-
-    return jsonify({"labels": labels, "data": data})
