@@ -103,6 +103,8 @@ def liveness_check():
         #     })
         
         # Liveness passed - set session flag (AUTO-PASS FOR DEMO)
+        confidence = 1.0  # Default for demo mode
+        message = "Liveness verified (demo mode)"
         session["lv_pass"] = True
         
         return jsonify({
@@ -154,6 +156,10 @@ def kiosk_recognize():
         #         "status": "WAIT",
         #         "message": message
         #     }), 200
+
+        # Default values for demo mode when liveness check is disabled
+        confidence = 1.0
+        message = "Liveness verified (demo mode)"
 
         # --- RECOGNITION (only when liveness passed) --- (AUTO-PASS FOR DEMO)
         result = recognize_and_mark(frame_b64, current_app)
