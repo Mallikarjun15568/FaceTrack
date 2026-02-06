@@ -52,11 +52,6 @@
       Edit
     </a>
 
-    <button onclick="deleteEmp({{ emp.id }})"
-            class="btn-premium btn-premium-danger">
-      Delete
-    </button>
-
     <button onclick="reenrollEmp({{ emp.id }})"
             class="btn-premium btn-premium-primary">
       Re-Enroll Face
@@ -68,36 +63,6 @@
 
 <!-- JS -->
 <script>
-function deleteEmp(id) {
-    Swal.fire({
-        title: "Delete Employee?",
-        text: "This action cannot be undone.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Delete"
-    }).then((result) => {
-        if (!result.isConfirmed) return;
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        if (!csrfToken) {
-            Swal.fire("Security error", "CSRF token missing", "error");
-            return;
-        }
-        fetch("/admin/employees/delete/" + id, { 
-            method: "POST",
-            headers: {
-                "X-CSRFToken": csrfToken
-            }
-        })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                Swal.fire("Deleted!", "", "success");
-                setTimeout(() => window.location.href = "/admin/employees/", 1300);
-            }
-        });
-    });
-}
-
 function reenrollEmp(id) {
     window.location.href = "/enroll?emp_id=" + id;
 }

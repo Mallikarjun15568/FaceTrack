@@ -586,6 +586,17 @@ def edit_employee(emp_id):
         params.append(emp_id)
 
         cursor.execute(base_update_query, tuple(params))
+        
+        # Also update email in users table if employee has a linked user account
+        cursor.execute("SELECT user_id FROM employees WHERE id=%s", (emp_id,))
+        emp_row = cursor.fetchone()
+        if emp_row and emp_row.get('user_id'):
+            cursor.execute("""
+                UPDATE users
+                SET email = %s
+                WHERE id = %s
+            """, (email, emp_row['user_id']))
+        
         db.commit()
 
         # Invalidate cache if photo was updated

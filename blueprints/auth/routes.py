@@ -600,24 +600,23 @@ def forgot_password():
         if not user:
             # Log attempt for security monitoring
             try:
+                logger.info(f"Password reset attempted for non-existent email: {email}")
                 log_audit(None, 'PASSWORD_RESET_INVALID_EMAIL', 'auth', f'email={email}', request.remote_addr)
             except:
                 pass
             # Stay on forgot password page with success message (don't reveal if email exists)
             return render_template("forgot_password.html")
         
-        # SECURITY: Block admin and HR password resets (prevent attack surface)
-        if user['role'] in ['admin', 'hr']:
-            # Log admin/HR reset attempt for security monitoring
+        # SECURITY: Block only admin password resets (prevent attack surface)
+        if user['role'] == 'admin':
+            # Log admin reset attempt for security monitoring
             try:
-                log_audit(user['id'], 'PASSWORD_RESET_BLOCKED_ADMIN_HR', 'auth', f'email={email}', request.remote_addr)
+                logger.warning(f"Password reset blocked for admin user: {email}")
+                log_audit(user['id'], 'PASSWORD_RESET_BLOCKED_ADMIN', 'auth', f'email={email}', request.remote_addr)
             except:
                 pass
-            # Show same generic message on forgot password page, don't reveal admin/HR status
+            # Show same generic message on forgot password page, don't reveal admin status
             return render_template("forgot_password.html")
-        
-        # Determine redirect based on user role (only for non-admin users)
-        redirect_target = "auth.user_login" if user['role'] == 'employee' else "auth.login"
         
         # Generate secure token
         import secrets
@@ -639,11 +638,17 @@ def forgot_password():
         employee_name = user.get('full_name') or user['username']
         
         try:
-            email_service.send_password_reset(email, employee_name, token, expiry_minutes=30)
-            log_audit(user['id'], 'PASSWORD_RESET_SENT', 'auth', f'email={email}', request.remote_addr)
+            logger.info(f"Attempting to send password reset email to: {email}")
+            result = email_service.send_password_reset(email, employee_name, token, expiry_minutes=30)
+            if result:
+                logger.info(f"Password reset email sent successfully to: {email}")
+                log_audit(user['id'], 'PASSWORD_RESET_SENT', 'auth', f'email={email}', request.remote_addr)
+            else:
+                logger.warning(f"Password reset email failed to send (service returned False) to: {email}")
+                log_audit(user['id'], 'PASSWORD_RESET_FAILED', 'auth', f'email={email}', request.remote_addr)
         except Exception as e:
-            from utils.logger import logger
-            logger.error(f"Failed to send password reset email: {e}")
+            logger.error(f"Failed to send password reset email to {email}: {e}", exc_info=True)
+            log_audit(user['id'], 'PASSWORD_RESET_ERROR', 'auth', f'email={email}, error={str(e)}', request.remote_addr)
             # Don't reveal error to user for security
         
         # Stay on forgot password page with success message
@@ -663,7 +668,7 @@ def reset_password():
     
     if not token:
         flash("Invalid or missing reset token", "error")
-        return redirect(url_for("auth.login"))
+        return redirect(url_for("auth.forgot_password"))
     
     db = get_db()
     cur = db.cursor(dictionary=True)
@@ -671,7 +676,7 @@ def reset_password():
     # Verify token
     from datetime import datetime
     cur.execute("""
-        SELECT rt.*, u.username, u.email, e.full_name
+        SELECT rt.*, u.username, u.email, u.role, e.full_name
         FROM password_reset_tokens rt
         JOIN users u ON rt.user_id = u.id
         LEFT JOIN employees e ON e.user_id = u.id
@@ -734,7 +739,12 @@ def reset_password():
             pass
         
         flash("Password reset successful! Please login with your new password.", "success")
-        return redirect(url_for("auth.login"))
+        
+        # Redirect based on user role
+        if reset_data['role'] == 'employee':
+            return redirect(url_for("auth.user_login"))
+        else:
+            return redirect(url_for("auth.login"))
     
     # GET request - show reset form
     return render_template("reset_password.html", token=token, 

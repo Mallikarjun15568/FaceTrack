@@ -279,6 +279,33 @@ def handle_csrf_error(e):
         return redirect(url_for('auth.login'))
 
 
+from flask_limiter.errors import RateLimitExceeded
+
+@app.errorhandler(RateLimitExceeded)
+def handle_rate_limit_exceeded(e):
+    logger.warning(f"Rate limit exceeded: {request.remote_addr} - {request.path}")
+    
+    # Return JSON for API requests
+    if request.is_json:
+        return jsonify({
+            'error': 'Rate limit exceeded',
+            'message': 'Too many requests. Please try again later.'
+        }), 429
+    
+    # For web requests, flash message and render appropriate template
+    flash('Too many requests. Please wait a few minutes before trying again.', 'error')
+    
+    # Determine which template to render based on the path
+    if 'forgot-password' in request.path:
+        return render_template('forgot_password.html'), 429
+    elif 'login' in request.path:
+        return render_template('login.html'), 429
+    elif 'user_login' in request.path:
+        return render_template('user_login.html'), 429
+    else:
+        return render_template('500.html'), 429
+
+
 # DB health and deep health endpoints removed per user request.
 
 
