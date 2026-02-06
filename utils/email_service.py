@@ -292,10 +292,17 @@ class EmailService:
     # -----------------------------
     def send_password_reset(self, to_email, employee_name, reset_token, expiry_minutes=30):
         """Send password reset link"""
-        from flask import request
-        # Get base URL from request or use default
+        from flask import request, current_app
+        
+        # Priority: 1) Config BASE_URL, 2) Request context, 3) Fallback
         try:
-            base_url = request.url_root.rstrip('/')
+            base_url = current_app.config.get('BASE_URL')
+            if not base_url or base_url == 'http://127.0.0.1:5000':
+                # Try to get from request context if available
+                try:
+                    base_url = request.url_root.rstrip('/')
+                except:
+                    base_url = "http://127.0.0.1:5000"
         except:
             base_url = "http://127.0.0.1:5000"
             

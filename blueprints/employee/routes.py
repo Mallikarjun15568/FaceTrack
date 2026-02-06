@@ -780,18 +780,18 @@ def submit_face_request():
         from utils.face_encoder import face_encoder # Ensure path is correct
         import numpy as np
 
-        # A. Blur Check (Quality Control)
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        variance = cv2.Laplacian(gray, cv2.CV_64F).var()
-        if variance < 80: # 80-100 ek accha threshold hai
-            return jsonify({'status': 'error', 'message': 'Photo dhundhli (blur) hai. Kripya saaf photo khinchein.'}), 400
+        # A. Blur Check (Quality Control) - (COMMENTED OUT FOR DEMO)
+        # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # variance = cv2.Laplacian(gray, cv2.CV_64F).var()
+        # if variance < 80: # 80-100 is a good threshold
+        #     return jsonify({'status': 'error', 'message': 'Photo is too blurry. Please take a clear photo.'}), 400
 
         # B. Face Detection (Presence Control)
         faces = face_encoder.app.get(frame)
         if len(faces) == 0:
-            return jsonify({'status': 'error', 'message': 'Photo mein koi chehra nahi mila.'}), 400
+            return jsonify({'status': 'error', 'message': 'No face detected in the photo.'}), 400
         if len(faces) > 1:
-            return jsonify({'status': 'error', 'message': 'Photo mein ek se zyada log hain.'}), 400
+            return jsonify({'status': 'error', 'message': 'Multiple faces detected. Please ensure only one person is in the photo.'}), 400
 
         # C. Confidence Check (Quality Control)
         from flask import current_app

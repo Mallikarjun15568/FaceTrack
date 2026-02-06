@@ -54,6 +54,14 @@ class BaseConfig:
     SENDER_PASSWORD = os.getenv('SENDER_PASSWORD')
     SENDER_NAME = os.getenv('SENDER_NAME', 'FaceTrack Pro')
     
+    # --- BASE URL (for email links, password reset, etc.) ---
+    # IMPORTANT: Set this to your server's public URL/IP for mobile access
+    # Examples:
+    #   Development: http://192.168.1.100:5000 (your local IP)
+    #   Production: https://facetrack.yourdomain.com
+    #   ngrok: https://abc123.ngrok.io
+    BASE_URL = os.getenv('BASE_URL', 'http://127.0.0.1:5000')
+    
     # --- PAGINATION ---
     ITEMS_PER_PAGE = 10
     

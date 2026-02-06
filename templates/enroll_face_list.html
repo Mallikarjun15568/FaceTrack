@@ -25,8 +25,64 @@
         </div>
     </div>
 
+    <!-- Filters Section -->
+    <div class="bg-white p-6 rounded-xl shadow mb-6">
+        <form method="GET" class="flex flex-col lg:flex-row gap-4 items-start lg:items-end">
+            <!-- Search -->
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-search mr-1"></i>Search
+                </label>
+                <input type="text" name="search" value="{{ search }}" placeholder="Name, Email, or ID"
+                       class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
+            </div>
+
+            <!-- Department Filter -->
+            <div class="min-w-[200px]">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-building mr-1"></i>Department
+                </label>
+                <select name="department" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if department_filter == dept.id|string %}selected{% endif %}>
+                        {{ dept.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="min-w-[180px]">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-user-check mr-1"></i>Face Status
+                </label>
+                <select name="status" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
+                    <option value="">All Status</option>
+                    <option value="enrolled" {% if status_filter == 'enrolled' %}selected{% endif %}>Enrolled</option>
+                    <option value="not_enrolled" {% if status_filter == 'not_enrolled' %}selected{% endif %}>Not Enrolled</option>
+                </select>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-2">
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    <i class="fas fa-filter mr-1"></i>Apply
+                </button>
+                <a href="{{ url_for('enroll.enroll_home') }}" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium">
+                    <i class="fas fa-redo mr-1"></i>Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results Table -->
     <div class="bg-white p-6 rounded-xl shadow">
-        <h2 class="text-xl font-semibold mb-4 text-gray-800">Employee Face Enrollment Status</h2>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-gray-800">Employee Face Enrollment Status</h2>
+            <span class="text-sm text-gray-600">Total: <strong>{{ employees|length }}</strong> employees</span>
+        </div>
+        <div class="overflow-x-auto">
         <table class="w-full border-collapse">
             <thead class="bg-gray-100 text-gray-600">
                 <tr>
@@ -87,6 +143,17 @@
             </tbody>
 
         </table>
+        </div>
+        
+        {% if employees|length == 0 %}
+        <div class="text-center py-12">
+            <i class="fas fa-user-slash text-gray-300 text-5xl mb-4"></i>
+            <p class="text-gray-500 text-lg">No employees found matching your filters.</p>
+            <a href="{{ url_for('enroll.enroll_home') }}" class="text-blue-600 hover:underline mt-2 inline-block">
+                Clear filters
+            </a>
+        </div>
+        {% endif %}
     </div>
 
 </div>

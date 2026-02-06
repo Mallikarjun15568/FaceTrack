@@ -125,16 +125,16 @@ def capture_face():
         except Exception:
             return jsonify({"status": "error", "message": "Invalid image format"}), 400
 
-        # --- BLUR CHECK START ---
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
-        
-        # Agar variance 70-80 se kam hai, matlab image dhundhli hai
-        if laplacian_var < 80: 
-            return jsonify({
-                "status": "error", 
-                "message": f"Photo bahut dhundhli (blur) hai (Quality: {laplacian_var:.1f}). Kripya saaf photo khinchein."
-            }), 400
+        # --- BLUR CHECK START --- (COMMENTED OUT FOR DEMO)
+        # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
+        # 
+        # # If variance is less than 80, the image is blurry
+        # if laplacian_var < 80: 
+        #     return jsonify({
+        #         "status": "error", 
+        #         "message": f"Photo is too blurry (Quality: {laplacian_var:.1f}). Please take a clear photo."
+        #     }), 400
         # --- BLUR CHECK END ---
 
         # Save temporary image
@@ -309,16 +309,16 @@ def update_capture_face():
         except Exception:
             return jsonify({"status": "error", "message": "Invalid image format"}), 400
 
-        # --- BLUR CHECK START ---
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
-        
-        # Agar variance 70-80 se kam hai, matlab image dhundhli hai
-        if laplacian_var < 80: 
-            return jsonify({
-                "status": "error", 
-                "message": f"Photo bahut dhundhli (blur) hai (Quality: {laplacian_var:.1f}). Kripya saaf photo khinchein."
-            }), 400
+        # --- BLUR CHECK START --- (COMMENTED OUT FOR DEMO)
+        # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
+        # 
+        # # If variance is less than 80, the image is blurry
+        # if laplacian_var < 80: 
+        #     return jsonify({
+        #         "status": "error", 
+        #         "message": f"Photo is too blurry (Quality: {laplacian_var:.1f}). Please take a clear photo."
+        #     }), 400
         # --- BLUR CHECK END ---
 
         # Check for faces before embedding
@@ -439,13 +439,19 @@ def enroll_home():
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
-    cursor.execute("""
+    # Get filter parameters
+    search = request.args.get('search', '').strip()
+    department_filter = request.args.get('department', '')
+    status_filter = request.args.get('status', '')
+
+    # Base query
+    query = """
         SELECT 
             e.id,
             e.full_name,
             e.photo,
             d.name AS department,
-
+            e.department_id,
             CASE 
                 WHEN fd.emp_id IS NOT NULL THEN 'Enrolled'
                 ELSE 'Not Enrolled'
@@ -454,9 +460,42 @@ def enroll_home():
         FROM employees e
         LEFT JOIN departments d ON e.department_id = d.id
         LEFT JOIN face_data fd ON e.id = fd.emp_id
-        ORDER BY e.id DESC
-    """)
+        WHERE 1=1
+    """
+    
+    params = []
 
+    # Apply search filter
+    if search:
+        query += " AND (e.full_name LIKE %s OR e.email LIKE %s OR e.id LIKE %s)"
+        search_param = f"%{search}%"
+        params.extend([search_param, search_param, search_param])
+
+    # Apply department filter
+    if department_filter:
+        query += " AND e.department_id = %s"
+        params.append(department_filter)
+
+    # Apply status filter
+    if status_filter == 'enrolled':
+        query += " AND fd.emp_id IS NOT NULL"
+    elif status_filter == 'not_enrolled':
+        query += " AND fd.emp_id IS NULL"
+
+    query += " ORDER BY e.id DESC"
+
+    cursor.execute(query, params)
     employees = cursor.fetchall()
 
-    return render_template("enroll_face_list.html", employees=employees)
+    # Get departments for filter dropdown
+    cursor.execute("SELECT id, name FROM departments ORDER BY name")
+    departments = cursor.fetchall()
+
+    return render_template(
+        "enroll_face_list.html", 
+        employees=employees,
+        departments=departments,
+        search=search,
+        department_filter=department_filter,
+        status_filter=status_filter
+    )

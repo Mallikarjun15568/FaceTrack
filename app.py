@@ -90,6 +90,7 @@ app.config['SMTP_PORT'] = int(os.getenv('SMTP_PORT', 587))
 app.config['SENDER_EMAIL'] = os.getenv('SENDER_EMAIL')
 app.config['SENDER_PASSWORD'] = os.getenv('SENDER_PASSWORD')
 app.config['SENDER_NAME'] = os.getenv('SENDER_NAME', 'FaceTrack Pro')
+app.config['BASE_URL'] = os.getenv('BASE_URL', 'http://127.0.0.1:5000')
 
 # Initialize email service with app config
 email_service.init_app(app)
@@ -110,10 +111,6 @@ logger = logging.getLogger("app")
 # 
 # --------------------------
 
-# Setup selective CSRF exemptions BEFORE registering blueprints
-from utils.csrf_exemptions import setup_csrf_exemptions
-setup_csrf_exemptions(app, csrf)
-
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(attendance_bp)
@@ -123,6 +120,10 @@ app.register_blueprint(leave_bp)
 app.register_blueprint(charts_bp)
 from blueprints.employee import bp as employee_bp
 app.register_blueprint(employee_bp)
+
+# Setup selective CSRF exemptions AFTER registering blueprints
+from utils.csrf_exemptions import setup_csrf_exemptions
+setup_csrf_exemptions(app, csrf)
 
 
 

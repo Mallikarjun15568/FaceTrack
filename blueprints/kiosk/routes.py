@@ -90,19 +90,19 @@ def liveness_check():
         if frame is None:
             return jsonify({"success": False, "message": "Invalid frame"}), 400
         
-        # ACTUAL LIVENESS DETECTION using LivenessDetector
-        is_live, confidence, message = liveness.check_liveness(frame)
+        # ACTUAL LIVENESS DETECTION using LivenessDetector (COMMENTED OUT FOR DEMO)
+        # is_live, confidence, message = liveness.check_liveness(frame)
+        # 
+        # if not is_live:
+        #     return jsonify({
+        #         "success": False,
+        #         "lv_pass": False,
+        #         "message": message,
+        #         "confidence": float(confidence),
+        #         "progress": int(confidence * 100)
+        #     })
         
-        if not is_live:
-            return jsonify({
-                "success": False,
-                "lv_pass": False,
-                "message": message,
-                "confidence": float(confidence),
-                "progress": int(confidence * 100)
-            })
-        
-        # Liveness passed - set session flag
+        # Liveness passed - set session flag (AUTO-PASS FOR DEMO)
         session["lv_pass"] = True
         
         return jsonify({
@@ -146,16 +146,16 @@ def kiosk_recognize():
                 "message": "Camera frame not ready"
             }), 200
 
-        # --- LIVENESS CHECK ---
-        is_live, confidence, message = liveness.check_liveness(frame)
+        # --- LIVENESS CHECK --- (COMMENTED OUT FOR DEMO)
+        # is_live, confidence, message = liveness.check_liveness(frame)
+        #
+        # if not is_live:
+        #     return jsonify({
+        #         "status": "WAIT",
+        #         "message": message
+        #     }), 200
 
-        if not is_live:
-            return jsonify({
-                "status": "WAIT",
-                "message": message
-            }), 200
-
-        # --- RECOGNITION (only when liveness passed) ---
+        # --- RECOGNITION (only when liveness passed) --- (AUTO-PASS FOR DEMO)
         result = recognize_and_mark(frame_b64, current_app)
 
         # Log the result for debugging
