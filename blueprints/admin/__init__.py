@@ -6,12 +6,15 @@ def check_admin():
     Ensures user is logged in and has 'admin' role.
     Handles both web and API requests.
     """
+    # Detect API requests by path
+    is_api = '/api/' in request.path or request.is_json or request.accept_mimetypes.best == 'application/json'
+    
     if 'user_id' not in session:
-        if request.is_json:
+        if is_api:
             return jsonify({"error": "Login required"}), 401
         abort(403)  # Show 403 instead of redirecting to login
     if session.get('role') != 'admin':
-        if request.is_json:
+        if is_api:
             return jsonify({"error": "Admin access required"}), 403
         abort(403)  # Show custom 403 Forbidden page
 
@@ -21,12 +24,15 @@ def check_admin_hr():
     Ensures user is logged in and has 'admin' or 'hr' role.
     Handles both web and API requests.
     """
+    # Detect API requests by path
+    is_api = request.path.startswith('/admin/reports/api/') or request.is_json or request.accept_mimetypes.best == 'application/json'
+    
     if 'user_id' not in session:
-        if request.is_json:
+        if is_api:
             return jsonify({"error": "Login required"}), 401
         abort(403)  # Show 403 instead of redirecting to login
     if session.get('role') not in ['admin', 'hr']:
-        if request.is_json:
+        if is_api:
             return jsonify({"error": "Admin/HR access required"}), 403
         abort(403)  # Show custom 403 Forbidden page
 
@@ -36,12 +42,15 @@ def check_employee():
     Ensures user is logged in and has 'employee', 'admin', or 'hr' role.
     Handles both web and API requests.
     """
+    # Detect API requests by path
+    is_api = '/api/' in request.path or request.is_json or request.accept_mimetypes.best == 'application/json'
+    
     if 'user_id' not in session:
-        if request.is_json:
+        if is_api:
             return jsonify({"error": "Login required"}), 401
         abort(403)  # Show 403 instead of redirecting to login
     if session.get('role') not in ['employee', 'admin', 'hr']:
-        if request.is_json:
+        if is_api:
             return jsonify({"error": "Employee/Admin/HR access required"}), 403
         abort(403)  # Show custom 403 Forbidden page
 

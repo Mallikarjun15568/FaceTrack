@@ -248,11 +248,7 @@ def approve(leave_id):
         flash('Leave not found', 'error')
         return redirect(url_for('leave.index'))
 
-    if leave['employee_id'] == approver_id and requester_role != 'admin':
-        flash('You cannot approve your own leave', 'error')
-        return redirect(url_for('leave.index'))
-
-    # Get requester's role
+    # Get requester's role first
     emp = fetchone("SELECT user_id FROM employees WHERE id = %s", (leave['employee_id'],))
     if not emp:
         flash('Employee not found', 'error')
@@ -264,6 +260,11 @@ def approve(leave_id):
     requester_role = user['role']
     approver_role = session.get('role')
 
+    # Check if approving own leave - NO ONE can approve their own leave
+    if leave['employee_id'] == approver_id:
+        flash('You cannot approve your own leave', 'error')
+        return redirect(url_for('leave.index'))
+
     # Hierarchy check
     if requester_role == 'employee':
         if approver_role not in ['hr', 'admin']:
@@ -274,8 +275,9 @@ def approve(leave_id):
             flash('Only Admin can approve HR leaves', 'error')
             return redirect(url_for('leave.index'))
     elif requester_role == 'admin':
+        # Admin leaves can be approved by another admin only (not themselves)
         if approver_role != 'admin':
-            flash('Only Admin can approve admin leaves (manual approval)', 'error')
+            flash('Only Admin can approve admin leaves', 'error')
             return redirect(url_for('leave.index'))
 
     execute("""

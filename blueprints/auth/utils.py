@@ -1,7 +1,7 @@
 # auth/utils.py
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-from flask import session, redirect, flash, url_for
+from flask import session, redirect, flash, url_for, jsonify, request
 from db_utils import get_connection
 
 
@@ -45,9 +45,12 @@ def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         if not session.get("logged_in"):
+            # Check if this is an API request (expects JSON response)
+            if request.path.startswith('/admin/reports/api/') or request.path.startswith('/api/'):
+                return jsonify({"success": False, "error": "Authentication required", "status": "unauthorized"}), 401
+            
             flash("Please login first", "error")
             # Check if this is an employee route, redirect accordingly
-            from flask import request
             if request.endpoint and request.endpoint.startswith("employee."):
                 return redirect(url_for("auth.user_login"))
             return redirect(url_for("auth.login"))
@@ -68,11 +71,16 @@ def role_required(*roles):
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
+            # Check if this is an API request
+            is_api_request = request.path.startswith('/admin/reports/api/') or request.path.startswith('/api/')
+            
             # First check if user is logged in
             if not session.get("logged_in"):
+                if is_api_request:
+                    return jsonify({"success": False, "error": "Authentication required", "status": "unauthorized"}), 401
+                
                 flash("Please login first", "error")
                 # Check if this is an employee route, redirect accordingly
-                from flask import request
                 if request.endpoint and request.endpoint.startswith("employee."):
                     return redirect(url_for("auth.user_login"))
                 return redirect(url_for("auth.login"))
@@ -80,6 +88,9 @@ def role_required(*roles):
             user_role = session.get("role")
 
             if user_role not in roles:
+                if is_api_request:
+                    return jsonify({"success": False, "error": "Access denied", "status": "forbidden"}), 403
+                
                 flash("⛔ Access Denied: You don't have permission to access this page", "error")
                 # Redirect based on role
                 if user_role == "employee":

@@ -279,10 +279,10 @@ def add_employee():
 
         # ✅ REMOVED: No automatic photo processing since photo is optional
 
-        # Create leave_balance row for new employee (MANDATORY for admin credit to work)
+        # Create leave_balance row for new employee with default allocation
         cursor.execute("""
             INSERT INTO leave_balance (employee_id, casual_leave, sick_leave, vacation_leave, emergency_leave)
-            VALUES (%s, 0, 0, 0, 0)
+            VALUES (%s, 6, 6, 10, 3)
         """, (employee_id,))
         
         # ✅ SINGLE COMMIT - Only at the end after all operations

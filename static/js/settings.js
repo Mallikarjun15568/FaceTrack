@@ -131,9 +131,13 @@ if (window.__settingsLoaded) {
                 login_alert: document.getElementById("login_alert").value
             };
 
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
             fetch("/admin/settings/api", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken || ''
+                },
                 body: JSON.stringify(data)
             })
             .then(res => res.json())
@@ -178,9 +182,13 @@ if (window.__settingsLoaded) {
 
         const fd = new FormData();
         fd.append("company_logo", file);
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
         fetch("/admin/settings/upload-logo", {
             method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken || ''
+            },
             body: fd
         })
         .then(res => res.json())
@@ -339,10 +347,14 @@ if (window.__settingsLoaded) {
             formData.append("old_password", oldPassword);
             formData.append("new_password", newPassword);
             formData.append("confirm_password", confirmPassword);
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
             try {
                 const response = await fetch("/admin/settings/change-password", {
                     method: "POST",
+                    headers: {
+                        "X-CSRFToken": csrfToken || ''
+                    },
                     body: formData
                 });
 

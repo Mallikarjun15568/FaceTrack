@@ -1,335 +1,690 @@
 {% extends "base.html" %}
+{% block head %}
+    <style>
+      .tab-button {
+        transition: all 0.2s ease-in-out;
+        position: relative;
+      }
+      .tab-button.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: #3b82f6;
+        border-radius: 1px 1px 0 0;
+      }
+      .tab-content {
+        animation: fadeIn 0.3s ease-in-out;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        border: 1px solid #e5e7eb;
+      }
+      .tab-transition {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+    </style>
+{% endblock %}
 {% block page_title %}Reports{% endblock %}
 {% block breadcrumb %}Reports{% endblock %}
 {% block content %}
 
-<div class="max-w-7xl mx-auto">
+<div class="max-w-6xl mx-auto">
 
   <!-- HEADER -->
-  <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-8">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-900">Attendance Reports</h1>
-      <p class="text-sm text-gray-500 mt-1">Comprehensive attendance analytics & insights</p>
-    </div>
-
-    <!-- Export Buttons -->
-    <div class="flex items-center gap-3">
-      <button id="refreshData" class="btn btn-primary">
-        <i class="fa-solid fa-refresh"></i>
-        Refresh Data
-      </button>
-
-      <button id="exportCsv" class="btn btn-secondary">
-        <i class="fa-solid fa-file-csv"></i>
-        Export CSV
-      </button>
-
-      <button id="exportPdf" class="btn btn-secondary">
-        <i class="fa-solid fa-file-pdf"></i>
-        Export PDF
-      </button>
-    </div>
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">Reports</h1>
+    <p class="text-gray-600 mt-2">Generate, analyze & export attendance data</p>
   </div>
 
-  <!-- Summary Cards - Only for Admin/HR -->
-  {% if not employee_view %}
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-
-    <!-- Present -->
-    <div class="card">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <p class="text-sm font-medium text-gray-500 mb-1">Total Present</p>
-          <p id="presentCount" class="text-3xl font-bold text-gray-900 countup" data-target="-">-</p>
-        </div>
-        <div class="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center">
-          <i class="fa-solid fa-user-check text-green-600 text-xl"></i>
-        </div>
-      </div>
-      <p class="text-xs text-gray-500">Checked in today</p>
-    </div>
-
-    <!-- Absent -->
-    <div class="card">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <p class="text-sm font-medium text-gray-500 mb-1">Total Absent</p>
-          <p id="absentCount" class="text-3xl font-bold text-gray-900 countup" data-target="-">-</p>
-        </div>
-        <div class="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center">
-          <i class="fa-solid fa-user-xmark text-orange-600 text-xl"></i>
-        </div>
-      </div>
-      <p class="text-xs text-gray-500">Not present today</p>
-    </div>
-
-    <!-- Late -->
-    <div class="card">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <p class="text-sm font-medium text-gray-500 mb-1">Late Entries</p>
-          <p id="lateCount" class="text-3xl font-bold text-gray-900 countup" data-target="-">-</p>
-        </div>
-        <div class="w-12 h-12 rounded-lg bg-purple-50 flex items-center justify-center">
-          <i class="fa-solid fa-clock text-purple-600 text-xl"></i>
-        </div>
-      </div>
-      <p class="text-xs text-gray-500">After 9:30 AM</p>
-    </div>
-
-    <!-- Attendance % -->
-    <div class="card">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <p class="text-sm font-medium text-gray-500 mb-1">Attendance %</p>
-          <p id="attendancePercentage" class="text-3xl font-bold text-gray-900 countup" data-target="-">-</p>
-        </div>
-        <div class="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center">
-          <i class="fa-solid fa-chart-simple text-indigo-600 text-xl"></i>
-        </div>
-      </div>
-      <p class="text-xs text-gray-500">Today's rate</p>
-    </div>
-
-  </div>
-  {% endif %}
-
-  <!-- Charts Row - Only for Admin/HR -->
-  {% if not employee_view %}
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-
-    <!-- Daily Attendance Chart -->
-    <div class="card">
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="font-bold text-lg text-gray-900">Attendance Overview</h3>
-        <span class="badge badge-primary">Last 7 Days</span>
-      </div>
-      <div class="h-64 md:h-80 flex items-center justify-center">
-        <canvas id="lineChart"></canvas>
-      </div>
-    </div>
-
-    <!-- Department-wise Chart -->
-    <div class="card">
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h3 class="font-bold text-lg text-gray-900">Department-wise Attendance</h3>
-          <p class="text-sm text-gray-500 mt-1">Last 7 Days (Weekly Summary)</p>
-        </div>
-        <span class="badge badge-success">Aggregated Data</span>
-      </div>
-      <div class="h-64 md:h-80">
-        <canvas id="barChart" style="width: 100%; height: 100%;"></canvas>
-      </div>
-    </div>
-
-  </div>
-  {% endif %}
-  
-  <!-- Employee Selection & Analysis - Only for Admin/HR -->
-  {% if not employee_view %}
-  <div class="card mb-8">
-    <h3 class="font-bold text-lg text-gray-900 mb-6">
-      <i class="fa-solid fa-user-circle text-indigo-600 mr-2"></i>
-      Employee Analysis
-    </h3>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-      <!-- Employee -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          <i class="fa-solid fa-user text-indigo-600 mr-2"></i>Select Employee
-        </label>
-        <select id="employeeSelector" class="input w-full">
-          <option value="">-- Select Employee --</option>
-        </select>
-      </div>
-
-      <!-- Month -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          <i class="fa-solid fa-calendar text-indigo-600 mr-2"></i>Select Month
-        </label>
-        <input id="monthSelector" type="month" class="input w-full">
-      </div>
-
-      <!-- Action -->
-      <div class="flex items-end">
-        <button id="loadEmployeeData" class="btn btn-primary w-full">
-          <i class="fa-solid fa-chart-line"></i>Load Analysis
+  <!-- TABS -->
+  <div class="mb-8">
+    <div class="border-b border-gray-200">
+      <nav class="flex space-x-6 overflow-x-auto" aria-label="Tabs">
+        <button onclick="switchTab('overview')" id="tab-overview" class="tab-button active border-b-2 border-blue-500 text-blue-600 whitespace-nowrap py-2 px-4 font-medium text-sm hover:text-blue-700 tab-transition">
+          <svg class="inline-block w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z"/>
+          </svg>Overview
         </button>
-      </div>
-
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Employee Monthly Summary (Hidden by default) -->
-  <div id="employeeSummarySection" class="{% if not employee_view %}hidden{% endif %} mb-8">
-    <div class="card">
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="font-bold text-lg text-gray-900">
-          <i class="fa-solid fa-calendar-check text-green-600 mr-2"></i>
-          <span id="selectedEmployeeName">Employee</span> - Monthly Summary
-        </h3>
-        <span class="badge badge-primary" id="selectedMonth">-</span>
-      </div>
-
-      <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
-          <div class="text-sm font-medium text-green-700 mb-1">Present</div>
-          <div class="text-2xl font-bold text-green-900" id="empPresentDays">-</div>
-          <div class="text-xs text-green-600 mt-1" id="empTotalHours">- hrs</div>
-        </div>
-        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
-          <div class="text-sm font-medium text-blue-700 mb-1">On Leave</div>
-          <div class="text-2xl font-bold text-blue-900" id="empLeaveDays">-</div>
-          <div class="text-xs text-blue-600 mt-1">Approved</div>
-        </div>
-        <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border border-red-200">
-          <div class="text-sm font-medium text-red-700 mb-1">Absent</div>
-          <div class="text-2xl font-bold text-red-900" id="empAbsentDays">-</div>
-          <div class="text-xs text-red-600 mt-1">Unmarked</div>
-        </div>
-        <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
-          <div class="text-sm font-medium text-purple-700 mb-1">Holidays</div>
-          <div class="text-2xl font-bold text-purple-900" id="empHolidayDays">-</div>
-          <div class="text-xs text-purple-600 mt-1">Company</div>
-        </div>
-        <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
-          <div class="text-sm font-medium text-gray-700 mb-1">Total Days</div>
-          <div class="text-2xl font-bold text-gray-900" id="empTotalDays">-</div>
-          <div class="text-xs text-gray-600 mt-1">This Month</div>
-        </div>
-      </div>
+        <button onclick="switchTab('records')" id="tab-records" class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-4 font-medium text-sm tab-transition">
+          <svg class="inline-block w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="9" y1="21" x2="9" y2="9"/>
+          </svg>Records
+        </button>
+        {% if not employee_view %}
+        <button onclick="switchTab('employee')" id="tab-employee" class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-4 font-medium text-sm tab-transition">
+          <svg class="inline-block w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+            <polyline points="17 6 23 6 23 12"/>
+          </svg>Employee Analysis
+        </button>
+        {% endif %}
+        <button onclick="switchTab('export')" id="tab-export" class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-4 font-medium text-sm tab-transition">
+          <svg class="inline-block w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <polyline points="9 15 12 18 15 15"/>
+          </svg>Generate Report
+        </button>
+      </nav>
     </div>
   </div>
 
-  <!-- Employee Monthly Calendar (Hidden by default) -->
-  <div id="employeeCalendarSection" class="{% if not employee_view %}hidden{% endif %} mb-8">
-    <div class="card">
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="font-bold text-lg text-gray-900">
-          <i class="fa-solid fa-calendar-alt text-purple-600 mr-2"></i>
-          Monthly Calendar View
-        </h3>
-      </div>
+  <!-- TAB CONTENT -->
+  <div class="space-y-8">
 
-      <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-4">
-          <button id="prevMonth" class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200">
-            <i class="fa-solid fa-chevron-left"></i>
-          </button>
-          <h3 id="calendarMonth" class="font-bold text-gray-900">January 2026</h3>
-          <button id="nextMonth" class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200">
-            <i class="fa-solid fa-chevron-right"></i>
-          </button>
+    <!-- OVERVIEW TAB -->
+    <div id="content-overview" class="tab-content">
+      <div class="card p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center shadow-sm">
+            <svg class="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Attendance Overview</h2>
+            <p class="text-gray-600 text-sm">Real-time statistics and chart visualizations</p>
+          </div>
         </div>
 
-        <!-- Weekdays -->
-        <div class="grid grid-cols-7 text-center text-sm font-semibold text-gray-500 mb-2">
-          <div>Sun</div><div>Mon</div><div>Tue</div>
-          <div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        <div class="space-y-8">
+          <!-- Date Filter for Charts - Only for Admin/HR -->
+          {% if not employee_view %}
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">Time Period for Charts</label>
+            <div class="p-6 bg-gray-50 rounded-lg border border-gray-200">
+              <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
+                <button type="button" class="overview-period-btn active" data-period="last_7_days">Last 7 Days</button>
+                <button type="button" class="overview-period-btn" data-period="this_week">This Week</button>
+                <button type="button" class="overview-period-btn" data-period="this_month">This Month</button>
+                <button type="button" class="overview-period-btn" data-period="last_month">Last Month</button>
+                <button type="button" class="overview-period-btn" data-period="this_quarter">Quarter</button>
+                <button type="button" class="overview-period-btn" data-period="this_year">This Year</button>
+                <button type="button" class="overview-period-btn" data-period="custom">Custom</button>
+              </div>
+              
+              <!-- Custom Date Range -->
+              <div id="overviewCustomDateRange" class="hidden mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fa-solid fa-calendar-days text-indigo-600 mr-2"></i>From Date
+                  </label>
+                  <input type="date" id="overviewFromDate" class="input w-full">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fa-solid fa-calendar-check text-indigo-600 mr-2"></i>To Date
+                  </label>
+                  <input type="date" id="overviewToDate" class="input w-full">
+                </div>
+              </div>
+              
+              <div class="mt-4 flex gap-3">
+                <button id="applyOverviewFilter" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                  <i class="fa-solid fa-filter mr-2"></i>Apply Filter
+                </button>
+                <button id="resetOverviewFilter" class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-colors">
+                  <i class="fa-solid fa-rotate-left mr-2"></i>Reset
+                </button>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Summary Cards - Only for Admin/HR -->
+          {% if not employee_view %}
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">
+              <span id="selectedPeriodLabel">Last 7 Days</span> Statistics
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <!-- Present -->
+              <div class="card">
+                <div class="flex items-center justify-between mb-4">
+                  <div>
+                    <p class="text-sm font-medium text-gray-500 mb-1">Total Present</p>
+                    <p id="presentCount" class="text-3xl font-bold text-gray-900 countup" data-target="-">-</p>
+                  </div>
+                  <div class="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center">
+                    <i class="fa-solid fa-user-check text-green-600 text-xl"></i>
+                  </div>
+                </div>
+                <p id="presentLabel" class="text-xs text-gray-500">Checked in during period</p>
+              </div>
+
+              <!-- Absent -->
+              <div class="card">
+                <div class="flex items-center justify-between mb-4">
+                  <div>
+                    <p class="text-sm font-medium text-gray-500 mb-1">Total Absent</p>
+                    <p id="absentCount" class="text-3xl font-bold text-gray-900 countup" data-target="-">-</p>
+                  </div>
+                  <div class="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center">
+                    <i class="fa-solid fa-user-xmark text-orange-600 text-xl"></i>
+                  </div>
+                </div>
+                <p id="absentLabel" class="text-xs text-gray-500">Not present during period</p>
+              </div>
+
+              <!-- Late -->
+              <div class="card">
+                <div class="flex items-center justify-between mb-4">
+                  <div>
+                    <p class="text-sm font-medium text-gray-500 mb-1">Late Entries</p>
+                    <p id="lateCount" class="text-3xl font-bold text-gray-900 countup" data-target="-">-</p>
+                  </div>
+                  <div class="w-12 h-12 rounded-lg bg-purple-50 flex items-center justify-center">
+                    <i class="fa-solid fa-clock text-purple-600 text-xl"></i>
+                  </div>
+                </div>
+                <p class="text-xs text-gray-500">After 9:30 AM</p>
+              </div>
+
+              <!-- Attendance % -->
+              <div class="card">
+                <div class="flex items-center justify-between mb-4">
+                  <div>
+                    <p class="text-sm font-medium text-gray-500 mb-1">Attendance %</p>
+                    <p id="attendancePercentage" class="text-3xl font-bold text-gray-900 countup" data-target="-">-</p>
+                  </div>
+                  <div class="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center">
+                    <i class="fa-solid fa-chart-simple text-indigo-600 text-xl"></i>
+                  </div>
+                </div>
+                <p id="percentLabel" class="text-xs text-gray-500">Overall attendance rate</p>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Charts Row - Only for Admin/HR -->
+          {% if not employee_view %}
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">Attendance Trends</label>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Daily Attendance Chart -->
+              <div class="card">
+                <div class="flex items-center justify-between mb-6">
+                  <h3 class="font-bold text-lg text-gray-900">Attendance Overview</h3>
+                  <span id="chartPeriodBadge" class="badge badge-primary">Last 7 Days</span>
+                </div>
+                <div class="h-64 md:h-80 flex items-center justify-center">
+                  <canvas id="lineChart"></canvas>
+                </div>
+              </div>
+
+              <!-- Department-wise Chart -->
+              <div class="card">
+                <div class="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 class="font-bold text-lg text-gray-900">Department-wise Attendance</h3>
+                    <p id="deptChartPeriodLabel" class="text-sm text-gray-500 mt-1">Last 7 Days (Weekly Summary)</p>
+                  </div>
+                  <span class="badge badge-success">Aggregated Data</span>
+                </div>
+                <div class="h-64 md:h-80">
+                  <canvas id="barChart" style="width: 100%; height: 100%;"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <!-- END OVERVIEW TAB -->
+
+    <!-- RECORDS TAB -->
+    <div id="content-records" class="tab-content hidden">
+      <div class="card p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center shadow-sm">
+            <svg class="w-6 h-6 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+              <line x1="9" y1="21" x2="9" y2="9"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Attendance Records</h2>
+            <p class="text-gray-600 text-sm">Detailed daily attendance log with filters</p>
+          </div>
         </div>
 
-        <!-- Calendar Grid -->
-        <div id="calendarGrid" class="grid grid-cols-7 gap-2 auto-rows-[90px]"></div>
+        <div class="space-y-8">
+          <!-- Table Filters -->
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">Filter Records</label>
+            <div class="grid grid-cols-1 md:grid-cols-{% if employee_view %}2{% else %}4{% endif %} gap-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
+              
+              <!-- From Date -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fa-solid fa-calendar-days text-indigo-600 mr-2"></i>From Date
+                </label>
+                <input id="fromDate" type="date" class="input w-full">
+              </div>
 
-        <!-- Legend -->
-        <div id="calendarLegend" class="flex flex-wrap items-center justify-center gap-3 mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-          <!-- Populated dynamically -->
+              <!-- To Date -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fa-solid fa-calendar-check text-indigo-600 mr-2"></i>To Date
+                </label>
+                <input id="toDate" type="date" class="input w-full">
+              </div>
+
+              <!-- Department - Only for Admin/HR -->
+              {% if not employee_view %}
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fa-solid fa-building text-indigo-600 mr-2"></i>Department
+                </label>
+                <select id="departmentFilter" class="input w-full">
+                </select>
+              </div>
+
+              <!-- Employee - Only for Admin/HR -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fa-solid fa-user text-indigo-600 mr-2"></i>Employee
+                </label>
+                <select id="employeeFilter" class="input w-full">
+                </select>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex items-center gap-3 mt-4">
+              <button id="applyFilters" class="btn btn-primary">
+                <i class="fa-solid fa-filter"></i>Apply Filters
+              </button>
+              <button id="resetFilters" class="btn btn-secondary">
+                <i class="fa-solid fa-redo"></i>Reset
+              </button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">Attendance Records</label>
+            <div class="overflow-x-auto bg-white rounded-lg border border-gray-200">
+              <table id="reportsTable" class="table w-full">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Status</th>
+                    <th>In Time</th>
+                    <th>Snapshot</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+    <!-- END RECORDS TAB -->
+
+    <!-- EMPLOYEE ANALYSIS TAB (Admin/HR only) -->
+    {% if not employee_view %}
+    <div id="content-employee" class="tab-content hidden">
+      <div class="card p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center shadow-sm">
+            <svg class="w-6 h-6 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+              <polyline points="17 6 23 6 23 12"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Employee Analysis</h2>
+            <p class="text-gray-600 text-sm">Individual performance and attendance patterns</p>
+          </div>
+        </div>
+
+        <div class="space-y-8">
+          <!-- Employee Selection -->
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">Select Employee & Period</label>
+            <div class="p-6 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
+              <!-- Employee Selector -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fa-solid fa-user text-blue-600 mr-2"></i>Select Employee
+                  </label>
+                  <select id="employeeSelector" class="input w-full">
+                    <option value="">-- Select Employee --</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fa-solid fa-calendar text-blue-600 mr-2"></i>Period Type
+                  </label>
+                  <select id="employeePeriodType" class="input w-full">
+                    <option value="month">Monthly View</option>
+                    <option value="custom">Custom Date Range</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Period Selectors -->
+              <div id="employeeMonthSelector" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fa-solid fa-calendar-days text-blue-600 mr-2"></i>Select Month
+                  </label>
+                  <input id="monthSelector" type="month" class="input w-full">
+                </div>
+                <div></div>
+              </div>
+
+              <div id="employeeCustomDateRange" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fa-solid fa-calendar-days text-blue-600 mr-2"></i>From Date
+                  </label>
+                  <input id="empFromDate" type="date" class="input w-full">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fa-solid fa-calendar-check text-blue-600 mr-2"></i>To Date
+                  </label>
+                  <input id="empToDate" type="date" class="input w-full">
+                </div>
+              </div>
+
+              <div class="flex gap-3">
+                <button id="loadEmployeeData" class="btn btn-primary">
+                  <i class="fa-solid fa-chart-line"></i>Load Analysis
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Employee Monthly Summary (Hidden by default) -->
+          <div id="employeeSummarySection" class="hidden">
+            <label class="block font-semibold text-gray-800 mb-3">
+              <span id="selectedEmployeeName">Employee</span> - Monthly Summary
+              <span class="badge badge-primary ml-2" id="selectedMonth">-</span>
+            </label>
+            <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+              <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
+                <div class="text-sm font-medium text-green-700 mb-1">Present</div>
+                <div class="text-2xl font-bold text-green-900" id="empPresentDays">-</div>
+                <div class="text-xs text-green-600 mt-1" id="empTotalHours">- hrs</div>
+              </div>
+              <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
+                <div class="text-sm font-medium text-blue-700 mb-1">On Leave</div>
+                <div class="text-2xl font-bold text-blue-900" id="empLeaveDays">-</div>
+                <div class="text-xs text-blue-600 mt-1">Approved</div>
+              </div>
+              <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border border-red-200">
+                <div class="text-sm font-medium text-red-700 mb-1">Absent</div>
+                <div class="text-2xl font-bold text-red-900" id="empAbsentDays">-</div>
+                <div class="text-xs text-red-600 mt-1">Unmarked</div>
+              </div>
+              <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
+                <div class="text-sm font-medium text-purple-700 mb-1">Holidays</div>
+                <div class="text-2xl font-bold text-purple-900" id="empHolidayDays">-</div>
+                <div class="text-xs text-purple-600 mt-1">Company</div>
+              </div>
+              <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
+                <div class="text-sm font-medium text-gray-700 mb-1">Total Days</div>
+                <div class="text-2xl font-bold text-gray-900" id="empTotalDays">-</div>
+                <div class="text-xs text-gray-600 mt-1">This Month</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Employee Monthly Calendar (Hidden by default) -->
+          <div id="employeeCalendarSection" class="hidden">
+            <label class="block font-semibold text-gray-800 mb-3">Monthly Calendar View</label>
+            <div class="bg-white rounded-xl border border-gray-200 p-4">
+              <!-- Header -->
+              <div class="flex items-center justify-between mb-4">
+                <button id="prevMonth" class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <h3 id="calendarMonth" class="font-bold text-gray-900">January 2026</h3>
+                <button id="nextMonth" class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+
+              <!-- Weekdays -->
+              <div class="grid grid-cols-7 text-center text-sm font-semibold text-gray-500 mb-2">
+                <div>Sun</div><div>Mon</div><div>Tue</div>
+                <div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+              </div>
+
+              <!-- Calendar Grid -->
+              <div id="calendarGrid" class="grid grid-cols-7 gap-2 auto-rows-[90px]"></div>
+
+              <!-- Legend -->
+              <div id="calendarLegend" class="flex flex-wrap items-center justify-center gap-3 mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    <!-- END EMPLOYEE ANALYSIS TAB -->
+
+    <!-- EXPORT TAB -->
+    <div id="content-export" class="tab-content hidden">
+      <div class="card p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100 flex items-center justify-center shadow-sm">
+            <svg class="w-6 h-6 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <polyline points="9 15 12 18 15 15"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Generate Report</h2>
+            <p class="text-gray-600 text-sm">Export attendance data in various formats</p>
+          </div>
+        </div>
+
+        <div class="space-y-8">
+          
+          <!-- Time Period -->
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">Time Period</label>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <button type="button" class="period-btn" data-period="today">Today</button>
+              <button type="button" class="period-btn" data-period="this_week">This Week</button>
+              <button type="button" class="period-btn active" data-period="this_month">This Month</button>
+              <button type="button" class="period-btn" data-period="this_quarter">Quarter</button>
+              <button type="button" class="period-btn" data-period="this_year">This Year</button>
+              <button type="button" class="period-btn" data-period="custom">Custom</button>
+            </div>
+            
+            <!-- Custom Date Range -->
+            <div id="customDateRange" class="hidden mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+                  <input type="date" id="modalFromDate" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+                  <input type="date" id="modalToDate" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {% if not employee_view %}
+          <!-- Filters -->
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">Filters</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
+              <!-- Employee -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Employee</label>
+                <div class="flex items-center gap-4 mb-3">
+                  <label class="flex items-center">
+                    <input type="radio" name="employee_scope" value="all" checked class="w-4 h-4 text-blue-600 mr-2">
+                    <span class="text-sm">All Employees</span>
+                  </label>
+                  <label class="flex items-center">
+                    <input type="radio" name="employee_scope" value="specific" class="w-4 h-4 text-blue-600 mr-2">
+                    <span class="text-sm">Specific</span>
+                  </label>
+                </div>
+                <select id="modalEmployeeSelector" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white disabled:bg-gray-100" disabled>
+                  <option value="">-- Select Employee --</option>
+                </select>
+              </div>
+
+              <!-- Department -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                <select id="modalDepartmentFilter" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white mt-10">
+                  <option value="">All Departments</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Export Format -->
+          <div>
+            <label class="block font-semibold text-gray-800 mb-3">Export Format</label>
+            <div class="flex gap-4">
+              <label class="cursor-pointer flex-1 relative">
+                <input type="radio" name="export_format" value="pdf" checked class="hidden peer">
+                <div class="p-6 border-2 border-red-200 rounded-xl bg-gradient-to-br from-red-50 to-red-100 hover:border-red-400 hover:shadow-lg peer-checked:border-red-600 peer-checked:shadow-2xl peer-checked:scale-105 transition-all text-center">
+                  <!-- Selected Badge -->
+                  <div class="hidden peer-checked:flex absolute -top-3 -right-3 w-10 h-10 bg-red-600 rounded-full items-center justify-center shadow-lg border-4 border-white">
+                    <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                  <svg class="mx-auto mb-3 text-red-600" width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                    <path d="M14 2v6h6"/>
+                    <path d="M10 12h4M10 16h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                  <div class="font-bold text-gray-900 text-lg">PDF</div>
+                  <div class="text-xs text-red-700 mt-1 font-medium">Professional Report</div>
+                  <div class="text-xs text-gray-600 mt-2">Formatted with headers, colors & summary</div>
+                </div>
+              </label>
+              <label class="cursor-pointer flex-1 relative">
+                <input type="radio" name="export_format" value="csv" class="hidden peer">
+                <div class="p-6 border-2 border-green-200 rounded-xl bg-gradient-to-br from-green-50 to-green-100 hover:border-green-400 hover:shadow-lg peer-checked:border-green-600 peer-checked:shadow-2xl peer-checked:scale-105 transition-all text-center">
+                  <!-- Selected Badge -->
+                  <div class="hidden peer-checked:flex absolute -top-3 -right-3 w-10 h-10 bg-green-600 rounded-full items-center justify-center shadow-lg border-4 border-white">
+                    <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                  <svg class="mx-auto mb-3 text-green-600" width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                    <path d="M14 2v6h6"/>
+                    <path d="M8 12h8M8 15h8M8 18h5" stroke="white" stroke-width="1" stroke-linecap="round"/>
+                  </svg>
+                  <div class="font-bold text-gray-900 text-lg">CSV</div>
+                  <div class="text-xs text-green-700 mt-1 font-medium">Simple Data Only</div>
+                  <div class="text-xs text-gray-600 mt-2">Clean table for import/processing</div>
+                </div>
+              </label>
+              <label class="cursor-pointer flex-1 relative">
+                <input type="radio" name="export_format" value="excel" class="hidden peer">
+                <div class="p-6 border-2 border-emerald-200 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 hover:border-emerald-400 hover:shadow-lg peer-checked:border-emerald-600 peer-checked:shadow-2xl peer-checked:scale-105 transition-all text-center">
+                  <!-- Selected Badge -->
+                  <div class="hidden peer-checked:flex absolute -top-3 -right-3 w-10 h-10 bg-emerald-600 rounded-full items-center justify-center shadow-lg border-4 border-white">
+                    <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                  <svg class="mx-auto mb-3 text-emerald-600" width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                    <path d="M14 2v6h6"/>
+                    <rect x="8" y="11" width="2.5" height="2.5" fill="white" rx="0.5"/>
+                    <rect x="11" y="11" width="2.5" height="2.5" fill="white" rx="0.5"/>
+                    <rect x="8" y="14" width="2.5" height="2.5" fill="white" rx="0.5"/>
+                    <rect x="11" y="14" width="2.5" height="2.5" fill="white" rx="0.5"/>
+                  </svg>
+                  <div class="font-bold text-gray-900 text-lg">Excel</div>
+                  <div class="text-xs text-emerald-700 mt-1 font-medium">Rich Formatting</div>
+                  <div class="text-xs text-gray-600 mt-2">Colors, sheets & visual formatting</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Generate Button -->
+          <div>
+            <button id="generateReportBtn" class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 text-lg">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>Generate Report</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <!-- END EXPORT TAB -->
+
   </div>
-
-  <!-- Table Filters -->
-  <div class="card mb-8">
-    <h3 class="font-bold text-lg text-gray-900 mb-6">
-      <i class="fa-solid fa-filter text-indigo-600 mr-2"></i>
-      Filter Detailed Records
-    </h3>
-
-    <div class="grid grid-cols-1 md:grid-cols-{% if employee_view %}2{% else %}4{% endif %} gap-6">
-
-      <!-- From Date -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          <i class="fa-solid fa-calendar-days text-indigo-600 mr-2"></i>From Date
-        </label>
-        <input id="fromDate" type="date" class="input w-full">
-      </div>
-
-      <!-- To Date -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          <i class="fa-solid fa-calendar-check text-indigo-600 mr-2"></i>To Date
-        </label>
-        <input id="toDate" type="date" class="input w-full">
-      </div>
-
-      <!-- Department - Only for Admin/HR -->
-      {% if not employee_view %}
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          <i class="fa-solid fa-building text-indigo-600 mr-2"></i>Department
-        </label>
-        <select id="departmentFilter" class="input w-full">
-        </select>
-      </div>
-
-      <!-- Employee - Only for Admin/HR -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          <i class="fa-solid fa-user text-indigo-600 mr-2"></i>Employee
-        </label>
-        <select id="employeeFilter" class="input w-full">
-        </select>
-      </div>
-      {% endif %}
-
-    </div>
-
-    <!-- Buttons -->
-    <div class="flex items-center gap-3 mt-6">
-      <button id="applyFilters" class="btn btn-primary">
-        <i class="fa-solid fa-filter"></i>Apply Filters
-      </button>
-
-      <button id="resetFilters" class="btn btn-secondary">
-        <i class="fa-solid fa-redo"></i>Reset
-      </button>
-    </div>
-
-  </div>
-  <!-- Table -->
-  <div class="card">
-    <div class="flex items-center justify-between mb-6">
-      <h3 class="font-bold text-lg text-gray-900">Detailed Attendance</h3>
-      <span class="badge badge-info">Records</span>
-    </div>
-
-    <div class="overflow-x-auto">
-      <table id="reportsTable" class="table w-full">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Employee</th>
-            <th>Department</th>
-            <th>Status</th>
-            <th>In Time</th>
-            <th>Snapshot</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-    </div>
-
-  </div>
-
 </div>
+
+<style>
+.period-btn, .overview-period-btn {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.2s;
+  cursor: pointer;
+  text-align: center;
+}
+
+.period-btn:hover, .overview-period-btn:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.period-btn.active, .overview-period-btn.active {
+  border-color: #3b82f6;
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+</style>
 
 <script>
 // Pass employee view flag to JavaScript
@@ -359,6 +714,40 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<script src="{{ url_for('static', filename='js/reports.js') }}?v=3"></script>
+<script>
+// Tab switching function
+function switchTab(tabName) {
+  // Hide all content
+  document.querySelectorAll('.tab-content').forEach(content => {
+    content.classList.add('hidden');
+  });
+  
+  // Remove active from all tabs
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.classList.remove('active', 'border-blue-500', 'text-blue-600');
+    btn.classList.add('border-transparent', 'text-gray-500');
+  });
+  
+  // Show selected content
+  const content = document.getElementById('content-' + tabName);
+  if (content) {
+    content.classList.remove('hidden');
+  }
+  
+  // Activate selected tab
+  const tab = document.getElementById('tab-' + tabName);
+  if (tab) {
+    tab.classList.add('active', 'border-blue-500', 'text-blue-600');
+    tab.classList.remove('border-transparent', 'text-gray-500');
+  }
+}
+
+// Initialize first tab as active on page load
+document.addEventListener('DOMContentLoaded', function() {
+  switchTab('overview');
+});
+</script>
+
+<script src="{{ url_for('static', filename='js/reports.js') }}?v=18"></script>
 
 {% endblock %}

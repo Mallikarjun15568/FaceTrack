@@ -223,12 +223,12 @@ def attendance():
 
     cur.execute("""
         SELECT DATE(check_in_time) as date,
-               TIME_FORMAT(TIME(check_in_time), '%%H:%%i') as check_in,
-               TIME_FORMAT(TIME(check_out_time), '%%H:%%i') as check_out,
+               DATE_FORMAT(check_in_time, '%H:%i') as check_in,
+               DATE_FORMAT(check_out_time, '%H:%i') as check_out,
                status,
                CASE
                    WHEN check_out_time IS NOT NULL THEN
-                       TIME_FORMAT(TIMEDIFF(check_out_time, check_in_time), '%%H:%%i')
+                       TIME_FORMAT(TIMEDIFF(check_out_time, check_in_time), '%H:%i')
                    ELSE NULL
                END as duration
         FROM attendance
@@ -279,17 +279,41 @@ def export_attendance_pdf():
     employee_id = session.get('employee_id')
     user_name = session.get('full_name', 'Employee')
 
-    # Get all attendance records for the employee
+    # Get custom date range from request
+    from_date = request.args.get('from')
+    to_date = request.args.get('to')
+
+    if from_date and to_date:
+        start_date = datetime.strptime(from_date, "%Y-%m-%d").date()
+        end_date = datetime.strptime(to_date, "%Y-%m-%d").date()
+        if start_date > end_date:
+            flash("From date cannot be later than to date", "error")
+            return redirect(url_for('employee.attendance'))
+    else:
+        end_date = date.today()
+        start_date = end_date - timedelta(days=29)
+
+    # Get company settings
+    try:
+        cur.execute("SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('company_name', 'company_logo')")
+        rows = cur.fetchall()
+        company_settings = {row['setting_key']: row['setting_value'] for row in rows}
+        company_name = company_settings.get('company_name', 'FaceTrack Pro')
+    except:
+        company_name = 'FaceTrack Pro'
+
+    # Get all attendance records for the employee within date range
     cur.execute("""
         SELECT DATE(check_in_time) as date,
-               TIME_FORMAT(TIME(check_in_time), '%H:%i') as check_in,
-               TIME_FORMAT(TIME(check_out_time), '%H:%i') as check_out,
+               DATE_FORMAT(check_in_time, '%H:%i') as check_in,
+               DATE_FORMAT(check_out_time, '%H:%i') as check_out,
                status,
-               TIMEDIFF(check_out_time, check_in_time) as duration
+               TIME_FORMAT(TIMEDIFF(check_out_time, check_in_time), '%H:%i') as duration
         FROM attendance
-        WHERE employee_id = %s AND check_out_time IS NOT NULL
-        ORDER BY check_in_time DESC
-    """, (employee_id,))
+        WHERE employee_id = %s
+          AND DATE(check_in_time) BETWEEN %s AND %s
+        ORDER BY check_in_time ASC
+    """, (employee_id, start_date, end_date))
     attendance_records = cur.fetchall()
 
     # Get late time setting
@@ -311,19 +335,29 @@ def export_attendance_pdf():
     c = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
 
-    # Title
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(50, height - 50, "FaceTrack Pro - Attendance Report")
+    # Company Header
+    c.setFont("Helvetica-Bold", 18)
+    c.drawCentredString(width / 2, height - 40, company_name)
+    
+    # Horizontal line
+    c.setStrokeColorRGB(0.2, 0.4, 0.7)
+    c.setLineWidth(2)
+    c.line(50, height - 50, width - 50, height - 50)
 
-    # Employee info
-    c.setFont("Helvetica", 12)
-    c.drawString(50, height - 80, f"Employee: {user_name}")
-    c.drawString(50, height - 100, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    c.drawString(50, height - 120, f"Total Records: {len(attendance_records)}")
+    # Report Title
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(width / 2, height - 75, "Attendance Report")
+
+    # Employee info and date range
+    c.setFont("Helvetica", 11)
+    c.drawString(50, height - 105, f"Employee: {user_name}")
+    c.drawString(50, height - 125, f"Report Period: {start_date.strftime('%d %b %Y')} to {end_date.strftime('%d %b %Y')}")
+    c.drawString(50, height - 145, f"Generated on: {datetime.now().strftime('%d %b %Y, %I:%M %p')}")
+    c.drawString(50, height - 165, f"Total Records: {len(attendance_records)}")
 
     # Table headers
     c.setFont("Helvetica-Bold", 10)
-    y_position = height - 150
+    y_position = height - 195
     c.drawString(50, y_position, "Date")
     c.drawString(130, y_position, "Check-in")
     c.drawString(200, y_position, "Check-out")
@@ -331,6 +365,8 @@ def export_attendance_pdf():
     c.drawString(360, y_position, "Status")
 
     # Draw line under headers
+    c.setStrokeColorRGB(0, 0, 0)
+    c.setLineWidth(1)
     c.line(50, y_position - 5, 500, y_position - 5)
 
     # Table data
@@ -343,7 +379,7 @@ def export_attendance_pdf():
             c.setFont("Helvetica", 9)
             y_position = height - 50
 
-        date_str = record['date'].strftime('%Y-%m-%d') if record['date'] else 'N/A'
+        date_str = record['date'].strftime('%d %b %Y') if record['date'] else 'N/A'
         check_in = record['check_in'] or '-'
         check_out = record['check_out'] or '-'
         duration = str(record['duration']) if record['duration'] else '-'
@@ -374,6 +410,14 @@ def export_summary_pdf():
     cur = db.cursor(dictionary=True)
     employee_id = session.get('employee_id')
     user_name = session.get('full_name', 'Employee')
+
+    # Get company name from settings
+    try:
+        cur.execute("SELECT setting_value FROM settings WHERE setting_key = 'company_name'")
+        company_result = cur.fetchone()
+        company_name = company_result['setting_value'] if company_result else 'FaceTrack Pro'
+    except:
+        company_name = 'FaceTrack Pro'
 
     # Get monthly summary data (same as summary route)
     cur.execute("""
@@ -410,15 +454,15 @@ def export_summary_pdf():
     c = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
 
-    # Title
+    # Title with company name
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(50, height - 50, "FaceTrack Pro - Monthly Attendance Summary")
+    c.drawString(50, height - 50, f"{company_name} - Monthly Attendance Summary")
 
     # Employee info
     c.setFont("Helvetica", 12)
     c.drawString(50, height - 80, f"Employee: {user_name}")
     c.drawString(50, height - 100, f"Report Year: {datetime.now().year}")
-    c.drawString(50, height - 120, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    c.drawString(50, height - 120, f"Generated on: {datetime.now().strftime('%d %b %Y, %I:%M %p')}")
     c.drawString(50, height - 140, f"Total Present Days: {total_present}")
 
     # Table headers

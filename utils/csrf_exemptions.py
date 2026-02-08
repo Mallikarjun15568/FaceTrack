@@ -16,10 +16,8 @@ def setup_csrf_exemptions(app, csrf):
     csrf.exempt(set_kiosk_pin)
     csrf.exempt(force_unlock)
 
-    # Leave Management: Exempt approve/reject endpoints for admin functionality
-    from blueprints.leave.routes import approve, reject, adjust_balance
-    csrf.exempt(approve)
-    csrf.exempt(reject)
+    # Leave Management: Only exempt adjust_balance (approve/reject now have CSRF protection)
+    from blueprints.leave.routes import adjust_balance
     csrf.exempt(adjust_balance)
 
     # Admin Employee Management: Exempt activate/deactivate endpoints

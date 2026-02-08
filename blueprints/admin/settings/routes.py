@@ -555,8 +555,17 @@ def upload_logo():
 # ---------------------------------------------------------
 @bp.route("/export/attendance")
 def export_attendance():
+    from datetime import datetime
     conn = get_connection()
     cur = conn.cursor()
+
+    # Get company name
+    try:
+        cur.execute("SELECT setting_value FROM settings WHERE setting_key = 'company_name'")
+        company_result = cur.fetchone()
+        company_name = company_result[0] if company_result else 'FaceTrack Pro'
+    except:
+        company_name = 'FaceTrack Pro'
 
     cur.execute("SELECT * FROM attendance")
     rows = cur.fetchall()
@@ -567,6 +576,13 @@ def export_attendance():
 
     buf = io.StringIO()
     writer = csv.writer(buf)
+    
+    # Add header info
+    writer.writerow([company_name])
+    writer.writerow([f"Complete Attendance Data Export"])
+    writer.writerow([f"Generated on: {datetime.now().strftime('%d %b %Y, %I:%M %p')}"])
+    writer.writerow([])  # Blank line
+    
     writer.writerow(cols)
     writer.writerows(rows)
     buf.seek(0)
@@ -584,8 +600,17 @@ def export_attendance():
 # ---------------------------------------------------------
 @bp.route("/export/employees")
 def export_employees():
+    from datetime import datetime
     conn = get_connection()
     cur = conn.cursor()
+
+    # Get company name
+    try:
+        cur.execute("SELECT setting_value FROM settings WHERE setting_key = 'company_name'")
+        company_result = cur.fetchone()
+        company_name = company_result[0] if company_result else 'FaceTrack Pro'
+    except:
+        company_name = 'FaceTrack Pro'
 
     cur.execute("SELECT * FROM employees")
     rows = cur.fetchall()
@@ -596,6 +621,13 @@ def export_employees():
 
     buf = io.StringIO()
     writer = csv.writer(buf)
+    
+    # Add header info
+    writer.writerow([company_name])
+    writer.writerow([f"Employee Database Export"])
+    writer.writerow([f"Generated on: {datetime.now().strftime('%d %b %Y, %I:%M %p')}"])
+    writer.writerow([])  # Blank line
+    
     writer.writerow(cols)
     writer.writerows(rows)
     buf.seek(0)

@@ -1,20 +1,173 @@
 // =====================================
+// DATE FORMATTING HELPER
+// =====================================
+function formatDate(dateStr) {
+    if (!dateStr) return "-";
+    try {
+        const date = new Date(dateStr);
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const day = date.getDate();
+        const month = months[date.getMonth()];
+        const year = date.getFullYear();
+        return `${day} ${month} ${year}`;
+    } catch (e) {
+        return dateStr;
+    }
+}
+
+// =====================================
+// PERIOD LABEL UPDATER
+// =====================================
+function updatePeriodLabels(period) {
+    const periodLabels = {
+        'last_7_days': 'Last 7 Days',
+        'this_week': 'This Week',
+        'this_month': 'This Month',
+        'last_month': 'Last Month',
+        'this_quarter': 'This Quarter',
+        'this_year': 'This Year',
+        'custom': 'Custom Period'
+    };
+    
+    const deptPeriodLabels = {
+        'last_7_days': 'Last 7 Days (Weekly Summary)',
+        'this_week': 'This Week (Weekly Summary)',
+        'this_month': 'This Month (Monthly Summary)',
+        'last_month': 'Last Month (Monthly Summary)',
+        'this_quarter': 'This Quarter (Quarterly Summary)',
+        'this_year': 'This Year (Yearly Summary)',
+        'custom': 'Custom Period (Aggregated Data)'
+    };
+    
+    const label = periodLabels[period] || 'Last 7 Days';
+    const deptLabel = deptPeriodLabels[period] || 'Last 7 Days (Weekly Summary)';
+    
+    // Update all labels
+    const selectedPeriodLabel = document.getElementById('selectedPeriodLabel');
+    const chartPeriodBadge = document.getElementById('chartPeriodBadge');
+    const deptChartPeriodLabel = document.getElementById('deptChartPeriodLabel');
+    
+    if (selectedPeriodLabel) selectedPeriodLabel.textContent = label;
+    if (chartPeriodBadge) chartPeriodBadge.textContent = label;
+    if (deptChartPeriodLabel) deptChartPeriodLabel.textContent = deptLabel;
+    
+    console.log('📅 Updated period labels to:', label);
+}
+
+// =====================================
 // INITIAL LOAD
 // =====================================
 // Calendar navigation
 let currentCalendarDate = new Date();
 let selectedEmployeeId = null;
+let overviewDateFilter = 'last_7_days'; // Default filter for overview
 
 document.addEventListener("DOMContentLoaded", function() {
+    console.log("🚀 Reports page initializing...");
+    
     // Attach event listeners
-    document.getElementById("applyFilters")?.addEventListener("click", loadTable);
-    document.getElementById("exportCsv")?.addEventListener("click", exportCSV);
-    document.getElementById("exportPdf")?.addEventListener("click", exportPDF);
+    const applyBtn = document.getElementById("applyFilters");
+    if (applyBtn) {
+        applyBtn.addEventListener("click", () => {
+            console.log("🔍 Apply Filters button clicked");
+            loadTable();
+        });
+        console.log("✅ Apply Filters listener attached");
+    } else {
+        console.error("❌ applyFilters button not found!");
+    }
+    
     document.getElementById("loadEmployeeData")?.addEventListener("click", loadEmployeeAnalysis);
     document.getElementById("refreshData")?.addEventListener("click", () => {
         loadSummary();
         loadCharts();
     });
+    
+    // Overview date filter buttons
+    const overviewPeriodBtns = document.querySelectorAll('.overview-period-btn');
+    const overviewCustomRange = document.getElementById('overviewCustomDateRange');
+    
+    overviewPeriodBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            overviewPeriodBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            overviewDateFilter = this.dataset.period;
+            
+            // Update period labels
+            updatePeriodLabels(overviewDateFilter);
+            
+            if (overviewDateFilter === 'custom') {
+                overviewCustomRange?.classList.remove('hidden');
+                // Don't auto-reload for custom, wait for user to select dates
+            } else {
+                overviewCustomRange?.classList.add('hidden');
+                // Auto-reload charts for preset periods
+                loadSummary();
+                loadCharts();
+            }
+        });
+    });
+    
+    document.getElementById('applyOverviewFilter')?.addEventListener('click', () => {
+        // Update custom period label with selected dates
+        if (overviewDateFilter === 'custom') {
+            const from = document.getElementById('overviewFromDate')?.value;
+            const to = document.getElementById('overviewToDate')?.value;
+            if (from && to) {
+                const fromFormatted = formatDate(from);
+                const toFormatted = formatDate(to);
+                const customLabel = `${fromFormatted} to ${toFormatted}`;
+                document.getElementById('selectedPeriodLabel').textContent = customLabel;
+                document.getElementById('chartPeriodBadge').textContent = 'Custom Range';
+            }
+        }
+        loadSummary();
+        loadCharts();
+    });
+    
+    document.getElementById('resetOverviewFilter')?.addEventListener('click', () => {
+        overviewDateFilter = 'last_7_days';
+        overviewPeriodBtns.forEach(b => b.classList.remove('active'));
+        overviewPeriodBtns[0]?.classList.add('active');
+        overviewCustomRange?.classList.add('hidden');
+        document.getElementById('overviewFromDate').value = '';
+        document.getElementById('overviewToDate').value = '';
+        updatePeriodLabels('last_7_days');
+        loadSummary();
+        loadCharts();
+    });
+    
+    // Employee period type toggle
+    const empPeriodType = document.getElementById('employeePeriodType');
+    if (empPeriodType) {
+        empPeriodType.addEventListener('change', function() {
+            const monthSelector = document.getElementById('employeeMonthSelector');
+            const customRange = document.getElementById('employeeCustomDateRange');
+            
+            if (this.value === 'custom') {
+                monthSelector?.classList.add('hidden');
+                customRange?.classList.remove('hidden');
+            } else {
+                monthSelector?.classList.remove('hidden');
+                customRange?.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Generate report button (inline)
+    document.getElementById("generateReportBtn")?.addEventListener("click", generateReport);
+    
+    // Reset filters button
+    const resetBtn = document.getElementById("resetFilters");
+    if (resetBtn) {
+        resetBtn.addEventListener("click", () => {
+            console.log("🔄 Reset Filters button clicked");
+            resetAllFilters();
+        });
+        console.log("✅ Reset Filters listener attached");
+    } else {
+        console.error("❌ resetFilters button not found!");
+    }
     
     // Calendar navigation buttons
     document.getElementById("prevMonth")?.addEventListener("click", () => {
@@ -32,7 +185,14 @@ document.addEventListener("DOMContentLoaded", function() {
     });
     
     // Initialize
+    console.log("📦 Calling initReports()...");
     initReports();
+    
+    // Load dropdowns for report generator
+    loadReportDropdowns();
+    
+    // Setup Generate Report tab interactivity
+    setupGenerateReportTab();
     
     // Auto-refresh for admin/HR every 30 seconds
     if (!window.isEmployeeView) {
@@ -41,23 +201,30 @@ document.addEventListener("DOMContentLoaded", function() {
             loadCharts();
         }, 30000); // 30 seconds
     }
+    
+    console.log("✅ Reports page initialization complete");
 });
 
 async function initReports() {
+    console.log("📊 initReports() started");
     // Check if this is employee view
     const isEmployeeView = window.isEmployeeView || false;
+    console.log("👤 Is employee view:", isEmployeeView);
     
     if (isEmployeeView) {
         // Employee view: Auto-load their own data
+        console.log("📊 Loading employee self data...");
         await loadEmployeeSelfData();
     } else {
         // Admin/HR view: Load all data
+        console.log("📊 Loading admin/HR data...");
         await loadSummary();
         await loadCharts();
         await loadDepartments();
         await loadEmployees();
         await loadEmployeeDropdown();
         await loadTable();
+        console.log("✅ All admin/HR data loaded");
     }
 
     
@@ -110,7 +277,26 @@ async function loadEmployeeSelfData() {
 // SUMMARY API
 // =====================================
 async function loadSummary() {
-    fetch("/admin/reports/api/summary")
+    let url = "/admin/reports/api/summary?";
+    
+    // Add date filter based on selection
+    if (overviewDateFilter === 'custom') {
+        const from = document.getElementById('overviewFromDate')?.value;
+        const to = document.getElementById('overviewToDate')?.value;
+        if (from && to) {
+            url += `period=custom&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&`;
+        } else {
+            // If custom selected but no dates, default to last 7 days
+            url += `period=last_7_days&`;
+        }
+    } else {
+        // Always send period parameter
+        url += `period=${encodeURIComponent(overviewDateFilter)}&`;
+    }
+    
+    console.log('📊 Loading summary with URL:', url);
+    
+    fetch(url)
         .then(res => res.json())
         .then(data => {
             if (data.status !== "ok") return;
@@ -171,7 +357,26 @@ let lineChartRef = null;
 let barChartRef = null;
 
 async function loadCharts() {
-    fetch("/admin/reports/api/chart-data")
+    let url = "/admin/reports/api/chart-data?";
+    
+    // Add date filter based on selection
+    if (overviewDateFilter === 'custom') {
+        const from = document.getElementById('overviewFromDate')?.value;
+        const to = document.getElementById('overviewToDate')?.value;
+        if (from && to) {
+            url += `period=custom&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&`;
+        } else {
+            // If custom selected but no dates, default to last 7 days
+            url += `period=last_7_days&`;
+        }
+    } else {
+        // Always send period parameter
+        url += `period=${encodeURIComponent(overviewDateFilter)}&`;
+    }
+    
+    console.log('📊 Loading charts with URL:', url);
+    
+    fetch(url)
         .then(res => res.json())
         .then(data => {
             if (data.status !== "ok") return;
@@ -601,12 +806,18 @@ function drawNoDataOnCanvas(canvas, message) {
 // DEPARTMENT DROPDOWN
 // =====================================
 async function loadDepartments() {
+    console.log("📊 Loading departments...");
     fetch("/admin/reports/api/departments")
         .then(res => res.json())
         .then(data => {
+            console.log("📊 Departments response:", data);
             if (data.status !== "ok") return;
 
             const dept = document.getElementById("departmentFilter");
+            if (!dept) {
+                console.error("❌ Department filter element not found!");
+                return;
+            }
             dept.innerHTML = `<option value="">All</option>`;
 
             data.departments.forEach(d => {
@@ -615,8 +826,9 @@ async function loadDepartments() {
                 opt.textContent = d.name;
                 dept.appendChild(opt);
             });
+            console.log(`✅ Loaded ${data.departments.length} departments`);
         })
-        .catch(err => console.error("Failed to load departments:", err));
+        .catch(err => console.error("❌ Failed to load departments:", err));
 }
 
 
@@ -650,27 +862,48 @@ async function loadEmployeeDropdown() {
 // =====================================
 async function loadEmployeeAnalysis() {
     const empSelector = document.getElementById("employeeSelector");
-    const monthSelector = document.getElementById("monthSelector");
+    const periodType = document.getElementById("employeePeriodType")?.value || 'month';
     
     const employeeName = empSelector.value;
-    const monthValue = monthSelector.value;
     
     if (!employeeName) {
         alert("Please select an employee");
         return;
     }
     
-    if (!monthValue) {
-        alert("Please select a month");
-        return;
+    let year, month;
+    
+    if (periodType === 'month') {
+        const monthSelector = document.getElementById("monthSelector");
+        const monthValue = monthSelector.value;
+        
+        if (!monthValue) {
+            alert("Please select a month");
+            return;
+        }
+        
+        // Parse month
+        [year, month] = monthValue.split('-');
+    } else {
+        // Custom date range - use current month for calendar display
+        const fromDate = document.getElementById("empFromDate")?.value;
+        const toDate = document.getElementById("empToDate")?.value;
+        
+        if (!fromDate || !toDate) {
+            alert("Please select both From and To dates");
+            return;
+        }
+        
+        // Use the from date to determine calendar month
+        const fromDateObj = new Date(fromDate);
+        year = fromDateObj.getFullYear();
+        month = fromDateObj.getMonth() + 1;
     }
     
     // Get employee ID from selected option
     const selectedOption = empSelector.options[empSelector.selectedIndex];
     selectedEmployeeId = employeeName;
     
-    // Parse month
-    const [year, month] = monthValue.split('-');
     currentCalendarDate = new Date(year, month - 1, 1);
     
     // Show sections
@@ -963,12 +1196,18 @@ function renderCalendarLegend(statusCount) {
 // EMPLOYEE DROPDOWN (for table filter)
 // =====================================
 async function loadEmployees() {
+    console.log("👥 Loading employees...");
     fetch("/admin/reports/api/employees")
         .then(res => res.json())
         .then(data => {
+            console.log("👥 Employees response:", data);
             if (data.status !== "ok") return;
 
             const emp = document.getElementById("employeeFilter");
+            if (!emp) {
+                console.error("❌ Employee filter element not found!");
+                return;
+            }
             emp.innerHTML = `<option value="">All</option>`;
 
             data.employees.forEach(e => {
@@ -977,8 +1216,9 @@ async function loadEmployees() {
                 opt.textContent = e.full_name;
                 emp.appendChild(opt);
             });
+            console.log(`✅ Loaded ${data.employees.length} employees`);
         })
-        .catch(err => console.error("Failed to load employees:", err));
+        .catch(err => console.error("❌ Failed to load employees:", err));
 }
 
 
@@ -987,10 +1227,13 @@ async function loadEmployees() {
 // TABLE API (FILTERS)
 // =====================================
 async function loadTable() {
+    console.log("📋 Loading table with filters...");
     const from = document.getElementById("fromDate").value;
     const to   = document.getElementById("toDate").value;
     const user = document.getElementById("employeeFilter").value;
     const dept = document.getElementById("departmentFilter").value;
+
+    console.log("📋 Filter values:", { from, to, user, dept });
 
     let url = "/admin/reports/api/table?";
 
@@ -999,13 +1242,20 @@ async function loadTable() {
     if (user) url += `user=${encodeURIComponent(user)}&`;
     if (dept) url += `department=${encodeURIComponent(dept)}&`;
 
+    console.log("📋 Fetching from:", url);
+
     fetch(url)
         .then(res => res.json())
         .then(data => {
-            if (data.status !== "ok") return;
+            console.log("📋 Table response:", data);
+            if (data.status !== "ok") {
+                console.error("❌ Table API returned non-OK status");
+                return;
+            }
+            console.log(`✅ Rendering ${data.records.length} records`);
             renderTable(data.records);
         })
-        .catch(err => console.error("Table load error:", err));
+        .catch(err => console.error("❌ Table load error:", err));
 }
 
 
@@ -1026,7 +1276,7 @@ function renderTable(records) {
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
-            <td class="p-2">${r.date}</td>
+            <td class="p-2">${formatDate(r.date)}</td>
             <td class="p-2">${r.name}</td>
             <td class="p-2">${r.department}</td>
             <td class="p-2">${r.status}</td>
@@ -1043,15 +1293,264 @@ function renderTable(records) {
 
 
 // =====================================
-// EXPORT CSV
+// MODAL CONTROLS
+// =====================================
+// Load dropdowns for inline report generator
+async function loadReportDropdowns() {
+    console.log("📋 Loading report dropdowns...");
+    // Load employees
+    try {
+        const empRes = await fetch('/admin/reports/api/employees');
+        const empData = await empRes.json();
+        const empSelect = document.getElementById('modalEmployeeSelector');
+        if (empSelect && empData.employees) {
+            empSelect.innerHTML = '<option value="">-- Select Employee --</option>';
+            empData.employees.forEach(emp => {
+                empSelect.innerHTML += `<option value="${emp.id}">${emp.full_name}</option>`;
+            });
+            console.log(`✅ Loaded ${empData.employees.length} employees for report`);
+        }
+    } catch (err) {
+        console.error('❌ Failed to load employees:', err);
+    }
+    
+    // Load departments
+    try {
+        const deptRes = await fetch('/admin/reports/api/departments');
+        const deptData = await deptRes.json();
+        const deptSelect = document.getElementById('modalDepartmentFilter');
+        if (deptSelect && deptData.departments) {
+            deptSelect.innerHTML = '<option value="">All Departments</option>';
+            deptData.departments.forEach(dept => {
+                deptSelect.innerHTML += `<option value="${dept.name}">${dept.name}</option>`;
+            });
+            console.log(`✅ Loaded ${deptData.departments.length} departments for report`);
+        }
+    } catch (err) {
+        console.error('❌ Failed to load departments:', err);
+    }
+}
+
+// =====================================
+// SETUP GENERATE REPORT TAB
+// =====================================
+function setupGenerateReportTab() {
+    console.log("⚙️ Setting up Generate Report tab...");
+    
+    // Period buttons
+    const periodButtons = document.querySelectorAll('.period-btn');
+    const customDateRange = document.getElementById('customDateRange');
+    
+    periodButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active from all
+            periodButtons.forEach(b => b.classList.remove('active'));
+            // Add active to clicked
+            this.classList.add('active');
+            
+            // Show/hide custom date range
+            if (this.dataset.period === 'custom') {
+                customDateRange?.classList.remove('hidden');
+                console.log("📅 Custom date range shown");
+            } else {
+                customDateRange?.classList.add('hidden');
+                console.log("📅 Period selected:", this.dataset.period);
+            }
+        });
+    });
+    console.log(`✅ Attached listeners to ${periodButtons.length} period buttons`);
+    
+    // Employee scope radio buttons
+    const employeeRadios = document.querySelectorAll('input[name="employee_scope"]');
+    const employeeSelector = document.getElementById('modalEmployeeSelector');
+    const departmentFilter = document.getElementById('modalDepartmentFilter');
+    
+    employeeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'specific') {
+                employeeSelector?.removeAttribute('disabled');
+                employeeSelector?.classList.remove('disabled:bg-gray-100');
+                console.log("👤 Employee selector enabled");
+            } else {
+                employeeSelector?.setAttribute('disabled', 'true');
+                employeeSelector?.classList.add('disabled:bg-gray-100');
+                if (employeeSelector) employeeSelector.value = '';
+                if (departmentFilter) departmentFilter.value = '';
+                console.log("👥 All employees selected");
+            }
+        });
+    });
+    console.log(`✅ Attached listeners to ${employeeRadios.length} employee radio buttons`);
+    
+    // Auto-select department when employee is selected
+    if (employeeSelector) {
+        employeeSelector.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const employeeId = selectedOption.value;
+            
+            if (employeeId) {
+                console.log("👤 Employee selected, fetching department...");
+                // Fetch employee details to get department
+                fetch(`/admin/reports/api/employees`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'ok') {
+                            const employee = data.employees.find(emp => emp.id == employeeId);
+                            if (employee && employee.department) {
+                                if (departmentFilter) {
+                                    departmentFilter.value = employee.department;
+                                    console.log("🏢 Auto-selected department:", employee.department);
+                                }
+                            }
+                        }
+                    })
+                    .catch(err => console.error("❌ Failed to fetch employee details:", err));
+            } else {
+                // Clear department when no employee selected
+                if (departmentFilter) departmentFilter.value = '';
+            }
+        });
+        console.log("✅ Employee auto-select department listener attached");
+    }
+    
+    console.log("✅ Generate Report tab setup complete");
+}
+
+function generateReport() {
+    console.log("📄 Generating report...");
+    // Get selected period
+    const periodBtn = document.querySelector('.period-btn.active');
+    const selectedPeriod = periodBtn ? periodBtn.dataset.period : 'this_month';
+    console.log("📅 Selected period:", selectedPeriod);
+    
+    // Get dates
+    let fromDate = '';
+    let toDate = '';
+    if (selectedPeriod === 'custom') {
+        fromDate = document.getElementById('modalFromDate').value;
+        toDate = document.getElementById('modalToDate').value;
+        
+        if (!fromDate || !toDate) {
+            alert('Please select both from and to dates for custom range');
+            console.error("❌ Custom dates not selected");
+            return;
+        }
+        console.log("📅 Custom dates:", fromDate, "to", toDate);
+    }
+    
+    // Get employee scope
+    const employeeScope = document.querySelector('input[name="employee_scope"]:checked')?.value || 'all';
+    let employeeId = '';
+    
+    if (employeeScope === 'specific') {
+        employeeId = document.getElementById('modalEmployeeSelector')?.value || '';
+        if (!employeeId) {
+            alert('Please select an employee');
+            console.error("❌ No employee selected");
+            return;
+        }
+        console.log("👤 Selected employee ID:", employeeId);
+    } else {
+        console.log("👥 All employees selected");
+    }
+    
+    // Get department
+    const department = document.getElementById('modalDepartmentFilter')?.value || '';
+    if (department) {
+        console.log("🏢 Selected department:", department);
+    }
+    
+    // Get format
+    const formatRadio = document.querySelector('input[name="export_format"]:checked');
+    const format = formatRadio ? formatRadio.value : 'pdf';
+    console.log("📊 Export format:", format);
+    
+    // Build URL
+    let url = `/admin/reports/api/export/${format}?`;
+    
+    if (selectedPeriod === 'custom') {
+        url += `period=custom&`;
+        if (fromDate) url += `from=${encodeURIComponent(fromDate)}&`;
+        if (toDate) url += `to=${encodeURIComponent(toDate)}&`;
+    } else {
+        url += `period=${selectedPeriod}&`;
+    }
+    
+    if (employeeId) url += `employee_id=${encodeURIComponent(employeeId)}&`;
+    if (department) url += `department=${encodeURIComponent(department)}&`;
+    
+    console.log("🔗 Export URL:", url);
+    
+    // Show loading state
+    const btn = document.getElementById('generateReportBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generating...';
+    btn.disabled = true;
+    
+    // Download report
+    if (format === 'pdf') {
+        window.open(url, '_blank');
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            console.log("✅ PDF generation initiated");
+        }, 1000);
+    } else {
+        window.location.href = url;
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            console.log(`✅ ${format.toUpperCase()} download initiated`);
+        }, 2000);
+    }
+}
+
+// Reset filters function
+function resetAllFilters() {
+    console.log("🔄 Resetting all filters...");
+    // Clear date filters
+    const fromDate = document.getElementById("fromDate");
+    const toDate = document.getElementById("toDate");
+    if (fromDate) {
+        fromDate.value = '';
+        console.log("✅ Cleared fromDate");
+    }
+    if (toDate) {
+        toDate.value = '';
+        console.log("✅ Cleared toDate");
+    }
+    
+    // Reset dropdown filters
+    const employeeFilter = document.getElementById("employeeFilter");
+    const departmentFilter = document.getElementById("departmentFilter");
+    if (employeeFilter) {
+        employeeFilter.value = '';
+        console.log("✅ Cleared employeeFilter");
+    }
+    if (departmentFilter) {
+        departmentFilter.value = '';
+        console.log("✅ Cleared departmentFilter");
+    }
+    
+    // Reload table with cleared filters
+    console.log("🔄 Reloading table with cleared filters...");
+    loadTable();
+}
+
+// Make functions global
+window.resetAllFilters = resetAllFilters;
+
+
+// =====================================
+// LEGACY EXPORT FUNCTIONS (Keep for backward compatibility)
 // =====================================
 function exportCSV() {
-    const from = document.getElementById("fromDate").value;
-    const to   = document.getElementById("toDate").value;
-    const user = document.getElementById("employeeFilter").value;
-    const dept = document.getElementById("departmentFilter").value;
+    const from = document.getElementById("fromDate")?.value || '';
+    const to   = document.getElementById("toDate")?.value || '';
+    const user = document.getElementById("employeeFilter")?.value || '';
+    const dept = document.getElementById("departmentFilter")?.value || '';
 
-    let url = "/admin/reports/api/export/csv?";
+    let url = "/admin/reports/api/export/csv?period=custom&";
 
     if (from) url += `from=${encodeURIComponent(from)}&`;
     if (to)   url += `to=${encodeURIComponent(to)}&`;
@@ -1061,18 +1560,13 @@ function exportCSV() {
     window.location.href = url;
 }
 
-
-
-// =====================================
-// EXPORT PDF
-// =====================================
 function exportPDF() {
-    const from = document.getElementById("fromDate").value;
-    const to   = document.getElementById("toDate").value;
-    const user = document.getElementById("employeeFilter").value;
-    const dept = document.getElementById("departmentFilter").value;
+    const from = document.getElementById("fromDate")?.value || '';
+    const to   = document.getElementById("toDate")?.value || '';
+    const user = document.getElementById("employeeFilter")?.value || '';
+    const dept = document.getElementById("departmentFilter")?.value || '';
 
-    let url = "/admin/reports/api/export/pdf?";
+    let url = "/admin/reports/api/export/pdf?period=custom&";
 
     if (from) url += `from=${encodeURIComponent(from)}&`;
     if (to)   url += `to=${encodeURIComponent(to)}&`;
@@ -1080,4 +1574,5 @@ function exportPDF() {
     if (dept) url += `department=${encodeURIComponent(dept)}&`;
 
     window.open(url, "_blank");
+
 }
