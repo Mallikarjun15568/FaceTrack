@@ -641,6 +641,357 @@ def export_employees():
 
 
 # ---------------------------------------------------------
+# Export Users CSV
+# ---------------------------------------------------------
+@bp.route("/export/users")
+@login_required
+@role_required("admin")
+def export_users():
+    from datetime import datetime
+    conn = get_connection()
+    cur = conn.cursor()
+
+    # Get company name
+    try:
+        cur.execute("SELECT setting_value FROM settings WHERE setting_key = 'company_name'")
+        company_result = cur.fetchone()
+        company_name = company_result[0] if company_result else 'FaceTrack Pro'
+    except:
+        company_name = 'FaceTrack Pro'
+
+    cur.execute("SELECT id, username, role, email, created_at, updated_at FROM users")
+    rows = cur.fetchall()
+    cols = ['id', 'username', 'role', 'email', 'created_at', 'updated_at']
+
+    cur.close()
+    conn.close()
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    
+    # Add header info
+    writer.writerow([company_name])
+    writer.writerow([f"Users Database Export"])
+    writer.writerow([f"Generated on: {datetime.now().strftime('%d %b %Y, %I:%M %p')}"])
+    writer.writerow([])  # Blank line
+    
+    writer.writerow(cols)
+    writer.writerows(rows)
+    buf.seek(0)
+
+    return send_file(
+        io.BytesIO(buf.getvalue().encode("utf-8")),
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name="users.csv"
+    )
+
+
+# ---------------------------------------------------------
+# Export Leaves CSV
+# ---------------------------------------------------------
+@bp.route("/export/leaves")
+@login_required
+@role_required("admin", "hr")
+def export_leaves():
+    from datetime import datetime
+    conn = get_connection()
+    cur = conn.cursor()
+
+    # Get company name
+    try:
+        cur.execute("SELECT setting_value FROM settings WHERE setting_key = 'company_name'")
+        company_result = cur.fetchone()
+        company_name = company_result[0] if company_result else 'FaceTrack Pro'
+    except:
+        company_name = 'FaceTrack Pro'
+
+    cur.execute("""
+        SELECT l.id, e.full_name, l.leave_type, l.start_date, l.end_date, 
+               l.total_days, l.reason, l.status, l.applied_date, 
+               u.username as approved_by, l.approved_date, l.rejection_reason
+        FROM leaves l
+        LEFT JOIN employees e ON l.employee_id = e.id
+        LEFT JOIN users u ON l.approved_by = u.id
+        ORDER BY l.applied_date DESC
+    """)
+    rows = cur.fetchall()
+    cols = ['id', 'employee_name', 'leave_type', 'start_date', 'end_date', 
+            'total_days', 'reason', 'status', 'applied_date', 
+            'approved_by', 'approved_date', 'rejection_reason']
+
+    cur.close()
+    conn.close()
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    
+    # Add header info
+    writer.writerow([company_name])
+    writer.writerow([f"Leave Records Export"])
+    writer.writerow([f"Generated on: {datetime.now().strftime('%d %b %Y, %I:%M %p')}"])
+    writer.writerow([])  # Blank line
+    
+    writer.writerow(cols)
+    writer.writerows(rows)
+    buf.seek(0)
+
+    return send_file(
+        io.BytesIO(buf.getvalue().encode("utf-8")),
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name="leaves.csv"
+    )
+
+
+# ---------------------------------------------------------
+# Export Departments CSV
+# ---------------------------------------------------------
+@bp.route("/export/departments")
+@login_required
+@role_required("admin")
+def export_departments():
+    from datetime import datetime
+    conn = get_connection()
+    cur = conn.cursor()
+
+    # Get company name
+    try:
+        cur.execute("SELECT setting_value FROM settings WHERE setting_key = 'company_name'")
+        company_result = cur.fetchone()
+        company_name = company_result[0] if company_result else 'FaceTrack Pro'
+    except:
+        company_name = 'FaceTrack Pro'
+
+    cur.execute("SELECT id, name, description, created_at FROM departments")
+    rows = cur.fetchall()
+    cols = ['id', 'name', 'description', 'created_at']
+
+    cur.close()
+    conn.close()
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    
+    # Add header info
+    writer.writerow([company_name])
+    writer.writerow([f"Departments Export"])
+    writer.writerow([f"Generated on: {datetime.now().strftime('%d %b %Y, %I:%M %p')}"])
+    writer.writerow([])  # Blank line
+    
+    writer.writerow(cols)
+    writer.writerows(rows)
+    buf.seek(0)
+
+    return send_file(
+        io.BytesIO(buf.getvalue().encode("utf-8")),
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name="departments.csv"
+    )
+
+
+# ---------------------------------------------------------
+# Complete Database Backup (MySQL Dump)
+# ---------------------------------------------------------
+@bp.route("/export/database-backup")
+@login_required
+@role_required("admin")
+def export_database_backup():
+    import subprocess
+    from datetime import datetime
+    import tempfile
+    
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    
+    try:
+        # Get database credentials from config
+        db_config = {
+            'host': os.environ.get('DB_HOST', 'localhost'),
+            'user': os.environ.get('DB_USER', 'root'),
+            'password': os.environ.get('DB_PASSWORD', ''),
+            'database': os.environ.get('DB_NAME', 'facetrack_db')
+        }
+        
+        # Create temporary file for backup
+        temp_file = tempfile.NamedTemporaryFile(mode='w+b', delete=False, suffix='.sql')
+        temp_path = temp_file.name
+        temp_file.close()
+        
+        # Build mysqldump command
+        cmd = ['mysqldump', '-h', db_config['host'], '-u', db_config['user']]
+        
+        # Add password if exists (using proper format)
+        if db_config['password']:
+            cmd.append(f"-p{db_config['password']}")
+        
+        cmd.extend([
+            '--single-transaction',
+            '--quick',
+            '--lock-tables=false',
+            '--add-drop-table',
+            '--add-locks',
+            '--complete-insert',
+            '--extended-insert',
+            db_config['database']
+        ])
+        
+        # Execute mysqldump
+        with open(temp_path, 'w', encoding='utf-8') as f:
+            result = subprocess.run(
+                cmd, 
+                stdout=f, 
+                stderr=subprocess.PIPE, 
+                text=True,
+                timeout=300  # 5 minute timeout
+            )
+        
+        if result.returncode != 0:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+            return jsonify({
+                "success": False, 
+                "error": f"Database backup failed. Please ensure MySQL client tools are installed."
+            }), 500
+        
+        # Verify backup file was created and has content
+        if not os.path.exists(temp_path) or os.path.getsize(temp_path) == 0:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+            return jsonify({
+                "success": False,
+                "error": "Backup file is empty. Please check database connection."
+            }), 500
+        
+        # Read the backup file
+        with open(temp_path, 'rb') as f:
+            backup_data = f.read()
+        
+        # Clean up temp file
+        os.unlink(temp_path)
+        
+        # Audit log
+        try:
+            from db_utils import log_audit
+            log_audit(
+                session.get('user_id'),
+                'DATABASE_BACKUP_EXPORTED',
+                'settings',
+                f'Full database backup created ({len(backup_data)} bytes)',
+                request.remote_addr
+            )
+        except:
+            pass
+        
+        return send_file(
+            io.BytesIO(backup_data),
+            mimetype="application/sql",
+            as_attachment=True,
+            download_name=f"facetrack_backup_{timestamp}.sql"
+        )
+        
+    except FileNotFoundError:
+        # Fallback: Create a simple SQL export using Python
+        return create_python_backup(timestamp)
+    except subprocess.TimeoutExpired:
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+        return jsonify({
+            "success": False,
+            "error": "Backup operation timed out. Database may be too large."
+        }), 500
+    except Exception as e:
+        if 'temp_path' in locals() and os.path.exists(temp_path):
+            os.unlink(temp_path)
+        return jsonify({
+            "success": False,
+            "error": f"Backup failed: {str(e)}"
+        }), 500
+
+
+def create_python_backup(timestamp):
+    """Fallback method to create backup using Python when mysqldump is not available"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Get all tables
+        cursor.execute("SHOW TABLES")
+        tables = [list(row.values())[0] for row in cursor.fetchall()]
+        
+        backup_sql = io.StringIO()
+        backup_sql.write(f"-- FaceTrack Database Backup\n")
+        backup_sql.write(f"-- Created: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        backup_sql.write(f"-- Database: {os.environ.get('DB_NAME', 'facetrack_db')}\n\n")
+        backup_sql.write("SET FOREIGN_KEY_CHECKS=0;\n\n")
+        
+        for table in tables:
+            # Get table structure
+            cursor.execute(f"SHOW CREATE TABLE `{table}`")
+            create_table = cursor.fetchone()
+            backup_sql.write(f"-- Table: {table}\n")
+            backup_sql.write(f"DROP TABLE IF EXISTS `{table}`;\n")
+            backup_sql.write(create_table['Create Table'] + ";\n\n")
+            
+            # Get table data
+            cursor.execute(f"SELECT * FROM `{table}`")
+            rows = cursor.fetchall()
+            
+            if rows:
+                backup_sql.write(f"-- Data for table {table}\n")
+                for row in rows:
+                    columns = ", ".join([f"`{col}`" for col in row.keys()])
+                    values = []
+                    for val in row.values():
+                        if val is None:
+                            values.append("NULL")
+                        elif isinstance(val, (int, float)):
+                            values.append(str(val))
+                        elif isinstance(val, bytes):
+                            # Handle binary data (like embeddings)
+                            values.append(f"X'{val.hex()}'")
+                        else:
+                            # Escape single quotes
+                            escaped = str(val).replace("'", "''")
+                            values.append(f"'{escaped}'")
+                    
+                    backup_sql.write(f"INSERT INTO `{table}` ({columns}) VALUES ({', '.join(values)});\n")
+                backup_sql.write("\n")
+        
+        backup_sql.write("SET FOREIGN_KEY_CHECKS=1;\n")
+        
+        cursor.close()
+        conn.close()
+        
+        # Audit log
+        try:
+            from db_utils import log_audit
+            log_audit(
+                session.get('user_id'),
+                'DATABASE_BACKUP_EXPORTED',
+                'settings',
+                f'Python fallback backup created',
+                request.remote_addr
+            )
+        except:
+            pass
+        
+        backup_data = backup_sql.getvalue()
+        return send_file(
+            io.BytesIO(backup_data.encode('utf-8')),
+            mimetype="application/sql",
+            as_attachment=True,
+            download_name=f"facetrack_backup_{timestamp}.sql"
+        )
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Python backup failed: {str(e)}"
+        }), 500
+
+
+# ---------------------------------------------------------
 # CHANGE PASSWORD (Self-service for logged-in users)
 # ---------------------------------------------------------
 @bp.route("/change-password", methods=["POST"])

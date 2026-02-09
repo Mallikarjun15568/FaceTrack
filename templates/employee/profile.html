@@ -215,14 +215,21 @@
         <p class="text-gray-600">{{ profile.email or 'No email provided' }}</p>
         <div class="flex items-center justify-center gap-2 mt-2">
           <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-            <i class="fas fa-user mr-1"></i>Employee
+            <i class="fas fa-user-circle mr-2"></i>Employee
           </span>
           {% if profile.status %}
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+            <span class="status-badge inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
               {% if profile.status == 'active' %}bg-green-100 text-green-800
               {% elif profile.status == 'inactive' %}bg-red-100 text-red-800
-              {% else %}bg-gray-100 text-gray-800{% endif %}">
-              <i class="fas fa-circle mr-1 text-xs"></i>{{ profile.status.title() }}
+              {% else %}bg-gray-100 text-gray-800{% endif %} transition-transform duration-200 hover:scale-105">
+              {% if profile.status == 'active' %}
+                <i class="fas fa-check-circle mr-2"></i>
+              {% elif profile.status == 'inactive' %}
+                <i class="fas fa-times-circle mr-2"></i>
+              {% else %}
+                <i class="fas fa-circle mr-2 text-xs"></i>
+              {% endif %}
+              {{ profile.status.title() }}
             </span>
           {% endif %}
         </div>
@@ -306,10 +313,11 @@
         </div>
 
         <div class="flex gap-4 pt-6 border-t border-gray-200">
-          <button type="submit" class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-lg hover:shadow-xl">
-            <i class="fas fa-save mr-2"></i>Update Profile
+          <button type="submit" id="profileSubmitBtn" class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]">
+            <i class="fas fa-save mr-2" id="profileSubmitIcon"></i>
+            <span id="profileSubmitText">Update Profile</span>
           </button>
-          <button type="button" onclick="resetForm()" class="px-6 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+          <button type="button" onclick="resetForm()" class="px-6 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transform hover:scale-[1.02]">
             <i class="fas fa-undo mr-2"></i>Reset Changes
           </button>
         </div>
@@ -351,6 +359,19 @@
           }, 500);
         });
       }, 5000);
+    });
+
+    // Form submission loading state
+    document.querySelector('form').addEventListener('submit', function() {
+      const btn = document.getElementById('profileSubmitBtn');
+      const icon = document.getElementById('profileSubmitIcon');
+      const text = document.getElementById('profileSubmitText');
+      if (btn && icon && text) {
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        icon.className = 'fas fa-spinner fa-spin mr-2';
+        text.textContent = 'Updating...';
+      }
     });
 
     // Form handling

@@ -183,10 +183,11 @@
         </div>
 
         <div class="flex gap-4 pt-6 border-t border-gray-200">
-          <button type="submit" id="submitBtn" class="flex-1 bg-gradient-to-r from-red-600 to-rose-600 text-white font-semibold py-2 px-6 rounded-lg hover:from-red-700 hover:to-rose-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
-            <i class="fas fa-save mr-2"></i>Update Password
+          <button type="submit" id="submitBtn" class="flex-1 bg-gradient-to-r from-red-600 to-rose-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-red-700 hover:to-rose-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02]">
+            <i class="fas fa-save mr-2" id="passwordSubmitIcon"></i>
+            <span id="passwordSubmitText">Update Password</span>
           </button>
-          <button type="button" onclick="clearForm()" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+          <button type="button" onclick="clearForm()" class="px-6 py-2.5 border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transform hover:scale-[1.02]">
             <i class="fas fa-times mr-1"></i>Clear
           </button>
         </div>
@@ -203,7 +204,7 @@
       </h3>
 
       <div class="space-y-6">
-        <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+        <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-gradient-to-br from-green-100 to-emerald-200 rounded-lg flex items-center justify-center">
               <i class="fas fa-envelope text-green-600"></i>
@@ -214,13 +215,12 @@
             </div>
           </div>
           <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" class="sr-only peer" disabled>
+            <input type="checkbox" class="sr-only peer" checked>
             <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            <span class="ml-2 text-xs text-gray-600" title="Feature under development">Coming Soon</span>
           </label>
         </div>
 
-        <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+        <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-gradient-to-br from-yellow-100 to-amber-200 rounded-lg flex items-center justify-center">
               <i class="fas fa-clock text-amber-600"></i>
@@ -231,13 +231,12 @@
             </div>
           </div>
           <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" class="sr-only peer" disabled>
+            <input type="checkbox" class="sr-only peer" checked>
             <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            <span class="ml-2 text-xs text-gray-600" title="Feature under development">Coming Soon</span>
           </label>
         </div>
 
-        <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+        <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-gradient-to-br from-purple-100 to-violet-200 rounded-lg flex items-center justify-center">
               <i class="fas fa-calendar-check text-purple-600"></i>
@@ -248,9 +247,8 @@
             </div>
           </div>
           <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" class="sr-only peer" disabled>
+            <input type="checkbox" class="sr-only peer" checked>
             <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            <span class="ml-2 text-xs text-gray-600" title="Feature under development">Coming Soon</span>
           </label>
         </div>
       </div>
@@ -266,7 +264,7 @@
       </h3>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-gradient-to-br from-blue-50 to-indigo-100 p-4 rounded-lg">
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-100 p-4 rounded-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105">
           <div class="flex items-center gap-3 mb-2">
             <i class="fas fa-id-badge text-blue-600"></i>
             <span class="text-sm font-semibold text-gray-700">Employee ID</span>
@@ -274,15 +272,15 @@
           <p class="text-lg font-bold text-gray-900 ml-7">{{ session.get('employee_id', 'N/A') }}</p>
         </div>
 
-        <div class="bg-gradient-to-br from-green-50 to-emerald-100 p-4 rounded-lg">
+        <div class="bg-gradient-to-br from-green-50 to-emerald-100 p-4 rounded-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105">
           <div class="flex items-center gap-3 mb-2">
             <i class="fas fa-envelope text-green-600"></i>
             <span class="text-sm font-semibold text-gray-700">Email</span>
           </div>
-          <p class="text-lg font-bold text-gray-900 ml-7">{{ session.get('username', 'N/A') }}</p>
+          <p class="text-lg font-bold text-gray-900 ml-7 truncate">{{ session.get('username', 'N/A') }}</p>
         </div>
 
-        <div class="bg-gradient-to-br from-purple-50 to-violet-100 p-4 rounded-lg">
+        <div class="bg-gradient-to-br from-purple-50 to-violet-100 p-4 rounded-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105">
           <div class="flex items-center gap-3 mb-2">
             <i class="fas fa-user-tag text-purple-600"></i>
             <span class="text-sm font-semibold text-gray-700">Role</span>
@@ -290,7 +288,7 @@
           <p class="text-lg font-bold text-gray-900 ml-7">{{ session.get('role', 'employee').title() }}</p>
         </div>
 
-        <div class="bg-gradient-to-br from-orange-50 to-amber-100 p-4 rounded-lg">
+        <div class="bg-gradient-to-br from-orange-50 to-amber-100 p-4 rounded-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105">
           <div class="flex items-center gap-3 mb-2">
             <i class="fas fa-calendar-alt text-orange-600"></i>
             <span class="text-sm font-semibold text-gray-700">Last Login</span>
@@ -385,6 +383,19 @@
       document.getElementById('passwordMatch').style.opacity = '0';
       document.getElementById('submitBtn').disabled = false;
     }
+
+    // Form submission loading state
+    document.getElementById('passwordForm').addEventListener('submit', function() {
+      const btn = document.getElementById('submitBtn');
+      const icon = document.getElementById('passwordSubmitIcon');
+      const text = document.getElementById('passwordSubmitText');
+      if (btn && icon && text && !btn.disabled) {
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        icon.className = 'fas fa-spinner fa-spin mr-2';
+        text.textContent = 'Updating...';
+      }
+    });
   </script>
 
 </body>

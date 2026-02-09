@@ -382,33 +382,91 @@
         </div>
 
         <div class="space-y-8">
-          <!-- Export Buttons -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <button onclick="exportData('attendance')" class="p-6 bg-gradient-to-br from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 border border-teal-200 hover:border-teal-300 rounded-xl transition-all duration-200 text-left group hover:shadow-md cursor-pointer">
+          <!-- Export Buttons Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Attendance Export -->
+            <button onclick="exportData('attendance')" class="p-5 bg-gradient-to-br from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 border border-teal-200 hover:border-teal-300 rounded-xl transition-all duration-200 text-left group hover:shadow-md cursor-pointer transform hover:scale-105">
               <div class="flex items-center gap-3 mb-2">
                 <div class="w-10 h-10 rounded-lg bg-teal-100 group-hover:bg-teal-200 flex items-center justify-center transition-colors">
-                  <i class="fas fa-file-csv text-teal-600 text-lg"></i>
+                  <i class="fas fa-clipboard-list text-teal-600 text-lg"></i>
                 </div>
-                <span class="font-semibold text-teal-800">Export Attendance</span>
+                <span class="font-semibold text-teal-800">Attendance</span>
               </div>
-              <p class="text-sm text-teal-600 ml-13">Download attendance records as CSV file</p>
+              <p class="text-xs text-teal-600">Download attendance records</p>
             </button>
 
-            <button onclick="exportData('employees')" class="p-6 bg-gradient-to-br from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 border border-teal-200 hover:border-teal-300 rounded-xl transition-all duration-200 text-left group hover:shadow-md cursor-pointer">
+            <!-- Employees Export -->
+            <button onclick="exportData('employees')" class="p-5 bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 hover:border-blue-300 rounded-xl transition-all duration-200 text-left group hover:shadow-md cursor-pointer transform hover:scale-105">
               <div class="flex items-center gap-3 mb-2">
-                <div class="w-10 h-10 rounded-lg bg-teal-100 group-hover:bg-teal-200 flex items-center justify-center transition-colors">
-                  <i class="fas fa-users text-teal-600 text-lg"></i>
+                <div class="w-10 h-10 rounded-lg bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center transition-colors">
+                  <i class="fas fa-users text-blue-600 text-lg"></i>
                 </div>
-                <span class="font-semibold text-teal-800">Export Employees</span>
+                <span class="font-semibold text-blue-800">Employees</span>
               </div>
-              <p class="text-sm text-teal-600 ml-13">Download employee database as CSV file</p>
+              <p class="text-xs text-blue-600">Download employee database</p>
+            </button>
+
+            <!-- Users Export -->
+            <button onclick="exportData('users')" class="p-5 bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 border border-purple-200 hover:border-purple-300 rounded-xl transition-all duration-200 text-left group hover:shadow-md cursor-pointer transform hover:scale-105">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-lg bg-purple-100 group-hover:bg-purple-200 flex items-center justify-center transition-colors">
+                  <i class="fas fa-user-shield text-purple-600 text-lg"></i>
+                </div>
+                <span class="font-semibold text-purple-800">Users</span>
+              </div>
+              <p class="text-xs text-purple-600">Download users & permissions</p>
+            </button>
+
+            <!-- Leaves Export -->
+            <button onclick="exportData('leaves')" class="p-5 bg-gradient-to-br from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 border border-amber-200 hover:border-amber-300 rounded-xl transition-all duration-200 text-left group hover:shadow-md cursor-pointer transform hover:scale-105">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-lg bg-amber-100 group-hover:bg-amber-200 flex items-center justify-center transition-colors">
+                  <i class="fas fa-calendar-alt text-amber-600 text-lg"></i>
+                </div>
+                <span class="font-semibold text-amber-800">Leaves</span>
+              </div>
+              <p class="text-xs text-amber-600">Download leave records</p>
+            </button>
+
+            <!-- Departments Export -->
+            <button onclick="exportData('departments')" class="p-5 bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border border-green-200 hover:border-green-300 rounded-xl transition-all duration-200 text-left group hover:shadow-md cursor-pointer transform hover:scale-105">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-lg bg-green-100 group-hover:bg-green-200 flex items-center justify-center transition-colors">
+                  <i class="fas fa-building text-green-600 text-lg"></i>
+                </div>
+                <span class="font-semibold text-green-800">Departments</span>
+              </div>
+              <p class="text-xs text-green-600">Download departments list</p>
+            </button>
+
+            <!-- Database Backup -->
+            <button onclick="exportData('database-backup')" class="p-5 bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border border-red-200 hover:border-red-300 rounded-xl transition-all duration-200 text-left group hover:shadow-md cursor-pointer transform hover:scale-105">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-lg bg-red-100 group-hover:bg-red-200 flex items-center justify-center transition-colors">
+                  <i class="fas fa-database text-red-600 text-lg"></i>
+                </div>
+                <span class="font-semibold text-red-800">Full Backup</span>
+              </div>
+              <p class="text-xs text-red-600">Complete database backup</p>
             </button>
           </div>
 
-          <!-- Last Export Info -->
-          <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
-            <h4 class="font-semibold text-gray-800 mb-2">Last Export</h4>
-            <p class="text-sm text-gray-600">24 Jan 2026 - Attendance data exported</p>
+          <!-- Backup Info -->
+          <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg p-6 border border-indigo-200">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-info-circle text-indigo-600"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold text-indigo-900 mb-2">Backup Information</h4>
+                <ul class="text-sm text-indigo-700 space-y-1">
+                  <li><i class="fas fa-check-circle mr-2 text-indigo-500"></i>All exports are in CSV format (except Full Backup)</li>
+                  <li><i class="fas fa-check-circle mr-2 text-indigo-500"></i>Full Backup creates a complete SQL dump</li>
+                  <li><i class="fas fa-check-circle mr-2 text-indigo-500"></i>Regular backups are recommended weekly</li>
+                  <li><i class="fas fa-check-circle mr-2 text-indigo-500"></i>Store backups in a secure location</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -730,18 +788,50 @@ function refreshCameras() {
 }
 
 function exportData(type) {
+  const exportNames = {
+    'attendance': 'Attendance Records',
+    'employees': 'Employee Database',
+    'users': 'Users & Permissions',
+    'leaves': 'Leave Records',
+    'departments': 'Departments',
+    'database-backup': 'Complete Database Backup'
+  };
+  
+  const displayName = exportNames[type] || type;
   const url = `/admin/settings/export/${type}`;
-  showNotification(`Starting ${type} export...`, 'info');
+  
+  showNotification(`Preparing ${displayName} export...`, 'info');
   
   // Create a temporary link to trigger download
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${type}_export.csv`;
+  link.style.display = 'none';
   document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
   
-  showNotification(`${type} data exported successfully!`, 'success');
+  // Handle the download
+  fetch(url)
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(err => {
+          throw new Error(err.error || 'Export failed');
+        });
+      }
+      return response.blob();
+    })
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      link.href = url;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      showNotification(`${displayName} exported successfully!`, 'success');
+    })
+    .catch(error => {
+      console.error('Export error:', error);
+      showNotification(error.message || `Failed to export ${displayName}`, 'error');
+    })
+    .finally(() => {
+      document.body.removeChild(link);
+    });
 }
 
 // Add change listeners to all inputs

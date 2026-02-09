@@ -342,9 +342,16 @@ def view_employee(emp_id):
     cursor = db.cursor(dictionary=True)
 
     cursor.execute("""
-        SELECT e.*, d.name AS department
+        SELECT 
+            e.*, 
+            d.name AS department,
+            CASE 
+                WHEN fd.embedding IS NOT NULL THEN 1
+                ELSE 0
+            END AS enrolled
         FROM employees e
         LEFT JOIN departments d ON e.department_id = d.id
+        LEFT JOIN face_data fd ON fd.emp_id = e.id
         WHERE e.id = %s
     """, (emp_id,))
     emp = cursor.fetchone()
