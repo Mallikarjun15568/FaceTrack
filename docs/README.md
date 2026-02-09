@@ -2,8 +2,8 @@
 
 ## BCA-III Application Level Project
 
-**Project:** Face Recognition Based Attendance System  
-**Academic Year:** 2025-26
+**Project:** FaceTrack PRO – AI-Based Facial Recognition Attendance System  
+**Academic Year:** 2025-2026
 
 ---
 
