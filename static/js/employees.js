@@ -97,6 +97,17 @@ document.addEventListener("DOMContentLoaded", function () {
         };
 
         searchForm.addEventListener('submit', function (e) {
+            // Show loading state
+            if (searchBtn && searchText) {
+                searchBtn.disabled = true;
+                searchBtn.classList.add('opacity-75', 'cursor-not-allowed');
+                const icon = document.getElementById('searchIcon');
+                if (icon) {
+                    icon.className = 'fas fa-spinner fa-spin mr-2';
+                }
+                searchText.textContent = 'Searching...';
+            }
+            
             const isAjax = searchForm.dataset.ajax === 'true';
             // Show loading state - rely on normal form submission
         });

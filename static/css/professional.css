@@ -97,13 +97,63 @@ body {
   transition: all var(--transition);
 }
 
-.card:hover,
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
 .stat-card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Table row hover effects */
+table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+table tbody tr:hover {
+  background-color: var(--gray-50);
 }
 
 /* ==================================================
    BUTTONS
+   ================================================== */
+.btn,
+button:not(.no-hover) {
+  transition: all 0.3s ease;
+}
+
+.btn:hover,
+button:not(.no-hover):hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Input focus states */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Status badge hover */
+.status-badge {
+  transition: transform 0.2s ease;
+}
+
+.status-badge:hover {
+  transform: scale(1.05);
+}
+
+/* ==================================================
+   BUTTONS (CONTINUED)
    ================================================== */
 .btn {
   display: inline-flex;

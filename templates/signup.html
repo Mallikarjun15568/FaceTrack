@@ -129,11 +129,25 @@
           </style>
         </div>
 
-        <button type="submit" class="w-full text-lg py-3 font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]" 
+        <button type="submit" id="signupBtn" class="w-full text-lg py-3 font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]" 
                 style="background-color: #2563EB; color: white; border: 2px solid #2563EB;">
-          <i class="fas fa-user-plus mr-2"></i>
-          Create Account
+          <i class="fas fa-user-plus mr-2" id="signupIcon"></i>
+          <span id="signupText">Create Account</span>
         </button>
+        
+        <script>
+          document.querySelector('form').addEventListener('submit', function() {
+            const btn = document.getElementById('signupBtn');
+            const icon = document.getElementById('signupIcon');
+            const text = document.getElementById('signupText');
+            if (btn && icon && text) {
+              btn.disabled = true;
+              btn.style.opacity = '0.7';
+              icon.className = 'fas fa-spinner fa-spin mr-2';
+              text.textContent = 'Creating Account...';
+            }
+          });
+        </script>
 
       </form>
 

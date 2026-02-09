@@ -104,8 +104,12 @@ function renderAttendance(records) {
     if (!records || records.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" class="p-4 text-center text-gray-500">
-                    No attendance records found.
+                <td colspan="7" class="p-8 text-center">
+                    <div class="flex flex-col items-center justify-center space-y-3">
+                        <i class="fas fa-calendar-times text-5xl text-gray-300"></i>
+                        <p class="text-gray-600 font-semibold text-lg">No attendance records found</p>
+                        <p class="text-gray-400 text-sm">Try adjusting your filters or check back later</p>
+                    </div>
                 </td>
             </tr>
         `;
