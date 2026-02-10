@@ -1,5 +1,5 @@
 from . import bp
-from flask import jsonify, request, render_template, session, redirect, flash, current_app
+from flask import jsonify, request, render_template, session, redirect, flash, current_app, make_response
 from utils.db import get_db
 from datetime import datetime, date, time, timedelta
 from blueprints.auth.utils import login_required, role_required
@@ -932,7 +932,7 @@ def export_pdf():
 
     response = make_response(buffer.getvalue())
     response.headers["Content-Type"] = "application/pdf"
-    response.headers["Content-Disposition"] = f"inline; filename={filename}"
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
 
     return response
 
@@ -1266,10 +1266,8 @@ def export_excel():
     
     filename = f"attendance_report_{from_date}_{to_date}.xlsx" if from_date and to_date else f"attendance_report_{date.today()}.xlsx"
     
-    return send_file(
-        buffer,
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        as_attachment=True,
-        download_name=filename
-    )
+    output = make_response(buffer.getvalue())
+    output.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    output.headers["Content-type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    return output
 

@@ -16,6 +16,52 @@ function formatDate(dateStr) {
 }
 
 // =====================================
+// EXPORT FORMAT SELECTION
+// =====================================
+let selectedExportFormat = 'pdf'; // Default format
+
+function selectExportFormat(format) {
+    selectedExportFormat = format;
+    console.log('📊 Export format selected:', format);
+    
+    // Remove active class from all cards
+    document.querySelectorAll('.export-format-card').forEach(card => {
+        card.classList.remove('active');
+        card.classList.remove('border-red-400', 'border-green-400', 'border-emerald-400');
+        card.classList.add('border-opacity-50');
+        
+        // Hide all badges
+        const badge = card.querySelector('.absolute');
+        if (badge) badge.classList.add('hidden');
+    });
+    
+    // Add active class to selected card
+    const selectedCard = document.getElementById(`export-${format}`);
+    if (selectedCard) {
+        selectedCard.classList.add('active');
+        
+        // Update border color based on format
+        if (format === 'pdf') {
+            selectedCard.classList.remove('border-red-200');
+            selectedCard.classList.add('border-red-400');
+        } else if (format === 'csv') {
+            selectedCard.classList.remove('border-green-200');
+            selectedCard.classList.add('border-green-400');
+        } else if (format === 'excel') {
+            selectedCard.classList.remove('border-emerald-200');
+            selectedCard.classList.add('border-emerald-400');
+        }
+        
+        // Show badge for selected card
+        const badge = selectedCard.querySelector('.absolute');
+        if (badge) {
+            badge.classList.remove('hidden');
+            badge.classList.add('flex');
+        }
+    }
+}
+
+// =====================================
 // PERIOD LABEL UPDATER
 // =====================================
 function updatePeriodLabels(period) {
@@ -1460,9 +1506,8 @@ function generateReport() {
         console.log("🏢 Selected department:", department);
     }
     
-    // Get format
-    const formatRadio = document.querySelector('input[name="export_format"]:checked');
-    const format = formatRadio ? formatRadio.value : 'pdf';
+    // Get format (using the selected format from card buttons)
+    const format = selectedExportFormat || 'pdf';
     console.log("📊 Export format:", format);
     
     // Build URL
@@ -1484,25 +1529,56 @@ function generateReport() {
     // Show loading state
     const btn = document.getElementById('generateReportBtn');
     const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generating...';
+    btn.innerHTML = '<svg class="inline w-5 h-5 animate-spin mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" opacity="0.75"/></svg>Generating...';
     btn.disabled = true;
     
-    // Download report
-    if (format === 'pdf') {
-        window.open(url, '_blank');
-        setTimeout(() => {
+    // Create temporary link for download
+    const link = document.createElement('a');
+    link.href = url;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    
+    // Trigger download using fetch
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error('Download failed');
+            
+            // Extract filename from Content-Disposition header
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = `attendance_report.${format === 'pdf' ? 'pdf' : format === 'excel' ? 'xlsx' : 'csv'}`;
+            
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="?(.+?)"?$/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1];
+                }
+            }
+            
+            return response.blob().then(blob => ({ blob, filename }));
+        })
+        .then(({ blob, filename }) => {
+            const downloadUrl = window.URL.createObjectURL(blob);
+            link.href = downloadUrl;
+            link.download = filename;
+            link.click();
+            
+            // Cleanup
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(link);
+            
             btn.innerHTML = originalText;
             btn.disabled = false;
-            console.log("✅ PDF generation initiated");
-        }, 1000);
-    } else {
-        window.location.href = url;
-        setTimeout(() => {
+            console.log(`✅ ${format.toUpperCase()} report downloaded: ${filename}`);
+        })
+        .catch(error => {
+            console.error('❌ Download failed:', error);
+            alert('Failed to generate report. Please try again.');
             btn.innerHTML = originalText;
             btn.disabled = false;
-            console.log(`✅ ${format.toUpperCase()} download initiated`);
-        }, 2000);
-    }
+            if (document.body.contains(link)) {
+                document.body.removeChild(link);
+            }
+        });
 }
 
 // Reset filters function
@@ -1576,3 +1652,138 @@ function exportPDF() {
     window.open(url, "_blank");
 
 }
+
+// =====================================
+// REPORT HISTORY FUNCTIONS
+// =====================================
+function loadReportHistory() {
+    const container = document.getElementById('reportHistoryContainer');
+    const loading = document.getElementById('reportHistoryLoading');
+    const empty = document.getElementById('reportHistoryEmpty');
+    const table = document.getElementById('reportHistoryTable');
+    const tbody = document.getElementById('reportHistoryBody');
+    
+    if (!container) return;
+    
+    // Show loading
+    loading?.classList.remove('hidden');
+    empty?.classList.add('hidden');
+    table?.classList.add('hidden');
+    
+    fetch('/admin/reports/api/history?limit=10')
+        .then(response => response.json())
+        .then(data => {
+            loading?.classList.add('hidden');
+            
+            if (!data.history || data.history.length === 0) {
+                empty?.classList.remove('hidden');
+                table?.classList.add('hidden');
+                return;
+            }
+            
+            // Build table rows
+            tbody.innerHTML = '';
+            data.history.forEach(report => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 transition-colors';
+                
+                // Format icon based on type
+                let formatIcon = '';
+                let formatBadge = '';
+                if (report.report_type === 'PDF') {
+                    formatIcon = `<div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                        </svg>
+                    </div>`;
+                    formatBadge = '<span class="px-2 py-1 text-xs font-semibold bg-red-100 text-red-700 rounded-lg">PDF</span>';
+                } else if (report.report_type === 'CSV') {
+                    formatIcon = `<div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-green-600" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                        </svg>
+                    </div>`;
+                    formatBadge = '<span class="px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-lg">CSV</span>';
+                } else if (report.report_type === 'Excel') {
+                    formatIcon = `<div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-emerald-600" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                        </svg>
+                    </div>`;
+                    formatBadge = '<span class="px-2 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700 rounded-lg">Excel</span>';
+                }
+                
+                // Build report name
+                let reportName = 'Attendance Report';
+                if (report.filters) {
+                    try {
+                        const filters = typeof report.filters === 'string' ? JSON.parse(report.filters) : report.filters;
+                        if (filters.employee_name) {
+                            reportName = `${filters.employee_name}'s Report`;
+                        } else if (filters.department_name) {
+                            reportName = `${filters.department_name} Report`;
+                        }
+                    } catch (e) {}
+                }
+                
+                // Format date
+                const genDate = new Date(report.generated_at);
+                const formattedDate = genDate.toLocaleDateString('en-IN', { 
+                    day: '2-digit', 
+                    month: 'short', 
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                // Period display
+                let periodText = report.period || '-';
+                if (report.from_date && report.to_date) {
+                    const fromDate = new Date(report.from_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+                    const toDate = new Date(report.to_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                    periodText = `${fromDate} - ${toDate}`;
+                }
+                
+                row.innerHTML = `
+                    <td class="p-4">
+                        <div class="flex items-center gap-3">
+                            ${formatIcon}
+                            <span class="font-medium text-gray-900">${reportName}</span>
+                        </div>
+                    </td>
+                    <td class="p-4">${formatBadge}</td>
+                    <td class="p-4 text-gray-600 text-sm">${periodText}</td>
+                    <td class="p-4 text-gray-600 text-sm">${formattedDate}</td>
+                    <td class="p-4 text-gray-600 text-sm">${report.generated_by_name || 'System'}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            empty?.classList.add('hidden');
+            table?.classList.remove('hidden');
+        })
+        .catch(error => {
+            console.error('Error loading report history:', error);
+            loading?.classList.add('hidden');
+            empty?.classList.remove('hidden');
+        });
+}
+
+// Make function global
+window.loadReportHistory = loadReportHistory;
+
+// Load report history when export tab is shown
+document.addEventListener('DOMContentLoaded', function() {
+    // Load history when tab is switched to export
+    const originalSwitchTab = window.switchTab;
+    if (typeof originalSwitchTab === 'function') {
+        window.switchTab = function(tabName) {
+            originalSwitchTab(tabName);
+            if (tabName === 'export') {
+                loadReportHistory();
+            }
+        };
+    }
+});
+

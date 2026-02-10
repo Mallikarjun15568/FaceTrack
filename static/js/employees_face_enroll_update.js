@@ -125,21 +125,32 @@ function startCamera() {
     isDetectionInProgress = false;
     currentDetectionRequest = null;
     
-    captureBtn.classList.add("hidden"); // reset state on camera start
+    captureBtn.style.display = "none"; // reset state on camera start
     navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
             currentStream = stream;
             video.srcObject = stream;
             cameraInactiveBox.classList.add("hidden");
+            cameraInactiveBox.style.display = "none";
             video.classList.remove("hidden");
+            video.style.display = "block";
             faceCanvas.classList.remove("hidden");
             guidanceText.classList.remove("hidden");
             startCameraBtn.classList.add("hidden");
-            stopCameraBtn.classList.remove("hidden");
+            startCameraBtn.style.display = "none";
+            
+            // Show camera controls
+            const cameraControls = document.getElementById("cameraControls");
+            if (cameraControls) {
+                cameraControls.style.display = "flex";
+            }
+            stopCameraBtn.style.display = "flex";
+            
             previewImg.classList.add("hidden");
-            actionBtns.classList.add("hidden");
-            saveBtn.classList.add("hidden");
-            retakeBtn.classList.add("hidden");
+            previewImg.style.display = "none";
+            actionBtns.style.display = "none";
+            saveBtn.style.display = "none";
+            retakeBtn.style.display = "none";
             video.onloadeddata = () => {
                 setTimeout(() => drawDetectionBox("#ef4444"), 100);
             };
@@ -153,7 +164,9 @@ function startCamera() {
         })
         .catch(err => {
             cameraInactiveBox.classList.remove("hidden");
+            cameraInactiveBox.style.display = "flex";
             video.classList.add("hidden");
+            video.style.display = "none";
             faceCanvas.classList.add("hidden");
             guidanceText.classList.add("hidden");
             showStatusModal("error", "Camera not accessible! Please check permissions.");
@@ -173,27 +186,40 @@ function stopCamera() {
         detectInterval = null;
     }
     lastDetectState = null;
+    
+    // Hide camera controls
+    const cameraControls = document.getElementById("cameraControls");
+    if (cameraControls) {
+        cameraControls.style.display = "none";
+    }
+    
     if (!currentStream) {
         cameraInactiveBox.classList.remove("hidden");
+        cameraInactiveBox.style.display = "flex";
         video.classList.add("hidden");
+        video.style.display = "none";
         faceCanvas.classList.add("hidden");
         guidanceText.classList.add("hidden");
         startCameraBtn.classList.remove("hidden");
-        stopCameraBtn.classList.add("hidden");
-        captureBtn.classList.add("hidden");
+        startCameraBtn.style.display = "inline-flex";
+        stopCameraBtn.style.display = "none";
+        captureBtn.style.display = "none";
         return;
     }
     currentStream.getTracks().forEach(track => track.stop());
     currentStream = null;
     video.srcObject = null;
     cameraInactiveBox.classList.remove("hidden");
+    cameraInactiveBox.style.display = "flex";
     video.classList.add("hidden");
+    video.style.display = "none";
     faceCanvas.classList.add("hidden");
     guidanceText.classList.add("hidden");
     startCameraBtn.classList.remove("hidden");
-    stopCameraBtn.classList.add("hidden");
-    captureBtn.classList.add("hidden");
-    actionBtns.classList.add("hidden");
+    startCameraBtn.style.display = "inline-flex";
+    stopCameraBtn.style.display = "none";
+    captureBtn.style.display = "none";
+    actionBtns.style.display = "none";
     guidanceText.classList.add("hidden");
 }
 
@@ -215,10 +241,12 @@ function showGuidance(message) {
 
 // Initial state (on page load)
 cameraInactiveBox.classList.remove("hidden");
+cameraInactiveBox.style.display = "flex";
 video.classList.add("hidden");
+video.style.display = "none";
 faceCanvas.classList.add("hidden");
 guidanceText.classList.add("hidden");
-captureBtn.classList.add("hidden");
+captureBtn.style.display = "none";
 
 // Button events
 startCameraBtn.addEventListener("click", startCamera);
@@ -258,13 +286,20 @@ captureBtn.onclick = () => {
         // 🎯 STEP 5: Show preview and hide camera
         previewImg.src = lastImage;
         previewImg.classList.remove("hidden");
-        actionBtns.classList.remove("hidden");
-        saveBtn.classList.remove("hidden");
-        retakeBtn.classList.remove("hidden");
-        captureBtn.classList.add("hidden");
+        previewImg.style.display = "block";
+        actionBtns.style.display = "flex";
+        saveBtn.style.display = "inline-flex";
+        retakeBtn.style.display = "inline-flex";
+        captureBtn.style.display = "none";
         guidanceText.classList.add("hidden");
-        stopCameraBtn.classList.add("hidden");
-        startCameraBtn.classList.add("hidden");
+        
+        // Hide camera controls
+        const cameraControls = document.getElementById("cameraControls");
+        if (cameraControls) {
+            cameraControls.style.display = "none";
+        }
+        stopCameraBtn.style.display = "none";
+        startCameraBtn.style.display = "none";
 
         // Stop camera stream
         if (currentStream) {
@@ -304,9 +339,10 @@ retakeBtn.onclick = () => {
     guidanceText.textContent = ""; // 🎯 CLEAR TEXT
     isRetaking = true; // 🎯 SKIP NEXT DETECT
     previewImg.classList.add("hidden");
-    actionBtns.classList.add("hidden");
-    saveBtn.classList.add("hidden");
-    retakeBtn.classList.add("hidden");
+    previewImg.style.display = "none";
+    actionBtns.style.display = "none";
+    saveBtn.style.display = "none";
+    retakeBtn.style.display = "none";
     startCamera();
 };
 
@@ -395,12 +431,12 @@ saveBtn.onclick = async () => {
     }
     // Stop camera and reset to initial state
     stopCamera();
-    startCameraBtn.classList.remove("hidden");
-    stopCameraBtn.classList.add("hidden");
-    captureBtn.classList.add("hidden");
-    previewImg.classList.add("hidden");
-    saveBtn.classList.add("hidden");
-    retakeBtn.classList.add("hidden");
+    startCameraBtn.style.display = "inline-flex";
+    stopCameraBtn.style.display = "none";
+    captureBtn.style.display = "none";
+    previewImg.style.display = "none";
+    saveBtn.style.display = "none";
+    retakeBtn.style.display = "none";
 };
 
 // Face Detection with Stability & Quality Gates
@@ -417,7 +453,7 @@ async function detectFaceOnce() {
     if (isCaptured || !currentStream) return;
     if (!currentStream || !video.videoWidth) {
         guidanceText.classList.add("hidden");
-        captureBtn.classList.add("hidden");
+        captureBtn.style.display = "none";
         return;
     }
 
@@ -525,16 +561,16 @@ async function detectFaceOnce() {
         guidanceText.classList.remove("hidden");
 
         // Always hide button first, then show only if capture is allowed
-        captureBtn.classList.add("hidden");
+        captureBtn.style.display = "none";
         if (!isCaptured && allowCapture) {
-            captureBtn.classList.remove("hidden");
+            captureBtn.style.display = "inline-flex";
         }
 
         showGuidance(message);
         lastDetectState = face_count;
     } catch (err) {
         if (sessionAtStart !== detectSessionId) return;
-        captureBtn.classList.add("hidden");
+        captureBtn.style.display = "none";
         guidanceText.textContent = "Detection error";
         resetStabilityTimer();
     } finally {

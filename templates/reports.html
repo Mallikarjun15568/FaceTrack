@@ -31,6 +31,25 @@
       .tab-transition {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
+      
+      /* Export format card styles */
+      .export-format-card {
+        position: relative;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      
+      .export-format-card.active {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+      }
+      
+      .export-format-card .absolute {
+        animation: badge-pop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      }
+      
+      @keyframes badge-pop {
+        0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+        100% { transform: scale(1) rotate(0deg); opacity: 1; }
+      }
     </style>
 {% endblock %}
 {% block page_title %}Reports{% endblock %}
@@ -151,59 +170,51 @@
             </label>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <!-- Present -->
-              <div class="card">
-                <div class="flex items-center justify-between mb-4">
-                  <div>
-                    <p class="text-sm font-medium text-gray-500 mb-1">Total Present</p>
-                    <p id="presentCount" class="text-3xl font-bold text-gray-900 countup" data-target="-">-</p>
-                  </div>
-                  <div class="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center">
-                    <i class="fa-solid fa-user-check text-green-600 text-xl"></i>
+              <div class="p-5 bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-[1.02] group">
+                <div class="flex items-center justify-between mb-3">
+                  <p class="text-sm font-semibold text-green-800">Total Present</p>
+                  <div class="w-11 h-11 rounded-xl bg-green-100 group-hover:bg-green-200 flex items-center justify-center transition-colors shadow-sm">
+                    <i class="fa-solid fa-user-check text-green-600 text-lg"></i>
                   </div>
                 </div>
-                <p id="presentLabel" class="text-xs text-gray-500">Checked in during period</p>
+                <p id="presentCount" class="text-3xl font-bold text-green-900 countup" data-target="-">-</p>
+                <p id="presentLabel" class="text-xs text-green-600 mt-1">Checked in during period</p>
               </div>
 
               <!-- Absent -->
-              <div class="card">
-                <div class="flex items-center justify-between mb-4">
-                  <div>
-                    <p class="text-sm font-medium text-gray-500 mb-1">Total Absent</p>
-                    <p id="absentCount" class="text-3xl font-bold text-gray-900 countup" data-target="-">-</p>
-                  </div>
-                  <div class="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center">
-                    <i class="fa-solid fa-user-xmark text-orange-600 text-xl"></i>
+              <div class="p-5 bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-[1.02] group">
+                <div class="flex items-center justify-between mb-3">
+                  <p class="text-sm font-semibold text-orange-800">Total Absent</p>
+                  <div class="w-11 h-11 rounded-xl bg-orange-100 group-hover:bg-orange-200 flex items-center justify-center transition-colors shadow-sm">
+                    <i class="fa-solid fa-user-xmark text-orange-600 text-lg"></i>
                   </div>
                 </div>
-                <p id="absentLabel" class="text-xs text-gray-500">Not present during period</p>
+                <p id="absentCount" class="text-3xl font-bold text-orange-900 countup" data-target="-">-</p>
+                <p id="absentLabel" class="text-xs text-orange-600 mt-1">Not present during period</p>
               </div>
 
               <!-- Late -->
-              <div class="card">
-                <div class="flex items-center justify-between mb-4">
-                  <div>
-                    <p class="text-sm font-medium text-gray-500 mb-1">Late Entries</p>
-                    <p id="lateCount" class="text-3xl font-bold text-gray-900 countup" data-target="-">-</p>
-                  </div>
-                  <div class="w-12 h-12 rounded-lg bg-purple-50 flex items-center justify-center">
-                    <i class="fa-solid fa-clock text-purple-600 text-xl"></i>
+              <div class="p-5 bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-[1.02] group">
+                <div class="flex items-center justify-between mb-3">
+                  <p class="text-sm font-semibold text-purple-800">Late Entries</p>
+                  <div class="w-11 h-11 rounded-xl bg-purple-100 group-hover:bg-purple-200 flex items-center justify-center transition-colors shadow-sm">
+                    <i class="fa-solid fa-clock text-purple-600 text-lg"></i>
                   </div>
                 </div>
-                <p class="text-xs text-gray-500">After 9:30 AM</p>
+                <p id="lateCount" class="text-3xl font-bold text-purple-900 countup" data-target="-">-</p>
+                <p class="text-xs text-purple-600 mt-1">After 9:30 AM</p>
               </div>
 
               <!-- Attendance % -->
-              <div class="card">
-                <div class="flex items-center justify-between mb-4">
-                  <div>
-                    <p class="text-sm font-medium text-gray-500 mb-1">Attendance %</p>
-                    <p id="attendancePercentage" class="text-3xl font-bold text-gray-900 countup" data-target="-">-</p>
-                  </div>
-                  <div class="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center">
-                    <i class="fa-solid fa-chart-simple text-indigo-600 text-xl"></i>
+              <div class="p-5 bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-[1.02] group">
+                <div class="flex items-center justify-between mb-3">
+                  <p class="text-sm font-semibold text-indigo-800">Attendance %</p>
+                  <div class="w-11 h-11 rounded-xl bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition-colors shadow-sm">
+                    <i class="fa-solid fa-chart-simple text-indigo-600 text-lg"></i>
                   </div>
                 </div>
-                <p id="percentLabel" class="text-xs text-gray-500">Overall attendance rate</p>
+                <p id="attendancePercentage" class="text-3xl font-bold text-indigo-900 countup" data-target="-">-</p>
+                <p id="percentLabel" class="text-xs text-indigo-600 mt-1">Overall attendance rate</p>
               </div>
             </div>
           </div>
@@ -573,81 +584,163 @@
 
           <!-- Export Format -->
           <div>
-            <label class="block font-semibold text-gray-800 mb-3">Export Format</label>
-            <div class="flex gap-4">
-              <label class="cursor-pointer flex-1 relative">
-                <input type="radio" name="export_format" value="pdf" checked class="hidden peer">
-                <div class="p-6 border-2 border-red-200 rounded-xl bg-gradient-to-br from-red-50 to-red-100 hover:border-red-400 hover:shadow-lg peer-checked:border-red-600 peer-checked:shadow-2xl peer-checked:scale-105 transition-all text-center">
-                  <!-- Selected Badge -->
-                  <div class="hidden peer-checked:flex absolute -top-3 -right-3 w-10 h-10 bg-red-600 rounded-full items-center justify-center shadow-lg border-4 border-white">
-                    <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <polyline points="20 6 9 17 4 12"/>
+            <label class="block font-semibold text-gray-800 mb-4">
+              <svg class="inline-block w-5 h-5 mr-2 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <polyline points="9 15 12 18 15 15"/>
+              </svg>Select Report Format
+            </label>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <!-- PDF Export -->
+              <button onclick="selectExportFormat('pdf')" id="export-pdf" class="export-format-card active relative p-5 bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-2 border-red-400 hover:border-red-500 rounded-xl transition-all duration-200 text-left group hover:shadow-lg cursor-pointer transform hover:scale-105">
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="w-12 h-12 rounded-lg bg-red-100 group-hover:bg-red-200 flex items-center justify-center transition-colors">
+                    <svg class="text-red-600" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                      <path d="M14 2v6h6"/>
+                      <path d="M10 12h4M10 16h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
                     </svg>
                   </div>
-                  <svg class="mx-auto mb-3 text-red-600" width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                    <path d="M14 2v6h6"/>
-                    <path d="M10 12h4M10 16h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-                  </svg>
-                  <div class="font-bold text-gray-900 text-lg">PDF</div>
-                  <div class="text-xs text-red-700 mt-1 font-medium">Professional Report</div>
-                  <div class="text-xs text-gray-600 mt-2">Formatted with headers, colors & summary</div>
+                  <div>
+                    <span class="font-bold text-red-900 text-lg block">PDF Report</span>
+                    <span class="text-xs text-red-700 font-medium">Professional Format</span>
+                  </div>
                 </div>
-              </label>
-              <label class="cursor-pointer flex-1 relative">
-                <input type="radio" name="export_format" value="csv" class="hidden peer">
-                <div class="p-6 border-2 border-green-200 rounded-xl bg-gradient-to-br from-green-50 to-green-100 hover:border-green-400 hover:shadow-lg peer-checked:border-green-600 peer-checked:shadow-2xl peer-checked:scale-105 transition-all text-center">
-                  <!-- Selected Badge -->
-                  <div class="hidden peer-checked:flex absolute -top-3 -right-3 w-10 h-10 bg-green-600 rounded-full items-center justify-center shadow-lg border-4 border-white">
-                    <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <polyline points="20 6 9 17 4 12"/>
+                <p class="text-xs text-red-600 mt-1">Formatted with headers, colors & summary statistics</p>
+                <!-- Selected Badge -->
+                <div class="flex absolute -top-2 -right-2 w-8 h-8 bg-red-600 rounded-full items-center justify-center shadow-lg border-2 border-white">
+                  <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+              </button>
+
+              <!-- CSV Export -->
+              <button onclick="selectExportFormat('csv')" id="export-csv" class="export-format-card relative p-5 bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border-2 border-green-200 hover:border-green-300 rounded-xl transition-all duration-200 text-left group hover:shadow-lg cursor-pointer transform hover:scale-105">
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="w-12 h-12 rounded-lg bg-green-100 group-hover:bg-green-200 flex items-center justify-center transition-colors">
+                    <svg class="text-green-600" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                      <path d="M14 2v6h6"/>
+                      <path d="M8 12h8M8 15h8M8 18h5" stroke="white" stroke-width="1" stroke-linecap="round"/>
                     </svg>
                   </div>
-                  <svg class="mx-auto mb-3 text-green-600" width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                    <path d="M14 2v6h6"/>
-                    <path d="M8 12h8M8 15h8M8 18h5" stroke="white" stroke-width="1" stroke-linecap="round"/>
-                  </svg>
-                  <div class="font-bold text-gray-900 text-lg">CSV</div>
-                  <div class="text-xs text-green-700 mt-1 font-medium">Simple Data Only</div>
-                  <div class="text-xs text-gray-600 mt-2">Clean table for import/processing</div>
+                  <div>
+                    <span class="font-bold text-green-900 text-lg block">CSV Data</span>
+                    <span class="text-xs text-green-700 font-medium">Simple Format</span>
+                  </div>
                 </div>
-              </label>
-              <label class="cursor-pointer flex-1 relative">
-                <input type="radio" name="export_format" value="excel" class="hidden peer">
-                <div class="p-6 border-2 border-emerald-200 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 hover:border-emerald-400 hover:shadow-lg peer-checked:border-emerald-600 peer-checked:shadow-2xl peer-checked:scale-105 transition-all text-center">
-                  <!-- Selected Badge -->
-                  <div class="hidden peer-checked:flex absolute -top-3 -right-3 w-10 h-10 bg-emerald-600 rounded-full items-center justify-center shadow-lg border-4 border-white">
-                    <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <polyline points="20 6 9 17 4 12"/>
+                <p class="text-xs text-green-600 mt-1">Clean table data for import & processing</p>
+                <!-- Selected Badge -->
+                <div class="hidden absolute -top-2 -right-2 w-8 h-8 bg-green-600 rounded-full items-center justify-center shadow-lg border-2 border-white">
+                  <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+              </button>
+
+              <!-- Excel Export -->
+              <button onclick="selectExportFormat('excel')" id="export-excel" class="export-format-card relative p-5 bg-gradient-to-br from-emerald-50 to-emerald-100 hover:from-emerald-100 hover:to-emerald-200 border-2 border-emerald-200 hover:border-emerald-300 rounded-xl transition-all duration-200 text-left group hover:shadow-lg cursor-pointer transform hover:scale-105">
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="w-12 h-12 rounded-lg bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center transition-colors">
+                    <svg class="text-emerald-600" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                      <path d="M14 2v6h6"/>
+                      <rect x="8" y="11" width="2.5" height="2.5" fill="white" rx="0.5"/>
+                      <rect x="11" y="11" width="2.5" height="2.5" fill="white" rx="0.5"/>
+                      <rect x="8" y="14" width="2.5" height="2.5" fill="white" rx="0.5"/>
+                      <rect x="11" y="14" width="2.5" height="2.5" fill="white" rx="0.5"/>
                     </svg>
                   </div>
-                  <svg class="mx-auto mb-3 text-emerald-600" width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                    <path d="M14 2v6h6"/>
-                    <rect x="8" y="11" width="2.5" height="2.5" fill="white" rx="0.5"/>
-                    <rect x="11" y="11" width="2.5" height="2.5" fill="white" rx="0.5"/>
-                    <rect x="8" y="14" width="2.5" height="2.5" fill="white" rx="0.5"/>
-                    <rect x="11" y="14" width="2.5" height="2.5" fill="white" rx="0.5"/>
-                  </svg>
-                  <div class="font-bold text-gray-900 text-lg">Excel</div>
-                  <div class="text-xs text-emerald-700 mt-1 font-medium">Rich Formatting</div>
-                  <div class="text-xs text-gray-600 mt-2">Colors, sheets & visual formatting</div>
+                  <div>
+                    <span class="font-bold text-emerald-900 text-lg block">Excel Report</span>
+                    <span class="text-xs text-emerald-700 font-medium">Rich Format</span>
+                  </div>
                 </div>
-              </label>
+                <p class="text-xs text-emerald-600 mt-1">Multiple sheets with colors & visual formatting</p>
+                <!-- Selected Badge -->
+                <div class="hidden absolute -top-2 -right-2 w-8 h-8 bg-emerald-600 rounded-full items-center justify-center shadow-lg border-2 border-white">
+                  <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+              </button>
             </div>
           </div>
 
+
+
           <!-- Generate Button -->
           <div>
-            <button id="generateReportBtn" class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 text-lg">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button id="generateReportBtn" class="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 text-lg group">
+              <svg class="w-5 h-5 group-hover:animate-bounce" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="7 10 12 15 17 10"/>
                 <line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
-              <span>Generate Report</span>
+              <span>Generate & Download Report</span>
             </button>
+          </div>
+
+          <!-- Report History Section -->
+          <div class="mt-8 pt-8 border-t border-gray-200">
+            <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-lg font-bold text-gray-900">Report History</h3>
+                  <p class="text-sm text-gray-500">Previously generated reports</p>
+                </div>
+              </div>
+              <button onclick="loadReportHistory()" class="px-4 py-2 text-sm font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="1 4 1 10 7 10"/>
+                  <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                </svg>
+                Refresh
+              </button>
+            </div>
+            
+            <div id="reportHistoryContainer">
+              <div id="reportHistoryLoading" class="hidden text-center py-8">
+                <div class="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-3"></div>
+                <p class="text-gray-500">Loading history...</p>
+              </div>
+              
+              <div id="reportHistoryEmpty" class="hidden text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg class="w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                </div>
+                <p class="text-gray-600 font-medium mb-1">No reports generated yet</p>
+                <p class="text-gray-400 text-sm">Generate your first report to see it here</p>
+              </div>
+              
+              <div id="reportHistoryTable" class="hidden overflow-x-auto rounded-xl border border-gray-200">
+                <table class="w-full">
+                  <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                    <tr>
+                      <th class="p-4 text-left text-sm font-semibold text-gray-700">Report</th>
+                      <th class="p-4 text-left text-sm font-semibold text-gray-700">Format</th>
+                      <th class="p-4 text-left text-sm font-semibold text-gray-700">Period</th>
+                      <th class="p-4 text-left text-sm font-semibold text-gray-700">Generated</th>
+                      <th class="p-4 text-left text-sm font-semibold text-gray-700">By</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reportHistoryBody" class="divide-y divide-gray-100">
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -748,6 +841,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<script src="{{ url_for('static', filename='js/reports.js') }}?v=18"></script>
+<script src="{{ url_for('static', filename='js/reports.js') }}?v=21"></script>
 
 {% endblock %}

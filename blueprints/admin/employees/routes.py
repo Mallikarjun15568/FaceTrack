@@ -15,6 +15,7 @@ import shutil
 import math
 from datetime import datetime
 from werkzeug.utils import secure_filename
+from mysql.connector import IntegrityError
 from utils.db import get_db
 from utils.face_encoder import face_encoder, invalidate_embeddings_cache
 from utils.logger import logger
@@ -233,7 +234,7 @@ def add_employee():
         if not is_valid_email:
             db.rollback()
             flash(f"Invalid email: {email_error}", "danger")
-            return redirect(url_for("employees.add_employee"))
+            return redirect(url_for("admin.employees.add_employee"))
 
         photo_file = request.files.get("photo")
 
@@ -246,7 +247,7 @@ def add_employee():
             if not is_valid:
                 db.rollback()
                 flash(f"Photo upload failed: {error_msg}", "danger")
-                return redirect(url_for("employees.add_employee"))
+                return redirect(url_for("admin.employees.add_employee"))
 
             # Save photo to disk
             folder_path = f"static/uploads/employees/{employee_id}/"
@@ -265,10 +266,9 @@ def add_employee():
         if cursor.fetchone():
             db.rollback()
             flash("Employee with this email already exists", "danger")
-            return redirect(url_for("employees.add_employee"))
+            return redirect(url_for("admin.employees.add_employee"))
 
         # ❌ NO COMMIT HERE - Insert employee without committing
-        from mysql.connector import IntegrityError
         cursor.execute("""
             INSERT INTO employees (full_name, email, phone, gender, job_title, department_id, join_date, status, photo)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -281,7 +281,7 @@ def add_employee():
 
         # Create leave_balance row for new employee with default allocation
         cursor.execute("""
-            INSERT INTO leave_balance (employee_id, casual_leave, sick_leave, vacation_leave, emergency_leave)
+            INSERT INTO leave_balance (employee_id, casual_leave, sick_leave, personal_leave, emergency_leave)
             VALUES (%s, 6, 6, 10, 3)
         """, (employee_id,))
         
@@ -311,7 +311,7 @@ def add_employee():
             os.remove(image_path)
         logger.error(f"Database integrity error adding employee: {e}", exc_info=True)
         flash("Failed to add employee due to database constraint.", "danger")
-        return redirect(url_for("employees.add_employee"))
+        return redirect(url_for("admin.employees.add_employee"))
     except Exception as e:
         # ✅ ROLLBACK on any other error
         db.rollback()
@@ -320,7 +320,7 @@ def add_employee():
             os.remove(image_path)
         logger.error(f"Error adding employee: {e}", exc_info=True)
         flash(f"Error adding employee: {str(e)}", "danger")
-        return redirect(url_for("employees.add_employee"))
+        return redirect(url_for("admin.employees.add_employee"))
 
 
 # ============================================================
@@ -440,17 +440,17 @@ def change_user_role(user_id):
 
     if new_role not in valid_roles:
         flash("Invalid role", "error")
-        return redirect(url_for("employees.user_management"))
+        return redirect(url_for("admin.employees.user_management"))
 
     # Security checks
     if user_id == current_user_id:
         flash("You cannot change your own role", "error")
-        return redirect(url_for("employees.user_management"))
+        return redirect(url_for("admin.employees.user_management"))
 
     # Only admins can assign admin role
     if new_role == "admin" and current_user_role != "admin":
         flash("Only administrators can assign admin role", "error")
-        return redirect(url_for("employees.user_management"))
+        return redirect(url_for("admin.employees.user_management"))
 
     db = get_db()
     cursor = db.cursor()
@@ -464,7 +464,7 @@ def change_user_role(user_id):
         
         if current_role == "admin" and admin_count <= 1:
             flash("Cannot demote the last administrator", "error")
-            return redirect(url_for("employees.user_management"))
+            return redirect(url_for("admin.employees.user_management"))
 
     # Update role
     cursor.execute("UPDATE users SET role = %s WHERE id = %s", (new_role, user_id))
@@ -530,7 +530,7 @@ def edit_employee(emp_id):
         is_valid, error_msg = validate_image_upload(photo_file)
         if not is_valid:
             flash(f"Photo upload failed: {error_msg}", "danger")
-            return redirect(url_for("employees.view_employee", emp_id=emp_id))
+            return redirect(url_for("admin.employees.view_employee", emp_id=emp_id))
         
         update_photo = True
 
@@ -551,7 +551,7 @@ def edit_employee(emp_id):
             img = cv2.imread(photo)
             if img is None:
                 flash("Failed to read uploaded photo!", "danger")
-                return redirect(url_for("employees.edit_employee", emp_id=emp_id))
+                return redirect(url_for("admin.employees.edit_employee", emp_id=emp_id))
 
             rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             embedding = face_encoder.get_embedding(rgb)
@@ -559,7 +559,7 @@ def edit_employee(emp_id):
             if embedding is None:
                 flash("No face detected in the new photo!", "danger")
                 logger.warning(f"No face detected in updated photo for employee ID: {emp_id}")
-                return redirect(url_for("employees.edit_employee", emp_id=emp_id))
+                return redirect(url_for("admin.employees.edit_employee", emp_id=emp_id))
 
             embedding_bytes = embedding.astype(np.float32).tobytes()
             
@@ -575,7 +575,7 @@ def edit_employee(emp_id):
         except Exception as e:
             logger.error(f"Error processing photo for employee {emp_id}: {e}", exc_info=True)
             flash(f"Error processing photo: {str(e)}", "danger")
-            return redirect(url_for("employees.edit_employee", emp_id=emp_id))
+            return redirect(url_for("admin.employees.edit_employee", emp_id=emp_id))
 
     try:
         base_update_query = """

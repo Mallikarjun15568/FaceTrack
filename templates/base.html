@@ -193,8 +193,8 @@
       {% if messages %}
       <div class="space-y-3 mb-6" id="flashMessages">
         {% for category, msg in messages %}
-        <div class="flex items-center gap-3 p-4 rounded-lg border {% if category=='error' %}bg-red-50 border-red-200 text-red-800{% else %}bg-green-50 border-green-200 text-green-800{% endif %} animate-slideIn">
-          <i class="{% if category=='error' %}fas fa-exclamation-circle{% else %}fas fa-check-circle{% endif %} text-lg"></i>
+        <div class="flex items-center gap-3 p-4 rounded-lg border {% if category in ['error', 'danger'] %}bg-red-50 border-red-200 text-red-800{% elif category == 'warning' %}bg-yellow-50 border-yellow-200 text-yellow-800{% else %}bg-green-50 border-green-200 text-green-800{% endif %} animate-slideIn">
+          <i class="{% if category in ['error', 'danger'] %}fas fa-exclamation-circle{% elif category == 'warning' %}fas fa-exclamation-triangle{% else %}fas fa-check-circle{% endif %} text-lg"></i>
           <span class="font-medium text-sm">{{ msg }}</span>
         </div>
         {% endfor %}

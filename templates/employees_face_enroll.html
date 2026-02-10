@@ -1,32 +1,106 @@
 {% extends "base.html" %}
+{% block page_title %}Face Enrollment{% endblock %}
+{% block breadcrumb %}Enroll Face{% endblock %}
 {% block head %}
 <style>
-    .card { transition: all 0.3s ease; }
-    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-    .btn { transition: all 0.2s ease; }
-    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-    .btn:active { transform: translateY(0); }
+    .card { 
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
+        padding: 1.5rem;
+        transition: all 0.3s ease; 
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px -5px rgba(0,0,0,0.1); }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+    .btn-success:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+    .btn-danger:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); }
+    
+    .btn-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+    .btn-warning:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); }
+    
+    .btn-secondary {
+        background: white;
+        color: #374151;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        border: 2px solid #e5e7eb;
+        transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; }
+    
     img, video { transition: all 0.3s ease; }
+    
+    .camera-box {
+        background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        border-radius: 16px;
+        padding: 4px;
+        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3);
+    }
 </style>
 {% endblock %}
 {% block content %}
 
-<div class="max-w-5xl mx-auto p-6">
+<div class="max-w-5xl mx-auto">
     
     <!-- Header -->
     <div class="card mb-6">
         <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center shadow-md">
-                    <i class="fas fa-camera text-white text-xl"></i>
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
                 </div>
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900">Face Enrollment</h1>
-                    <p class="text-sm text-gray-600 mt-1">Employee: <span class="font-semibold text-indigo-600">{{ employee.name }}</span> (ID: {{ employee.id }})</p>
+                    <p class="text-gray-600 mt-1">Employee: <span class="font-semibold text-indigo-600">{{ employee.name }}</span> (ID: {{ employee.id }})</p>
                 </div>
             </div>
-            <a href="/enroll" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i>
+            <a href="/enroll" class="btn-secondary inline-flex items-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
                 Back to List
             </a>
         </div>
@@ -36,20 +110,28 @@
     <!-- Already Enrolled Section -->
     <div class="card">
         <div class="text-center py-12">
-            <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-check-circle text-4xl text-green-600"></i>
+            <div class="w-24 h-24 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <svg class="w-12 h-12 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
             </div>
             <h2 class="text-2xl font-bold text-gray-900 mb-2">Face Already Enrolled</h2>
-            <p class="text-gray-600 mb-6">This employee's face has been successfully enrolled in the system.</p>
+            <p class="text-gray-600 mb-8 max-w-md mx-auto">This employee's face has been successfully enrolled in the system and can be used for attendance.</p>
             <div class="flex justify-center gap-4">
                 {% if session.role in ['admin', 'hr'] %}
-                <a href="/enroll/update/{{ employee.id }}" class="btn btn-primary">
-                    <i class="fas fa-edit"></i>
+                <a href="/enroll/update/{{ employee.id }}" class="btn-primary inline-flex items-center gap-2">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
                     Update Face
                 </a>
                 {% endif %}
-                <a href="/enroll" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i>
+                <a href="/enroll" class="btn-secondary inline-flex items-center gap-2">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
                     Back to List
                 </a>
             </div>
@@ -60,44 +142,56 @@
     <div class="card">
         <!-- Camera Preview -->
         <div class="flex justify-center mb-6">
-            <div class="relative inline-block">
-                 <div id="cameraInactiveBox"
-                     class="flex flex-col items-center justify-center w-[640px] h-[480px] bg-white rounded-lg shadow-lg border-2 border-gray-300">
-                    <div class="relative w-48 h-48 rounded-full border-4 border-gray-400 flex items-center justify-center bg-white/90 transition-all duration-300">
-                        <div class="text-center">
-                            <i class="fas fa-video-slash text-4xl text-gray-400 mb-2"></i>
-                            <p class="text-gray-800 font-semibold text-sm">CAMERA INACTIVE</p>
-                            <p class="text-gray-500 text-xs mt-1">Start camera to begin</p>
+            <div class="camera-box">
+                <div class="relative inline-block">
+                    <div id="cameraInactiveBox"
+                         class="flex flex-col items-center justify-center w-[640px] h-[480px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl">
+                        <div class="relative w-48 h-48 rounded-full border-4 border-dashed border-gray-600 flex items-center justify-center transition-all duration-300">
+                            <div class="text-center">
+                                <svg class="w-12 h-12 text-gray-500 mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+                                </svg>
+                                <p class="text-gray-300 font-semibold text-sm">CAMERA INACTIVE</p>
+                                <p class="text-gray-500 text-xs mt-1">Click "Start Camera" to begin</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                  <video id="camera"
-                      autoplay playsinline
-                      class="rounded-lg shadow-lg w-[640px] h-[480px] bg-black border-2 border-gray-300 object-cover hidden"></video>
-                <canvas id="faceCanvas"
-                    class="absolute top-0 left-0 w-full h-full pointer-events-none hidden"
-                    style="z-index: 10;"></canvas>
-                 <div id="guidanceText"
-                     class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-lg text-sm font-medium z-20 hidden">
-                    Center your face
+                    <video id="camera"
+                           autoplay playsinline
+                           class="rounded-xl w-[640px] h-[480px] bg-black object-cover hidden"></video>
+                    <canvas id="faceCanvas"
+                            class="absolute top-0 left-0 w-full h-full pointer-events-none hidden"
+                            style="z-index: 10;"></canvas>
+                    <div id="guidanceText"
+                         class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-5 py-2.5 rounded-xl text-sm font-semibold z-20 hidden backdrop-blur-sm">
+                        Center your face in the frame
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Buttons -->
-        <div id="cameraControls" class="flex justify-center gap-3 mb-4">
-            <button id="startCameraBtn" class="btn btn-success">
-                <i class="fas fa-video"></i>
+        <div id="cameraControls" class="flex justify-center gap-4 mb-4">
+            <button id="startCameraBtn" class="btn-success inline-flex items-center gap-2">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="23 7 16 12 23 17 23 7"/>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                </svg>
                 Start Camera
             </button>
             
-            <button id="stopCameraBtn" class="btn btn-danger hidden">
-                <i class="fas fa-stop"></i>
+            <button id="stopCameraBtn" class="btn-danger inline-flex items-center gap-2 hidden">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="6" width="12" height="12" rx="2"/>
+                </svg>
                 Stop Camera
             </button>
             
-            <button id="captureBtn" class="btn btn-primary hidden">
-                <i class="fas fa-camera"></i>
+            <button id="captureBtn" class="btn-primary inline-flex items-center gap-2 hidden">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
                 Capture Face
             </button>
         </div>
@@ -105,29 +199,40 @@
 
         <!-- Preview -->
         <div class="flex justify-center hidden" id="previewBox">
-            <div class="relative">
-                <img id="capturedImg" class="w-[480px] rounded-lg shadow-lg border-2 border-green-400"/>
-                <div class="absolute -top-3 -right-3 w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center">
-                    <i class="fas fa-check"></i>
+            <div class="relative camera-box">
+                <img id="capturedImg" class="w-[480px] rounded-xl"/>
+                <div class="absolute -top-3 -right-3 w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-full flex items-center justify-center shadow-lg">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
                 </div>
             </div>
         </div>
 
-        <!-- DSLR Action Buttons -->
-        <div class="flex justify-center gap-3 mt-4 hidden" id="actionBtns">
-          <button id="retakeBtn" class="btn btn-warning">
-            <i class="fas fa-redo"></i> Retake
-          </button>
-          <button id="saveBtn" class="btn btn-success">
-            <i class="fas fa-save"></i> Save Face
-          </button>
+        <!-- Action Buttons -->
+        <div class="flex justify-center gap-4 mt-6 hidden" id="actionBtns">
+            <button id="retakeBtn" class="btn-warning inline-flex items-center gap-2">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="1 4 1 10 7 10"/>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                </svg>
+                Retake
+            </button>
+            <button id="saveBtn" class="btn-success inline-flex items-center gap-2">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save Face
+            </button>
         </div>
 
         <!-- Loading -->
-        <div id="loadingBox" class="hidden text-center py-4">
-            <div class="inline-flex items-center gap-3 bg-blue-50 px-6 py-3 rounded-lg border border-blue-200">
+        <div id="loadingBox" class="hidden text-center py-6">
+            <div class="inline-flex items-center gap-3 bg-blue-50 px-6 py-4 rounded-xl border border-blue-200">
                 <div class="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <span class="text-base text-blue-700 font-semibold">Processing... Please wait</span>
+                <span class="text-base text-blue-700 font-semibold">Processing face data... Please wait</span>
             </div>
         </div>
 

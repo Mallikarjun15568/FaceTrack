@@ -1,5 +1,5 @@
 from . import bp
-from flask import render_template, request, redirect, url_for, session, flash, jsonify, send_file, current_app
+from flask import render_template, request, redirect, url_for, session, flash, jsonify, send_file, current_app, make_response
 from utils.db import get_db
 from werkzeug.security import check_password_hash, generate_password_hash
 import io
@@ -397,12 +397,11 @@ def export_attendance_pdf():
     buffer.seek(0)
 
     # Return PDF file
-    return send_file(
-        buffer,
-        as_attachment=True,
-        download_name=f'attendance_report_{user_name.replace(" ", "_")}_{datetime.now().strftime("%Y%m%d")}.pdf',
-        mimetype='application/pdf'
-    )
+    filename = f'attendance_report_{user_name.replace(" ", "_")}_{datetime.now().strftime("%Y%m%d")}.pdf'
+    output = make_response(buffer.getvalue())
+    output.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    output.headers["Content-type"] = "application/pdf"
+    return output
 
 @bp.route('/export-summary-pdf')
 def export_summary_pdf():
@@ -496,12 +495,11 @@ def export_summary_pdf():
     buffer.seek(0)
 
     # Return PDF file
-    return send_file(
-        buffer,
-        as_attachment=True,
-        download_name=f'attendance_summary_{user_name.replace(" ", "_")}_{datetime.now().strftime("%Y%m%d")}.pdf',
-        mimetype='application/pdf'
-    )
+    filename = f'attendance_summary_{user_name.replace(" ", "_")}_{datetime.now().strftime("%Y%m%d")}.pdf'
+    output = make_response(buffer.getvalue())
+    output.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    output.headers["Content-type"] = "application/pdf"
+    return output
 
 # ================================
 # EMPLOYEE LEAVE MANAGEMENT

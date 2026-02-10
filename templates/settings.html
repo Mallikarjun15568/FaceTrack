@@ -816,11 +816,24 @@ function exportData(type) {
           throw new Error(err.error || 'Export failed');
         });
       }
-      return response.blob();
+      
+      // Extract filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `${type}_export.csv`; // default filename
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+?)"?$/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      return response.blob().then(blob => ({ blob, filename }));
     })
-    .then(blob => {
+    .then(({ blob, filename }) => {
       const url = window.URL.createObjectURL(blob);
       link.href = url;
+      link.download = filename; // Set the proper filename
       link.click();
       window.URL.revokeObjectURL(url);
       showNotification(`${displayName} exported successfully!`, 'success');

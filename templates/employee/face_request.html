@@ -139,60 +139,60 @@
     </script>
 
   <!-- Main Content -->
-  <div class="pt-36 pb-8">
-    <div class="max-w-4xl mx-auto px-6">
+  <div class="pt-24 pb-8">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
       <!-- Page Header -->
-      <div class="premium-card p-6 mb-8 scroll-reveal">
+      <div class="premium-card p-6 mb-6 scroll-reveal">
         <div class="flex items-center gap-4">
-          <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-            <i class="fas fa-camera text-blue-600"></i>
+          <div class="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center">
+            <i class="fas fa-camera text-blue-600 text-lg"></i>
           </div>
           <div>
-            <h1 class="text-2xl font-bold text-gray-900">Face Recognition Request</h1>
-            <p class="text-gray-600 mt-1">Request to enroll or update your face data for attendance system</p>
+            <h1 class="text-xl font-bold text-gray-900">Face Recognition Request</h1>
+            <p class="text-gray-500 text-sm mt-0.5">Request to enroll or update your face data for attendance system</p>
           </div>
         </div>
       </div>
 
       <!-- Current Face Status -->
-      <div class="premium-card p-6 mb-8 scroll-reveal">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Current Status</h3>
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-4">
+      <div class="premium-card p-5 mb-6 scroll-reveal">
+        <h3 class="text-base font-semibold text-gray-900 mb-3">Current Status</h3>
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div class="flex items-center gap-3">
             {% if pending_request %}
               {% if pending_request.status == 'pending' %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                  <i class="fas fa-clock mr-2"></i> Request Pending Approval
+                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                  <i class="fas fa-clock mr-2 text-xs"></i> Request Pending Approval
                 </span>
               {% elif pending_request.status == 'approved' %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  <i class="fas fa-check mr-2"></i> Face Approved
+                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  <i class="fas fa-check mr-2 text-xs"></i> Face Approved
                 </span>
               {% elif pending_request.status == 'rejected' %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                  <i class="fas fa-times mr-2"></i> Request Rejected
+                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                  <i class="fas fa-times mr-2 text-xs"></i> Request Rejected
                 </span>
               {% endif %}
             {% elif has_face %}
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                <i class="fas fa-check mr-2"></i> Face Enrolled
+              <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                <i class="fas fa-check mr-2 text-xs"></i> Face Enrolled
               </span>
             {% else %}
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                <i class="fas fa-times mr-2"></i> Not Enrolled
+              <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                <i class="fas fa-times mr-2 text-xs"></i> Not Enrolled
               </span>
             {% endif %}
           </div>
           {% if pending_request and pending_request.status == 'pending' %}
-            <button id="cancelRequestBtn" class="btn btn-outline-danger">
-              <i class="fas fa-times mr-2"></i>
+            <button id="cancelRequestBtn" class="btn btn-outline-danger text-sm">
+              <i class="fas fa-times mr-1.5 text-xs"></i>
               Cancel Request
             </button>
           {% endif %}
         </div>
         {% if pending_request and pending_request.status == 'rejected' and pending_request.rejection_reason %}
-          <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+          <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
             <p class="text-sm text-red-800">
               <strong>Rejection Reason:</strong> {{ pending_request.rejection_reason }}
             </p>
@@ -202,31 +202,31 @@
 
       <!-- Face Request Form -->
       {% if not pending_request or pending_request.status == 'rejected' %}
-      <div id="faceRequestSection" class="premium-card p-6 scroll-reveal">
-        <h3 class="text-lg font-semibold text-gray-900 mb-6">Request Face Enrollment/Update</h3>
-        <div class="space-y-6">
-          <div class="flex gap-4">
-            <button id="enrollBtn" class="action-btn {{ 'bg-gray-400 cursor-not-allowed' if has_face else '' }}" {{ 'disabled' if has_face else '' }}>
-              <i class="fas fa-plus"></i>
+      <div id="faceRequestSection" class="premium-card p-5 scroll-reveal">
+        <h3 class="text-base font-semibold text-gray-900 mb-5">Request Face Enrollment/Update</h3>
+        <div class="space-y-5">
+          <div class="flex gap-3 flex-wrap">
+            <button id="enrollBtn" class="action-btn text-sm {{ 'bg-gray-400 cursor-not-allowed' if has_face else '' }}" {{ 'disabled' if has_face else '' }}>
+              <i class="fas fa-plus text-sm"></i>
               New Enrollment
             </button>
-            <button id="updateBtn" class="action-btn action-btn-secondary {{ 'bg-gray-400 cursor-not-allowed' if not has_face else '' }}" {{ 'disabled' if not has_face else '' }}>
-              <i class="fas fa-edit"></i>
+            <button id="updateBtn" class="action-btn action-btn-secondary text-sm {{ 'bg-gray-400 cursor-not-allowed' if not has_face else '' }}" {{ 'disabled' if not has_face else '' }}>
+              <i class="fas fa-edit text-sm"></i>
               Update Face
             </button>
           </div>
 
           {% if has_face %}
-            <div class="p-4 bg-green-50 border border-green-200 rounded-md">
+            <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
               <p class="text-sm text-green-800">
                 <i class="fas fa-info-circle mr-2"></i>
                 Your face is already enrolled. You can request an update if your appearance has changed significantly.
               </p>
             </div>
           {% else %}
-            <div class="p-4 bg-blue-50 border border-blue-200 rounded-md">
+            <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p class="text-sm text-blue-800">
-                <i class="fas fa-info-circle mr-2"></i>
+                <i class="fas fa-info-circle mr-2 text-xs"></i>
                 No face data found. Choose "New Enrollment" to add your face to the attendance system.
               </p>
             </div>
@@ -234,56 +234,56 @@
         </div>
 
         <!-- Camera Section -->
-        <div id="cameraSection" class="hidden mt-8">
-          <div class="bg-gray-50 rounded-lg p-6">
-            <h4 class="text-md font-medium text-gray-900 mb-4">Capture Your Face</h4>
+        <div id="cameraSection" class="hidden mt-6">
+          <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
+            <h4 class="text-sm font-semibold text-gray-900 mb-4">Capture Your Face</h4>
 
             <div class="flex flex-col items-center w-full">
-              <div class="relative mb-6 w-full max-w-md">
-                <video id="video" width="400" height="300" autoplay muted class="w-full rounded-lg border-2 border-gray-300"></video>
+              <div class="relative mb-5 w-full max-w-sm aspect-[4/3] rounded-xl overflow-hidden shadow-lg border border-slate-300">
+                <video id="video" autoplay muted class="absolute inset-0 w-full h-full object-cover bg-slate-800"></video>
                 <canvas id="faceCanvas" class="absolute inset-0 w-full h-full pointer-events-none hidden" style="z-index: 10;"></canvas>
-                <div id="guidanceText" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-lg text-sm font-medium hidden" style="z-index: 20;">
+                <div id="guidanceText" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-lg text-xs font-medium hidden" style="z-index: 20;">
                   Center your face
                 </div>
               </div>
 
               <!-- Camera Controls -->
-              <div id="cameraControls" class="flex justify-center gap-4 mb-4 w-full max-w-md">
-                <button id="startCameraBtn" class="btn btn-success">
-                  <i class="fas fa-video mr-2"></i>
+              <div id="cameraControls" class="flex justify-center gap-3 mb-4 w-full max-w-sm">
+                <button id="startCameraBtn" class="btn btn-success text-sm flex-1">
+                  <i class="fas fa-video mr-1.5 text-xs"></i>
                   Start Camera
                 </button>
-                <button id="stopCameraBtn" class="btn btn-danger hidden">
-                  <i class="fas fa-stop mr-2"></i>
-                  Stop Camera
+                <button id="stopCameraBtn" class="btn btn-danger hidden text-sm flex-1">
+                  <i class="fas fa-stop mr-1.5 text-xs"></i>
+                  Stop
                 </button>
-                <button id="captureBtn" class="btn btn-primary hidden">
-                  <i class="fas fa-camera mr-2"></i>
-                  Capture Face
+                <button id="captureBtn" class="btn btn-primary hidden text-sm flex-1">
+                  <i class="fas fa-camera mr-1.5 text-xs"></i>
+                  Capture
                 </button>
               </div>
 
-              <div class="text-center w-full max-w-md">
-                <p class="text-sm text-gray-600">Ensure good lighting and position your face clearly in the center.</p>
+              <div class="text-center w-full max-w-sm">
+                <p class="text-xs text-gray-500">Ensure good lighting and position your face clearly in the center.</p>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Preview Section -->
-        <div id="previewSection" class="hidden mt-8">
-          <div class="bg-gray-50 rounded-lg p-6">
-            <h4 class="text-md font-medium text-gray-900 mb-4">Preview & Submit Request</h4>
-            <div class="text-center mb-6">
-              <img id="previewImg" class="max-w-md mx-auto block rounded-lg shadow-md border-2 border-green-400" />
+        <div id="previewSection" class="hidden mt-6">
+          <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
+            <h4 class="text-sm font-semibold text-gray-900 mb-4">Preview & Submit Request</h4>
+            <div class="text-center mb-5">
+              <img id="previewImg" class="max-w-xs mx-auto block rounded-xl shadow-lg border-2 border-green-400" />
             </div>
-            <div class="text-center">
-              <button id="submitBtn" class="action-btn mr-4">
-                <i class="fas fa-paper-plane"></i>
+            <div class="flex justify-center gap-3">
+              <button id="submitBtn" class="action-btn text-sm">
+                <i class="fas fa-paper-plane text-sm"></i>
                 Submit Request
               </button>
-              <button id="retakeBtn" class="btn btn-secondary">
-                <i class="fas fa-redo mr-2"></i>
+              <button id="retakeBtn" class="btn btn-secondary text-sm">
+                <i class="fas fa-redo mr-1.5 text-xs"></i>
                 Retake
               </button>
             </div>
@@ -291,10 +291,10 @@
         </div>
 
         <!-- Loading -->
-        <div id="loadingBox" class="hidden text-center py-6 mt-8">
-          <div class="inline-flex items-center gap-3 bg-blue-50 px-6 py-4 rounded-lg border border-blue-200">
-            <div class="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <span class="text-base text-blue-700 font-semibold">Processing your request...</span>
+        <div id="loadingBox" class="hidden text-center py-5 mt-6">
+          <div class="inline-flex items-center gap-3 bg-blue-50 px-5 py-3 rounded-xl border border-blue-200">
+            <div class="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <span class="text-sm text-blue-700 font-semibold">Processing your request...</span>
           </div>
         </div>
 

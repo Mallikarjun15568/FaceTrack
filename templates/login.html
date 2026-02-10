@@ -113,5 +113,19 @@
 
   </div>
 
+  <!-- Toast notification system -->
+  <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+  
+  <!-- Show flash messages as toast -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, msg in messages %}
+      showToast("{{ msg }}", "{{ 'success' if category == 'success' else 'error' }}", 4000);
+      {% endfor %}
+      {% endwith %}
+    });
+  </script>
+
 </body>
 </html>

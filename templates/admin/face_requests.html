@@ -1,137 +1,312 @@
 {% extends "base.html" %}
 {% block page_title %}Face Requests{% endblock %}
+{% block breadcrumb %}Face Requests{% endblock %}
 {% block extra_head %}
 <style>
-    .status-badge {
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: 500;
+    .card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        border: 1px solid #e5e7eb;
     }
-    .status-pending { background: #fef3c7; color: #d97706; }
-    .status-approved { background: #d1fae5; color: #065f46; }
-    .status-rejected { background: #fee2e2; color: #dc2626; }
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .status-pending { 
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); 
+        color: #92400e;
+        box-shadow: 0 2px 4px rgba(217, 119, 6, 0.2);
+    }
+    .status-approved { 
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); 
+        color: #065f46;
+        box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
+    }
+    .status-rejected { 
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); 
+        color: #991b1b;
+        box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+    }
+    .btn-approve {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    }
+    .btn-approve:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+    .btn-reject {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+    }
+    .btn-reject:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+    .request-card {
+        transition: all 0.3s ease;
+    }
+    .request-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    .face-image {
+        transition: all 0.3s ease;
+        border: 3px solid #e5e7eb;
+    }
+    .face-image:hover {
+        transform: scale(1.05);
+        border-color: #3b82f6;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fadeIn 0.3s ease-out;
+    }
 </style>
 {% endblock %}
 {% block content %}
 
-<div class="max-w-7xl mx-auto p-6">
+<div class="max-w-7xl mx-auto">
 
     <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Face Enrollment Requests</h1>
-            <p class="text-sm text-gray-600 mt-1">Review and approve employee face enrollment/update requests</p>
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
+                    <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                        <path d="M16 11l2 2 4-4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900">Face Enrollment Requests</h1>
+                    <p class="text-gray-500 text-sm mt-0.5">Review and approve employee face enrollment or update requests</p>
+                </div>
+            </div>
+            <a href="{{ url_for('admin.employees.list_employees') }}" 
+               class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Back to Employees
+            </a>
         </div>
-        <a href="{{ url_for('admin.employees.list_employees') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i>
-            Back to Employees
-        </a>
     </div>
 
-    <!-- Requests Table -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request Type</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested At</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for request in requests %}
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{{ request.employee_name }}</div>
-                            <div class="text-sm text-gray-500">{{ request.employee_email }}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="capitalize text-sm text-gray-900">{{ request.request_type }}</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="status-badge status-{{ request.status }}">
-                                {{ request.status|title }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ request.requested_at.strftime('%Y-%m-%d %H:%M') }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                               <img src="{{ url_for('static', filename=request.image_path) }}"
-                                   class="h-12 w-12 rounded-lg object-cover cursor-pointer image-modal-trigger"
-                                   data-image-src="{{ url_for('static', filename=request.image_path) }}" />
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            {% if request.status == 'pending' %}
-                            <button data-action="approve" data-request-id="{{ request.id }}"
-                                    class="approve-btn text-green-600 hover:text-green-900 mr-3">
-                                <i class="fas fa-check"></i> Approve
-                            </button>
-                            <button data-action="reject" data-request-id="{{ request.id }}"
-                                    class="reject-btn text-red-600 hover:text-red-900">
-                                <i class="fas fa-times"></i> Reject
-                            </button>
-                            {% else %}
-                            <span class="text-gray-400">
-                                {% if request.approved_by_username %}
-                                Processed by {{ request.approved_by_username }}
-                                {% else %}
-                                Processed
-                                {% endif %}
-                            </span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="card p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-200/50 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-amber-600" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xl font-bold text-amber-900">{{ requests|selectattr('status', 'equalto', 'pending')|list|length }}</p>
+                    <p class="text-xs text-amber-700 font-medium">Pending Requests</p>
+                </div>
+            </div>
         </div>
-
-        {% if not requests %}
-        <div class="text-center py-12">
-            <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">No Face Requests</h3>
-            <p class="text-gray-500">There are no pending face enrollment requests at this time.</p>
+        <div class="card p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-green-200/50 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-green-600" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xl font-bold text-green-900">{{ requests|selectattr('status', 'equalto', 'approved')|list|length }}</p>
+                    <p class="text-xs text-green-700 font-medium">Approved</p>
+                </div>
+            </div>
         </div>
-        {% endif %}
+        <div class="card p-4 bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-red-200/50 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M15 9l-6 6M9 9l6 6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xl font-bold text-red-900">{{ requests|selectattr('status', 'equalto', 'rejected')|list|length }}</p>
+                    <p class="text-xs text-red-700 font-medium">Rejected</p>
+                </div>
+            </div>
+        </div>
     </div>
+
+    {% if requests %}
+    <!-- Requests Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {% for request in requests %}
+        <div class="card request-card p-6 animate-fade-in" style="animation-delay: {{ loop.index * 0.05 }}s">
+            <div class="flex gap-5">
+                <!-- Face Image -->
+                <div class="flex-shrink-0">
+                    <img src="{{ url_for('static', filename=request.image_path) }}"
+                         class="w-24 h-24 rounded-xl object-cover face-image cursor-pointer image-modal-trigger"
+                         data-image-src="{{ url_for('static', filename=request.image_path) }}" 
+                         alt="Face image"/>
+                </div>
+                
+                <!-- Details -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">{{ request.employee_name }}</h3>
+                            <p class="text-sm text-gray-500">{{ request.employee_email }}</p>
+                        </div>
+                        <span class="status-badge status-{{ request.status }}">
+                            {{ request.status|title }}
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 text-sm text-gray-600 mb-4">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-lg">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                            {{ request.request_type|title }}
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 text-gray-500">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            {{ request.requested_at.strftime('%d %b %Y, %H:%M') }}
+                        </span>
+                    </div>
+                    
+                    <!-- Actions -->
+                    {% if request.status == 'pending' %}
+                    <div class="flex items-center gap-3">
+                        <button data-action="approve" data-request-id="{{ request.id }}" class="approve-btn btn-approve inline-flex items-center gap-2">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Approve
+                        </button>
+                        <button data-action="reject" data-request-id="{{ request.id }}" class="reject-btn btn-reject inline-flex items-center gap-2">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                            Reject
+                        </button>
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-gray-400 italic">
+                        {% if request.approved_by_username %}
+                        Processed by {{ request.approved_by_username }}
+                        {% else %}
+                        Processed
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="card p-12 text-center">
+        <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+            <svg class="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+                <line x1="12" y1="11" x2="12" y2="17"/>
+                <line x1="9" y1="14" x2="15" y2="14"/>
+            </svg>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">No Face Requests</h3>
+        <p class="text-gray-500 max-w-md mx-auto">There are no pending face enrollment requests at this time. When employees submit face enrollment or update requests, they will appear here.</p>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Image Modal -->
-<div id="imageModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-4 max-w-md w-full mx-4">
+<div id="imageModal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center z-50 backdrop-blur-sm" onclick="closeImageModal()">
+    <div class="bg-white rounded-2xl p-4 max-w-2xl w-full mx-4 shadow-2xl transform transition-all animate-fade-in" onclick="event.stopPropagation()">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-medium">Face Image</h3>
-            <button onclick="closeImageModal()" class="text-gray-400 hover:text-gray-600">
-                <i class="fas fa-times"></i>
+            <h3 class="text-xl font-bold text-gray-900">Face Image Preview</h3>
+            <button onclick="closeImageModal()" class="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
             </button>
         </div>
-        <img id="modalImage" class="w-full rounded-lg" />
+        <div class="flex justify-center">
+            <img id="modalImage" class="max-w-full max-h-[70vh] rounded-xl shadow-lg object-contain" />
+        </div>
     </div>
 </div>
 
 <!-- Reject Modal -->
-<div id="rejectModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-medium">Reject Face Request</h3>
-            <button onclick="closeRejectModal()" class="text-gray-400 hover:text-gray-600">
-                <i class="fas fa-times"></i>
+<div id="rejectModal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center z-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl transform transition-all animate-fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900">Reject Request</h3>
+            </div>
+            <button onclick="closeRejectModal()" class="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
             </button>
         </div>
         <form id="rejectForm">
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Rejection Reason</label>
-                <textarea id="rejectReason" name="reason" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Please provide a reason for rejection..."></textarea>
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Rejection Reason</label>
+                <textarea id="rejectReason" name="reason" rows="4" 
+                    class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all resize-none" 
+                    placeholder="Please provide a reason for rejection..."></textarea>
             </div>
             <div class="flex justify-end gap-3">
-                <button type="button" onclick="closeRejectModal()" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Reject Request</button>
+                <button type="button" onclick="closeRejectModal()" 
+                    class="px-5 py-2.5 text-gray-700 bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-all">
+                    Cancel
+                </button>
+                <button type="submit" 
+                    class="px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg shadow-red-200">
+                    Reject Request
+                </button>
             </div>
         </form>
     </div>

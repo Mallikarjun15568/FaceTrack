@@ -443,6 +443,8 @@ def enroll_home():
     search = request.args.get('search', '').strip()
     department_filter = request.args.get('department', '')
     status_filter = request.args.get('status', '')
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
 
     # Base query
     query = """
@@ -486,6 +488,13 @@ def enroll_home():
 
     cursor.execute(query, params)
     employees = cursor.fetchall()
+    
+    # Calculate pagination
+    total_employees = len(employees)
+    total_pages = (total_employees + per_page - 1) // per_page if total_employees > 0 else 1
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    paginated_employees = employees[start_idx:end_idx]
 
     # Get departments for filter dropdown
     cursor.execute("SELECT id, name FROM departments ORDER BY name")
@@ -494,8 +503,13 @@ def enroll_home():
     return render_template(
         "enroll_face_list.html", 
         employees=employees,
+        paginated_employees=paginated_employees,
         departments=departments,
         search=search,
         department_filter=department_filter,
-        status_filter=status_filter
+        status_filter=status_filter,
+        page=page,
+        total_pages=total_pages,
+        total_employees=total_employees,
+        per_page=per_page
     )

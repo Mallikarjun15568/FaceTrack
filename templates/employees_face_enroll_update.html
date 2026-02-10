@@ -1,128 +1,265 @@
 {% extends "base.html" %}
+{% block page_title %}Update Face{% endblock %}
+{% block breadcrumb %}Update Face{% endblock %}
 {% block head %}
 <style>
-    .card { transition: all 0.3s ease; }
-    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-    .btn { transition: all 0.2s ease; }
-    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-    .btn:active { transform: translateY(0); }
+    .card { 
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
+        padding: 1.5rem;
+        transition: all 0.3s ease; 
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px -5px rgba(0,0,0,0.1); }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+    .btn-success:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+    .btn-danger:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); }
+    
+    .btn-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+    .btn-warning:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); }
+    
+    .btn-secondary {
+        background: white;
+        color: #374151;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        border: 2px solid #e5e7eb;
+        transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; }
+    
     img, video { transition: all 0.3s ease; }
+    
+    .camera-box {
+        background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        border-radius: 16px;
+        padding: 4px;
+        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3);
+    }
 </style>
 {% endblock %}
 {% block content %}
 
-<div class="max-w-6xl mx-auto px-2 md:px-0">
+<div class="max-w-6xl mx-auto">
 
-    <!-- Header with Logo and Back Button -->
-
-    <div class="bg-white rounded-xl shadow-md px-6 py-5 flex flex-col md:flex-row items-center mb-8 border border-gray-100">
-        <div class="flex flex-row items-center w-full">
-            <a href="/enroll" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white">
-                <i class="fas fa-arrow-left"></i>
-                Back to List
-            </a>
-            <div class="flex-1 flex justify-end">
-                <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-camera text-white text-xl"></i>
-                        </div>
-                    <div>
-                        <h2 class="text-2xl font-bold">Update Face Recognition</h2>
-                        <p class="text-sm text-gray-500">Employee: {{ employee.full_name }}</p>
-                    </div>
+    <!-- Header -->
+    <div class="card mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Update Face Recognition</h1>
+                    <p class="text-gray-600 mt-1">Employee: <span class="font-semibold text-purple-600">{{ employee.full_name }}</span></p>
                 </div>
             </div>
+            <a href="/enroll" class="btn-secondary inline-flex items-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Back to List
+            </a>
         </div>
     </div>
 
     <!-- Main Content -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-
         <!-- CURRENT SAVED FACE -->
-        <div class="bg-white rounded-xl shadow-xl p-6 flex flex-col items-center border border-gray-200 animate-fadeInUp delay-100">
-            <div class="flex items-center gap-2 mb-4">
-                <i class="fas fa-user text-gray-600"></i>
-                <h3 class="text-lg font-semibold text-gray-900">Current Registered Face</h3>
+        <div class="card">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900">Current Registered Face</h3>
             </div>
-            <div class="border rounded-lg p-4 bg-gray-50 text-center w-full">
+            <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 text-center">
                 {% if employee.face_image %}
-                    <img 
-                        src="/{{ employee.face_image }}" 
-                        alt="Registered Face"
-                        class="w-36 h-36 object-cover rounded-lg mx-auto border"
-                    />
-                    <p class="text-xs text-gray-500 mt-2">
+                    <div class="camera-box inline-block mb-4">
+                        <img 
+                            src="/{{ employee.face_image }}" 
+                            alt="Registered Face"
+                            class="w-48 h-48 object-cover rounded-xl"
+                        />
+                    </div>
+                    <p class="text-sm text-gray-500">
+                        <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
                         Last updated: {{ employee.face_updated_at.strftime('%d %b %Y %H:%M') }}
                     </p>
                 {% else %}
-                    <div class="text-gray-400">
-                        <i class="fa-solid fa-user-slash text-4xl mb-2"></i>
-                        <p>No photo available</p>
+                    <div class="py-8">
+                        <div class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="8.5" cy="7" r="4"/>
+                                <line x1="18" y1="8" x2="23" y2="13"/>
+                                <line x1="23" y1="8" x2="18" y2="13"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500 font-medium">No photo available</p>
                     </div>
                 {% endif %}
             </div>
         </div>
 
         <!-- LIVE CAMERA -->
-
-        <div class="bg-white rounded-xl shadow-xl p-6 border border-gray-200">
-            <div class="flex items-center gap-2 mb-6 justify-center w-full">
-                <i class="fas fa-video text-blue-600 text-xl"></i>
-                <h3 class="text-xl font-semibold text-gray-900">Live Camera Preview</h3>
+        <div class="card">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="23 7 16 12 23 17 23 7"/>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900">Live Camera Preview</h3>
             </div>
-            <div class="relative w-full h-96 rounded-lg border-2 border-gray-300 object-cover bg-gray-50">
-                <!-- Inactive Overlay -->
-                <div id="cameraInactiveBox"
-                     class="absolute inset-0 flex flex-col items-center justify-center
-                            bg-white rounded-lg border-2 border-gray-300 z-30">
-                    <div class="w-40 h-40 rounded-full border-2 border-gray-300
-                                flex flex-col items-center justify-center bg-gray-50 mb-4">
-                        <i class="fas fa-video-slash text-5xl text-gray-400"></i>
-                        <p class="font-semibold mt-2">CAMERA INACTIVE</p>
-                        <p class="text-sm text-gray-400">Start camera to begin</p>
+            
+            <div class="flex justify-center mb-6">
+                <div class="camera-box w-full max-w-md">
+                    <div class="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-xl">
+                        <!-- Inactive Overlay -->
+                        <div id="cameraInactiveBox"
+                             class="flex flex-col items-center justify-center absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-gray-900 rounded-2xl">
+                            <!-- Modern Face Scan Icon -->
+                            <div class="relative mb-6">
+                                <div class="w-28 h-28 rounded-2xl border-2 border-dashed border-slate-500 flex items-center justify-center relative">
+                                    <!-- Corner Markers -->
+                                    <div class="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-emerald-400 rounded-tl"></div>
+                                    <div class="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-emerald-400 rounded-tr"></div>
+                                    <div class="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-emerald-400 rounded-bl"></div>
+                                    <div class="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-emerald-400 rounded-br"></div>
+                                    <svg class="w-12 h-12 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-slate-300 font-bold text-sm tracking-wider uppercase">Camera Inactive</p>
+                            <p class="text-slate-500 text-xs mt-2">Click "Start Camera" to begin capture</p>
+                        </div>
+
+                        <video id="camera"
+                               autoplay playsinline
+                               class="absolute inset-0 w-full h-full bg-black object-cover hidden">
+                        </video>
+
+                        <canvas id="faceCanvas"
+                                class="absolute inset-0 w-full h-full pointer-events-none hidden z-10">
+                        </canvas>
+
+                        <div id="guidanceText"
+                             class="absolute bottom-4 left-1/2 -translate-x-1/2
+                                    bg-black/80 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hidden z-20 backdrop-blur-sm">
+                            Center your face in the frame
+                        </div>
+                        
+                        <img id="previewImg"
+                             class="hidden absolute inset-0 w-full h-full object-cover" />
                     </div>
                 </div>
-
-                <video id="camera"
-                       autoplay playsinline
-                       class="w-full h-full rounded-lg border-2 border-gray-300 object-cover hidden">
-                </video>
-
-                <canvas id="faceCanvas"
-                        class="absolute inset-0 w-full h-full pointer-events-none hidden z-10">
-                </canvas>
-
-                <div id="guidanceText"
-                     class="absolute bottom-3 left-1/2 -translate-x-1/2
-                            bg-black/70 text-white px-4 py-2 rounded-lg text-sm hidden z-20">
-                    Center your face
-                </div>
-                <img id="previewImg"
-                  class="hidden w-full h-96 rounded-lg border-2 border-green-400 shadow-lg object-cover mb-3" />
             </div>
-            <button id="startCameraBtn"
-                    class="btn btn-success px-6 py-2 w-full flex items-center justify-center gap-2 mb-12 mt-6">
-                <i class="fas fa-video"></i>
+            
+            <!-- Start Camera Button -->
+            <button id="startCameraBtn" class="btn-success w-full inline-flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="23 7 16 12 23 17 23 7"/>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                </svg>
                 Start Camera
             </button>
-            <div class="flex gap-4 w-full max-w-[420px] mx-auto mt-4">
-                <button id="stopCameraBtn" class="btn btn-danger flex-1 hidden">
+            
+            <!-- Camera Control Buttons -->
+            <div class="flex gap-4 mt-4" id="cameraControls" style="display: none;">
+                <button id="stopCameraBtn" class="btn-danger flex-1 inline-flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="6" width="12" height="12" rx="2"/>
+                    </svg>
                     Stop Camera
                 </button>
-                <button id="captureBtn" class="btn btn-primary flex-1 hidden">
+                <button id="captureBtn" class="btn-primary flex-1 inline-flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
                     Capture Face
                 </button>
             </div>
 
-            <!-- DSLR Action Buttons -->
-            <div class="flex justify-center gap-3 mt-4 hidden" id="actionBtns">
-              <button id="retakeBtn" class="btn btn-warning">
-                <i class="fas fa-redo"></i> Retake
-              </button>
-              <button id="saveBtn" class="btn btn-success">
-                <i class="fas fa-save"></i> Save Updated Face
-              </button>
+            <!-- Action Buttons -->
+            <div class="flex justify-center gap-4 mt-4" id="actionBtns" style="display: none;">
+                <button id="retakeBtn" class="btn-warning inline-flex items-center gap-2" style="display: none;">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="1 4 1 10 7 10"/>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                    </svg>
+                    Retake
+                </button>
+                <button id="saveBtn" class="btn-success inline-flex items-center gap-2" style="display: none;">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Save Updated Face
+                </button>
+            </div>
+            
+            <!-- Loading -->
+            <div id="loadingBox" class="hidden text-center py-4 mt-4">
+                <div class="inline-flex items-center gap-3 bg-blue-50 px-6 py-4 rounded-xl border border-blue-200">
+                    <div class="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span class="text-base text-blue-700 font-semibold">Processing face data... Please wait</span>
+                </div>
             </div>
         </div>
 

@@ -2,7 +2,7 @@ import os
 import csv
 import io
 from datetime import datetime, timedelta
-from flask import render_template, request, jsonify, send_file, session, redirect, url_for, flash, current_app
+from flask import render_template, request, jsonify, send_file, session, redirect, url_for, flash, current_app, make_response
 from utils.db import get_connection, close_db
 from blueprints.auth.utils import login_required, role_required
 from . import bp
@@ -587,12 +587,11 @@ def export_attendance():
     writer.writerows(rows)
     buf.seek(0)
 
-    return send_file(
-        io.BytesIO(buf.getvalue().encode("utf-8")),
-        mimetype="text/csv",
-        as_attachment=True,
-        download_name="attendance.csv"
-    )
+    filename = f"attendance_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    output = make_response(buf.getvalue())
+    output.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    output.headers["Content-type"] = "text/csv"
+    return output
 
 
 # ---------------------------------------------------------
@@ -632,12 +631,11 @@ def export_employees():
     writer.writerows(rows)
     buf.seek(0)
 
-    return send_file(
-        io.BytesIO(buf.getvalue().encode("utf-8")),
-        mimetype="text/csv",
-        as_attachment=True,
-        download_name="employees.csv"
-    )
+    filename = f"employees_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    output = make_response(buf.getvalue())
+    output.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    output.headers["Content-type"] = "text/csv"
+    return output
 
 
 # ---------------------------------------------------------
@@ -679,12 +677,11 @@ def export_users():
     writer.writerows(rows)
     buf.seek(0)
 
-    return send_file(
-        io.BytesIO(buf.getvalue().encode("utf-8")),
-        mimetype="text/csv",
-        as_attachment=True,
-        download_name="users.csv"
-    )
+    filename = f"users_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    output = make_response(buf.getvalue())
+    output.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    output.headers["Content-type"] = "text/csv"
+    return output
 
 
 # ---------------------------------------------------------
@@ -736,12 +733,11 @@ def export_leaves():
     writer.writerows(rows)
     buf.seek(0)
 
-    return send_file(
-        io.BytesIO(buf.getvalue().encode("utf-8")),
-        mimetype="text/csv",
-        as_attachment=True,
-        download_name="leaves.csv"
-    )
+    filename = f"leaves_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    output = make_response(buf.getvalue())
+    output.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    output.headers["Content-type"] = "text/csv"
+    return output
 
 
 # ---------------------------------------------------------
@@ -783,12 +779,11 @@ def export_departments():
     writer.writerows(rows)
     buf.seek(0)
 
-    return send_file(
-        io.BytesIO(buf.getvalue().encode("utf-8")),
-        mimetype="text/csv",
-        as_attachment=True,
-        download_name="departments.csv"
-    )
+    filename = f"departments_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    output = make_response(buf.getvalue())
+    output.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    output.headers["Content-type"] = "text/csv"
+    return output
 
 
 # ---------------------------------------------------------
@@ -883,12 +878,10 @@ def export_database_backup():
         except:
             pass
         
-        return send_file(
-            io.BytesIO(backup_data),
-            mimetype="application/sql",
-            as_attachment=True,
-            download_name=f"facetrack_backup_{timestamp}.sql"
-        )
+        output = make_response(backup_data)
+        output.headers["Content-Disposition"] = f"attachment; filename=facetrack_backup_{timestamp}.sql"
+        output.headers["Content-type"] = "application/sql"
+        return output
         
     except FileNotFoundError:
         # Fallback: Create a simple SQL export using Python
@@ -977,12 +970,10 @@ def create_python_backup(timestamp):
             pass
         
         backup_data = backup_sql.getvalue()
-        return send_file(
-            io.BytesIO(backup_data.encode('utf-8')),
-            mimetype="application/sql",
-            as_attachment=True,
-            download_name=f"facetrack_backup_{timestamp}.sql"
-        )
+        output = make_response(backup_data)
+        output.headers["Content-Disposition"] = f"attachment; filename=facetrack_backup_{timestamp}.sql"
+        output.headers["Content-type"] = "application/sql"
+        return output
         
     except Exception as e:
         return jsonify({
