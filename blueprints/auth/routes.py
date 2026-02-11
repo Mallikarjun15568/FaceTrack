@@ -396,7 +396,7 @@ def signup():
             )
             db.commit()
             flash("Account created! You can now login.", "success")
-            return redirect(url_for("auth.login"))
+            return redirect(url_for("auth.user_login"))
         except Exception as e:
             db.rollback()
             flash("Signup failed. Please try again.", "error")
