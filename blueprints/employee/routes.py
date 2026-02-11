@@ -217,9 +217,18 @@ def attendance():
     cur = db.cursor(dictionary=True)
     employee_id = session.get('employee_id')
 
-    # Get attendance records for the last 30 days and include absent days
+    # Get employee's join_date for proper date range filtering
+    cur.execute("SELECT join_date FROM employees WHERE id = %s", (employee_id,))
+    emp_row = cur.fetchone()
+    join_date = emp_row['join_date'] if emp_row and emp_row.get('join_date') else None
+
+    # Get attendance records for the last 30 days
     today_date = date.today()
-    start_date = today_date - timedelta(days=29)
+    raw_start_date = today_date - timedelta(days=29)
+
+    # ENTERPRISE RULE: Clamp date range to join_date -> today
+    from utils.helpers import get_valid_date_range, get_attendance_status_for_date
+    start_date, end_date = get_valid_date_range(join_date, raw_start_date, today_date)
 
     cur.execute("""
         SELECT DATE(check_in_time) as date,
@@ -235,24 +244,34 @@ def attendance():
         WHERE employee_id = %s
           AND DATE(check_in_time) BETWEEN %s AND %s
         ORDER BY check_in_time DESC
-    """, (employee_id, start_date, today_date))
+    """, (employee_id, start_date, end_date))
     rows = cur.fetchall()
 
     # Map DB rows by date for quick lookup
     rows_by_date = { (r['date'] if hasattr(r['date'], 'isoformat') else r['date']): r for r in rows }
 
     attendance_records = []
-    for i in range(0, 30):
+    # Calculate number of days in valid range
+    days_in_range = (end_date - start_date).days + 1
+    
+    for i in range(0, days_in_range):
         d = start_date + timedelta(days=i)
+        
+        # ENTERPRISE: Skip dates before join_date or after today
+        status_hint = get_attendance_status_for_date(d, join_date, today_date)
+        if status_hint == 'skip':
+            continue
+        
         db_row = rows_by_date.get(d)
         if db_row:
             attendance_records.append(db_row)
         else:
+            # No record found - determine status based on date
             attendance_records.append({
                 'date': d,
                 'check_in': None,
                 'check_out': None,
-                'status': 'absent',
+                'status': status_hint,  # 'absent' or 'wait' (for today)
                 'duration': None
             })
 
@@ -267,8 +286,7 @@ def attendance():
                 record['status'] = 'present'
             else:
                 record['status'] = 'late'
-        else:
-            record['status'] = 'absent'
+        # Note: If no check_in, status is already set to 'absent' or 'wait'
 
     return render_template('employee/attendance.html', attendance_records=attendance_records)
 
@@ -627,15 +645,24 @@ def summary():
     cur = db.cursor(dictionary=True)
     employee_id = session.get('employee_id')
 
+    # ENTERPRISE: Get employee's join_date for accurate calculations
+    cur.execute("SELECT join_date FROM employees WHERE id = %s", (employee_id,))
+    emp_row = cur.fetchone()
+    join_date = emp_row['join_date'] if emp_row and emp_row.get('join_date') else None
+
     # Get total statistics for the year
     current_year = datetime.now().year
+    today = date.today()
 
-    # Total present days
+    # Total present days (only from join_date onwards and up to today)
     cur.execute("""
         SELECT COUNT(DISTINCT DATE(check_in_time)) as total_present
-        FROM attendance
-        WHERE employee_id = %s AND YEAR(check_in_time) = %s
-              AND (status = 'check-in' OR status = 'check-out')
+        FROM attendance a
+        JOIN employees e ON a.employee_id = e.id
+        WHERE a.employee_id = %s AND YEAR(check_in_time) = %s
+              AND DATE(check_in_time) >= COALESCE(e.join_date, '1970-01-01')
+              AND DATE(check_in_time) <= CURDATE()
+              AND (a.status = 'check-in' OR a.status = 'check-out')
     """, (employee_id, current_year))
     total_present_result = cur.fetchone()
     total_present = total_present_result['total_present'] or 0
@@ -643,8 +670,11 @@ def summary():
     # Total hours worked (approximate)
     cur.execute("""
         SELECT SUM(TIMESTAMPDIFF(HOUR, check_in_time, check_out_time)) as total_hours
-        FROM attendance
-        WHERE employee_id = %s AND YEAR(check_in_time) = %s
+        FROM attendance a
+        JOIN employees e ON a.employee_id = e.id
+        WHERE a.employee_id = %s AND YEAR(check_in_time) = %s
+              AND DATE(check_in_time) >= COALESCE(e.join_date, '1970-01-01')
+              AND DATE(check_in_time) <= CURDATE()
               AND check_out_time IS NOT NULL
     """, (employee_id, current_year))
     total_hours_result = cur.fetchone()
@@ -654,54 +684,97 @@ def summary():
     # Late arrivals (assuming late after 9:30 AM)
     cur.execute("""
         SELECT COUNT(*) as total_late
-        FROM attendance
-        WHERE employee_id = %s AND YEAR(check_in_time) = %s
+        FROM attendance a
+        JOIN employees e ON a.employee_id = e.id
+        WHERE a.employee_id = %s AND YEAR(check_in_time) = %s
+              AND DATE(check_in_time) >= COALESCE(e.join_date, '1970-01-01')
+              AND DATE(check_in_time) <= CURDATE()
               AND TIME(check_in_time) > '09:30:00'
     """, (employee_id, current_year))
     total_late_result = cur.fetchone()
     total_late = total_late_result['total_late'] or 0
 
-    # Absent days (rough calculation - days with no attendance in working days)
-    # This is a simplified calculation
-    total_absent = 0  # For now, we'll set this to 0 as it's complex to calculate accurately
+    # Absent days - will be calculated per month based on working days from join_date
+    total_absent = 0
 
     # Monthly summary for current year with late calculations
     cur.execute("""
         SELECT MONTH(check_in_time) as month,
                COUNT(DISTINCT DATE(check_in_time)) as present_days,
                COUNT(CASE WHEN TIME(check_in_time) > '09:30:00' THEN 1 END) as late_days
-        FROM attendance
-        WHERE employee_id = %s AND YEAR(check_in_time) = %s
-              AND (status = 'check-in' OR status = 'check-out')
+        FROM attendance a
+        JOIN employees e ON a.employee_id = e.id
+        WHERE a.employee_id = %s AND YEAR(check_in_time) = %s
+              AND DATE(check_in_time) >= COALESCE(e.join_date, '1970-01-01')
+              AND DATE(check_in_time) <= CURDATE()
+              AND (a.status = 'check-in' OR a.status = 'check-out')
         GROUP BY MONTH(check_in_time)
         ORDER BY month
     """, (employee_id, current_year))
     monthly_data = cur.fetchall()
 
     # Fill missing months and calculate attendance rates
+    # ENTERPRISE: Consider join_date when calculating working days
     summary = []
     for month in range(1, 13):
         data = next((item for item in monthly_data if item['month'] == month), None)
+        
+        # Calculate working days for this month considering join_date
+        month_start = date(current_year, month, 1)
+        if month == 12:
+            month_end = date(current_year, 12, 31)
+        else:
+            month_end = date(current_year, month + 1, 1) - timedelta(days=1)
+        
+        # ENTERPRISE: Clamp to join_date and today
+        effective_start = month_start
+        effective_end = month_end
+        
+        if join_date:
+            if hasattr(join_date, 'date'):
+                join_date_obj = join_date.date() if hasattr(join_date, 'date') else join_date
+            else:
+                join_date_obj = join_date
+            effective_start = max(month_start, join_date_obj)
+        
+        effective_end = min(month_end, today)
+        
+        # If month is in future or before join, set working days to 0
+        if effective_start > effective_end or month_start > today:
+            working_days = 0
+        else:
+            # Approximate: count weekdays in range (excluding weekends)
+            working_days = 0
+            d = effective_start
+            while d <= effective_end:
+                if d.weekday() < 5:  # Monday=0, Friday=4
+                    working_days += 1
+                d += timedelta(days=1)
+        
         if data:
             present_days = data['present_days']
             late_days = data['late_days'] or 0
-            # Rough attendance rate calculation (assuming 22 working days per month)
-            attendance_rate = min(int((present_days / 22) * 100), 100)
+            absent_days = max(0, working_days - present_days)
+            attendance_rate = min(int((present_days / max(working_days, 1)) * 100), 100)
+            total_absent += absent_days
             summary.append({
                 'month': calendar.month_name[month],
                 'year': current_year,
                 'present': present_days,
                 'late': late_days,
-                'absent': max(0, 22 - present_days),  # Rough calculation
+                'absent': absent_days,
                 'attendance_rate': attendance_rate
             })
         else:
+            # No attendance data for this month
+            absent_days = working_days if working_days > 0 else 0
+            total_absent += absent_days
             summary.append({
                 'month': calendar.month_name[month],
                 'year': current_year,
                 'present': 0,
                 'late': 0,
-                'absent': 22,  # Assuming 22 working days
+                'absent': absent_days,
                 'attendance_rate': 0
             })
 

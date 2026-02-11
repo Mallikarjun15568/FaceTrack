@@ -157,10 +157,26 @@ def apply():
         start = datetime.strptime(start_date, '%Y-%m-%d')
         end = datetime.strptime(end_date, '%Y-%m-%d')
         total_days = (end - start).days + 1
+        today = datetime.now().date()
 
         if total_days <= 0:
             flash('Invalid date range', 'error')
             return redirect(url_for('leave.index'))
+
+        # ENTERPRISE VALIDATION: Leave cannot be applied for past dates
+        if start.date() < today:
+            flash('Cannot apply leave for past dates', 'error')
+            return redirect(url_for('leave.index'))
+
+        # ENTERPRISE VALIDATION: Check if leave date is before employee's join date
+        emp_data = fetchone("SELECT join_date FROM employees WHERE id = %s", (employee_id,))
+        if emp_data and emp_data.get('join_date'):
+            join_date = emp_data['join_date']
+            if hasattr(join_date, 'date'):
+                join_date = join_date.date() if hasattr(join_date, 'date') else join_date
+            if start.date() < join_date:
+                flash('Cannot apply leave for dates before your joining date', 'error')
+                return redirect(url_for('leave.index'))
 
         balance = fetchone("""
             SELECT * FROM leave_balance WHERE employee_id = %s

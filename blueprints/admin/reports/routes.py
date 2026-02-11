@@ -209,19 +209,27 @@ def api_summary():
     db = get_db()
     cur = db.cursor(dictionary=True)
 
-    cur.execute("SELECT COUNT(*) AS total FROM employees WHERE status = 'active'")
+    # ENTERPRISE: Only count employees who had joined by the report period
+    # Employees who joined after the period should not be counted as absent
+    cur.execute("""
+        SELECT COUNT(*) AS total FROM employees 
+        WHERE status = 'active' 
+        AND (join_date IS NULL OR join_date <= %s)
+    """, (end_date,))
     total = cur.fetchone()["total"] or 0
 
     # Get comprehensive attendance summary for the period
     # Logic: Categorize each employee into one of three groups
-    # 1. Never attended = Absent (total_days IS NULL or 0)
+    # 1. Never attended = Absent (total_days IS NULL or 0) - ONLY if they had joined
     # 2. Attended but always on-time = Present (On-time)
     # 3. Attended but late at least once = Late
     
+    # ENTERPRISE: join_date filter added to prevent counting new employees as absent
     cur.execute("""
         SELECT
             COUNT(DISTINCT CASE 
-                WHEN COALESCE(total_days, 0) = 0 THEN e.id 
+                WHEN COALESCE(total_days, 0) = 0 
+                     AND (e.join_date IS NULL OR e.join_date <= %s) THEN e.id 
             END) as absent_count,
             COUNT(DISTINCT CASE 
                 WHEN total_days > 0 AND COALESCE(late_days, 0) = 0 THEN e.id 
@@ -247,7 +255,7 @@ def api_summary():
             GROUP BY employee_id
         ) a ON e.id = a.employee_id
         WHERE e.status = 'active'
-    """, (start_date, end_date))
+    """, (end_date, start_date, end_date))
     
     summary = cur.fetchone()
     
