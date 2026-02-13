@@ -57,8 +57,9 @@ app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 # Set secure cookie flag in production
 app.config["SESSION_COOKIE_SECURE"] = app.config.get('APP_MODE', 'development') == 'production'
-# Lifetime in seconds
-app.config["PERMANENT_SESSION_LIFETIME"] = int(os.getenv('PERMANENT_SESSION_LIFETIME', 3600))  # 1 hour
+
+# Set initial session lifetime (will be updated after DB init)
+app.config["PERMANENT_SESSION_LIFETIME"] = int(os.getenv('PERMANENT_SESSION_LIFETIME', 3600))  # 1 hour default
 
 
 # --------------------------
@@ -124,6 +125,16 @@ app.register_blueprint(employee_bp)
 # Setup selective CSRF exemptions AFTER registering blueprints
 from utils.csrf_exemptions import setup_csrf_exemptions
 setup_csrf_exemptions(app, csrf)
+
+# Load session timeout from database settings (after DB is initialized)
+with app.app_context():
+    try:
+        session_timeout_minutes = int(get_setting('session_timeout', 30))  # Default 30 minutes
+        session_timeout_seconds = session_timeout_minutes * 60
+        app.config["PERMANENT_SESSION_LIFETIME"] = session_timeout_seconds
+        logger.info(f"Session timeout loaded from database: {session_timeout_minutes} minutes ({session_timeout_seconds} seconds)")
+    except Exception as e:
+        logger.warning(f"Failed to load session_timeout from database, keeping default. Error: {e}")
 
 
 

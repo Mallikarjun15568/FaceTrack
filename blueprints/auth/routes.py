@@ -92,7 +92,7 @@ def login():
 
             # Check if user has admin/hr role
             if user.get("role") not in ["admin", "hr"]:
-                flash("Access denied. This login is for administrators only.", "error")
+                flash("🔒 Administrator Access Required - This portal is restricted to authorized administrators only", "error")
                 return redirect(url_for("auth.login"))
 
             # Fetch linked employee row (if any)
@@ -232,7 +232,7 @@ def user_login():
 
             # Check if user has employee, admin, or HR role (all can use employee login)
             if user.get("role") not in ["employee", "admin", "hr"]:
-                flash("Access denied. Invalid user role.", "error")
+                flash("🔒 Invalid Access Level - Please use the appropriate login portal for your role", "error")
                 return redirect(url_for("auth.user_login"))
 
             # Fetch linked employee row (required for employees)

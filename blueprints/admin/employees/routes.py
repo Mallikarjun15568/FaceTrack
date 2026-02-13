@@ -636,9 +636,20 @@ def edit_employee(emp_id):
 @login_required
 @role_required("admin", "hr")
 def face_requests():
+    # Get page and per_page from query parameters
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 10))
+    offset = (page - 1) * per_page
+
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
+    # Get total count for pagination
+    cursor.execute("SELECT COUNT(*) as total FROM pending_face_requests")
+    total_requests = cursor.fetchone()['total']
+    total_pages = (total_requests + per_page - 1) // per_page
+
+    # Get requests with pagination - show ALL requests, not just pending
     cursor.execute("""
         SELECT
             pfr.*,
@@ -649,11 +660,17 @@ def face_requests():
         JOIN employees e ON pfr.emp_id = e.id
         LEFT JOIN users u ON pfr.approved_by = u.id
         ORDER BY pfr.requested_at DESC
-    """)
+        LIMIT %s OFFSET %s
+    """, (per_page, offset))
 
     requests = cursor.fetchall()
 
-    return render_template("admin/face_requests.html", requests=requests)
+    return render_template("admin/face_requests.html",
+                         requests=requests,
+                         page=page,
+                         per_page=per_page,
+                         total_pages=total_pages,
+                         total_requests=total_requests)
 
 
 @bp.route("/face_request/<int:request_id>/<action>", methods=["POST"])
@@ -684,7 +701,7 @@ def process_face_request(request_id, action):
             import shutil
             from utils.face_encoder import face_encoder
 
-            faces_folder = os.path.join("static", "faces")
+            faces_folder = os.path.join(current_app.root_path, "static", "faces")
             ensure_folder(faces_folder)
 
             # Generate new filename
@@ -692,7 +709,8 @@ def process_face_request(request_id, action):
             new_path = os.path.join(faces_folder, new_filename)
 
             # Copy from pending to faces
-            shutil.copy2(request_data["image_path"], new_path)
+            pending_image_path = os.path.join(current_app.root_path, "static", request_data["image_path"])
+            shutil.copy2(pending_image_path, new_path)
 
             # Encode face (with error logging)
             try:
@@ -738,10 +756,15 @@ def process_face_request(request_id, action):
                 )
                 return jsonify({"success": False, "message": message}), 400
 
+            # Fetch old image path for cleanup (if updating existing enrollment)
+            cursor.execute("SELECT image_path FROM face_data WHERE emp_id = %s", (request_data["emp_id"],))
+            old_face_row = cursor.fetchone()
+            old_image_path = old_face_row['image_path'] if old_face_row else None
+
             # Save to face_data (store path relative to static/ for use in templates)
-            new_path_rel = new_path.replace('\\', '/')
-            if new_path_rel.startswith('static/'):
-                new_path_rel = new_path_rel[len('static/'):]
+            # new_path is now a full path, so extract the part after static/
+            static_path = os.path.join(current_app.root_path, "static")
+            new_path_rel = os.path.relpath(new_path, static_path).replace('\\', '/')
 
             # Save to face_data
             cursor.execute("""
@@ -752,6 +775,16 @@ def process_face_request(request_id, action):
                 embedding = VALUES(embedding),
                 created_at = CURRENT_TIMESTAMP
             """, (request_data["emp_id"], new_path_rel, embedding.tobytes()))
+
+            # Clean up old image file after successful database update
+            if old_image_path and old_image_path != new_path_rel:
+                old_full_path = os.path.join(current_app.root_path, "static", old_image_path)
+                if os.path.exists(old_full_path):
+                    try:
+                        os.remove(old_full_path)
+                        logger.info(f"Cleaned up old face image: {old_full_path}")
+                    except Exception as e:
+                        logger.warning(f"Failed to cleanup old face image {old_full_path}: {e}")
 
             # Update request
             cursor.execute("""
@@ -772,8 +805,9 @@ def process_face_request(request_id, action):
             """, (session.get("user_id"), rejection_reason, request_id))
 
             # Optionally delete image
-            if os.path.exists(request_data["image_path"]):
-                os.remove(request_data["image_path"])
+            pending_image_path = os.path.join(current_app.root_path, "static", request_data["image_path"])
+            if os.path.exists(pending_image_path):
+                os.remove(pending_image_path)
 
         db.commit()
 

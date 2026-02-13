@@ -850,11 +850,20 @@ def face_request():
     cur.execute("SELECT id FROM face_data WHERE emp_id = %s", (employee_id,))
     has_face = cur.fetchone() is not None
 
-    # Check pending requests
+    # Check pending requests (latest one for status display)
     cur.execute("SELECT id, request_type, status, requested_at, rejection_reason FROM pending_face_requests WHERE emp_id = %s ORDER BY requested_at DESC LIMIT 1", (employee_id,))
     pending_request = cur.fetchone()
 
-    return render_template('employee/face_request.html', has_face=has_face, pending_request=pending_request)
+    # Get all face request history
+    cur.execute("""
+        SELECT id, request_type, status, requested_at, approved_at, rejection_reason, image_path
+        FROM pending_face_requests
+        WHERE emp_id = %s
+        ORDER BY requested_at DESC
+    """, (employee_id,))
+    face_history = cur.fetchall()
+
+    return render_template('employee/face_request.html', has_face=has_face, pending_request=pending_request, face_history=face_history)
 
 
 @bp.route('/submit_face_request', methods=['POST'])

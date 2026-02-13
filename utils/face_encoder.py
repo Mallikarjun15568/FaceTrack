@@ -95,6 +95,27 @@ class FaceEncoder:
         emb = getattr(face, "normed_embedding", None)
         return emb
 
+    def encode_face_from_image(self, image_path):
+        """
+        Encode face from image file path.
+        Returns normalized embedding or None if encoding fails.
+        """
+        try:
+            # Load image using OpenCV
+            img = cv2.imread(image_path)
+            if img is None:
+                logger.error(f"Failed to load image from path: {image_path}")
+                return None
+            
+            # Convert BGR to RGB
+            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            
+            # Get embedding
+            return self.get_embedding(img_rgb)
+            
+        except Exception as e:
+            logger.error(f"Error encoding face from image {image_path}: {e}", exc_info=True)
+            return None
 
     def get_quality_feedback(self, issues):
         """Convert technical issues to user-friendly feedback"""

@@ -1,4 +1,4 @@
-from flask import Blueprint, session, redirect, url_for, flash, request, jsonify, abort
+from flask import Blueprint, session, redirect, url_for, flash, request, jsonify
 
 def check_admin():
     """
@@ -12,11 +12,13 @@ def check_admin():
     if 'user_id' not in session:
         if is_api:
             return jsonify({"error": "Login required"}), 401
-        abort(403)  # Show 403 instead of redirecting to login
+        flash("Please login first", "error")
+        return redirect(url_for("auth.login"))
     if session.get('role') != 'admin':
         if is_api:
             return jsonify({"error": "Admin access required"}), 403
-        abort(403)  # Show custom 403 Forbidden page
+        flash("🔒 Administrator Access Required - Please contact your system administrator", "error")
+        return redirect(url_for("auth.login"))
 
 def check_admin_hr():
     """
@@ -30,11 +32,13 @@ def check_admin_hr():
     if 'user_id' not in session:
         if is_api:
             return jsonify({"error": "Login required"}), 401
-        abort(403)  # Show 403 instead of redirecting to login
+        flash("Please login first", "error")
+        return redirect(url_for("auth.login"))
     if session.get('role') not in ['admin', 'hr']:
         if is_api:
             return jsonify({"error": "Admin/HR access required"}), 403
-        abort(403)  # Show custom 403 Forbidden page
+        flash("🔒 Administrator or HR Access Required - Please contact your system administrator", "error")
+        return redirect(url_for("auth.login"))
 
 def check_employee():
     """
@@ -48,11 +52,13 @@ def check_employee():
     if 'user_id' not in session:
         if is_api:
             return jsonify({"error": "Login required"}), 401
-        abort(403)  # Show 403 instead of redirecting to login
+        flash("Please login first", "error")
+        return redirect(url_for("auth.user_login"))
     if session.get('role') not in ['employee', 'admin', 'hr']:
         if is_api:
             return jsonify({"error": "Employee/Admin/HR access required"}), 403
-        abort(403)  # Show custom 403 Forbidden page
+        flash("🔒 Authorized Access Required - Please log in with valid credentials", "error")
+        return redirect(url_for("auth.user_login"))
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 

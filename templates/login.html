@@ -4,121 +4,239 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>Admin Login - FaceTrack</title>
+  <title>Administrator Login - FaceTrack Pro</title>
 
   <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/professional.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    .login-bg {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      background-image:
+        radial-gradient(circle at 25% 25%, rgba(37, 99, 235, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(37, 99, 235, 0.02) 0%, transparent 50%);
+    }
+    .login-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 1.5rem;
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .login-card:hover {
+      box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    }
+    .input-premium {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      background: #ffffff;
+    }
+    .input-premium:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      outline: none;
+    }
+    .btn-login {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
+      padding: 0.875rem 1.5rem;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.3);
+    }
+    .btn-login:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    }
+    .btn-login:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .welcome-message {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 1px solid #bfdbfe;
+      border-radius: 1rem;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .security-badge {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border: 1px solid #f59e0b;
+      color: #92400e;
+    }
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .animate-fade-in {
+      animation: fadeInUp 0.6s ease-out;
+    }
+  </style>
 </head>
 
-<body class="bg-soft-mist min-h-screen flex items-center justify-center px-4">
+<body class="login-bg min-h-screen flex items-center justify-center px-4 py-8">
 
   <!-- ================= LOGIN CARD ================= -->
-  <div class="w-full max-w-md">
+  <div class="w-full max-w-md animate-fade-in">
 
-    <!-- HEADER -->
-    <div class="text-center mb-8">
-      <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4 shadow-lg">
-        <i class="fas fa-shield-alt text-2xl text-white"></i>
+    <!-- WELCOME MESSAGE -->
+    <div class="welcome-message text-center mb-6">
+      <div class="flex justify-center mb-3">
+        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+          <i class="fas fa-building text-xl text-white"></i>
+        </div>
       </div>
-      <h1 class="text-3xl font-bold text-gray-900 mb-2" style="color: #0F172A;">Admin Access</h1>
-      <p class="text-blue-600">Secure Administrator Login Portal</p>
-      <div class="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full text-xs text-blue-700 border border-blue-200">
-        <i class="fas fa-lock text-blue-600"></i>
-        <span>Restricted Access</span>
-      </div>
+      <h1 class="text-xl font-bold text-gray-900 mb-2">Welcome to FaceTrack Pro</h1>
+      <p class="text-blue-700 text-sm leading-relaxed">
+        Advanced Face Recognition Attendance System for Modern Organizations
+      </p>
     </div>
 
-    <div class="bg-white rounded-xl shadow-2xl border border-gray-200 p-8">
+    <!-- LOGIN CARD -->
+    <div class="login-card p-6">
+
+      <!-- HEADER -->
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl mb-3 shadow-lg">
+          <i class="fas fa-shield-alt text-lg text-white"></i>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Administrator Portal</h2>
+        <p class="text-gray-600 text-sm">Access the secure administration dashboard</p>
+        <div class="mt-2 inline-flex items-center gap-2 px-3 py-1 security-badge rounded-full text-xs font-medium border">
+          <i class="fas fa-lock text-amber-600"></i>
+          <span>Secure Administrator Access</span>
+        </div>
+      </div>
 
       <!-- Flash Messages -->
       {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
       <div class="space-y-3 mb-6">
         {% for category, msg in messages %}
-        <div class="flex items-center gap-3 p-3 rounded-lg border text-sm {% if category=='error' %}bg-red-50 border-red-200 text-red-800{% else %}bg-green-50 border-green-200 text-green-800{% endif %}">
-          <i class="{% if category=='error' %}fas fa-exclamation-circle{% else %}fas fa-check-circle{% endif %}"></i>
-          <span class="font-medium">{{ msg }}</span>
+        <div class="flex items-center gap-3 p-4 rounded-xl border text-sm font-medium
+                    {% if category=='error' %}bg-red-50 border-red-200 text-red-800
+                    {% else %}bg-green-50 border-green-200 text-green-800{% endif %}">
+          <i class="{% if category=='error' %}fas fa-exclamation-triangle{% else %}fas fa-check-circle{% endif %} text-lg"></i>
+          <span>{{ msg }}</span>
         </div>
         {% endfor %}
       </div>
       {% endif %}
       {% endwith %}
 
-      <!-- NORMAL LOGIN FORM -->
-      <form method="POST" class="space-y-6">
+      <!-- LOGIN FORM -->
+      <form method="POST" class="space-y-5">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
         <div>
-          <label class="block text-sm font-semibold mb-2" style="color: #334155;">
-            <i class="fas fa-user mr-2 text-blue-600"></i>Administrator Username
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            <i class="fas fa-user-shield mr-2 text-blue-600"></i>Administrator Username
           </label>
           <input type="text" name="username" required autocomplete="off"
-                 class="input-premium focus:border-blue-600 focus:ring-blue-600" 
-                 placeholder="Enter admin username" value=""
-                 style="color: #020617;">
-          <style>
-            .input-premium::placeholder { color: #94A3B8; }
-          </style>
+                 class="input-premium"
+                 placeholder="Enter your admin username">
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2" style="color: #334155;">
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
             <i class="fas fa-key mr-2 text-blue-600"></i>Password
           </label>
           <input type="password" name="password" required
-                 class="input-premium focus:border-blue-600 focus:ring-blue-600" 
-                 placeholder="Enter your password"
-                 style="color: #020617;">
-          <style>
-            .input-premium::placeholder { color: #94A3B8; }
-          </style>
+                 class="input-premium"
+                 placeholder="Enter your secure password">
         </div>
 
-        <button type="submit" id="loginBtn" class="w-full text-lg py-3 font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]" 
-                style="background-color: #2563EB; color: white; border: 2px solid #2563EB;">
+        <button type="submit" id="loginBtn" class="w-full btn-login text-sm">
           <i class="fas fa-sign-in-alt mr-2" id="loginIcon"></i>
-          <span id="loginText">Access Admin Panel</span>
+          <span id="loginText">Access Dashboard</span>
         </button>
-        
-        <script>
-          document.querySelector('form').addEventListener('submit', function() {
-            const btn = document.getElementById('loginBtn');
-            const icon = document.getElementById('loginIcon');
-            const text = document.getElementById('loginText');
-            if (btn && icon && text) {
-              btn.disabled = true;
-              btn.style.opacity = '0.7';
-              icon.className = 'fas fa-spinner fa-spin mr-2';
-              text.textContent = 'Logging In...';
-            }
-          });
-        </script>
 
       </form>
 
-      <p class="mt-6 text-center text-sm text-gray-600">
-        Need help?
-        <a href="/contact" class="font-semibold hover:text-blue-800 transition" style="color: #3B82F6;">
-          Contact Support
-        </a>
-      </p>
+      <!-- FOOTER LINKS -->
+      <div class="mt-6 pt-4 border-t border-gray-200">
+        <div class="text-center space-y-1">
+          <p class="text-sm text-gray-600">
+            <i class="fas fa-question-circle mr-1 text-blue-500"></i>
+            Need assistance?
+            <a href="/contact" class="font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+              Contact Support
+            </a>
+          </p>
+          <p class="text-xs text-gray-500">
+            <i class="fas fa-info-circle mr-1"></i>
+            For authorized administrators only
+          </p>
+        </div>
+      </div>
 
     </div>
 
-    <p class="text-center text-xs text-gray-500 mt-6">
-      © 2026 FaceTrack Pro. Secure Administrator Portal.
-    </p>
+    <!-- FOOTER -->
+    <div class="text-center mt-6">
+      <p class="text-xs text-gray-500">
+        © 2026 FaceTrack Pro. Enterprise Face Recognition System.
+        <br>
+        <span class="inline-flex items-center gap-1 mt-1">
+          <i class="fas fa-shield-alt text-green-500"></i>
+          <span>SSL Secured & GDPR Compliant</span>
+        </span>
+      </p>
+    </div>
 
   </div>
 
   <!-- Toast notification system -->
   <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
-  
-  <!-- Show flash messages as toast -->
+
+  <!-- Login form enhancement -->
   <script>
+    document.querySelector('form').addEventListener('submit', function() {
+      const btn = document.getElementById('loginBtn');
+      const icon = document.getElementById('loginIcon');
+      const text = document.getElementById('loginText');
+
+      if (btn && icon && text) {
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        btn.style.transform = 'none';
+        icon.className = 'fas fa-spinner fa-spin mr-2';
+        text.textContent = 'Authenticating...';
+      }
+    });
+
+    // Add fade-in animation
     document.addEventListener('DOMContentLoaded', function() {
+      const card = document.querySelector('.animate-fade-in');
+      if (card) {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+          card.style.transition = 'all 0.6s ease-out';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, 100);
+      }
+
+      // Show flash messages as toast
       {% with messages = get_flashed_messages(with_categories=true) %}
       {% for category, msg in messages %}
       showToast("{{ msg }}", "{{ 'success' if category == 'success' else 'error' }}", 4000);
