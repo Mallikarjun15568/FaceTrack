@@ -9,36 +9,42 @@
 
 > Production-grade facial recognition attendance system powered by InsightFace ArcFace. Features real-time kiosk mode with mobile camera support, smooth animations, liveness detection, and enterprise-level security.
 
-> **🎉 Version 2.4** - Contact form database storage, enhanced security middleware, custom error pages, face request approval system, and improved admin workflows!
+> **🎉 Version 2.5** - Remember Me functionality, premium UI/UX enhancements, professional login pages, enhanced security messaging, and improved session management!
 
 ---
 
-## 📱 Latest Updates (v2.4)
+## 📱 Latest Updates (v2.5)
 
-### 💬 Contact Form Enhancement
-- **Database Storage**: Contact form messages now stored in database instead of email-only
-- **Message Management**: Admin can track and manage contact form submissions
-- **Status Tracking**: New/Read/Replied status for message management
+### 🔐 Remember Me Functionality
+- **Persistent Sessions**: "Remember Me" checkbox on both admin and employee login pages
+- **Configurable Duration**: Sessions persist for admin-configurable timeout period (default: 30 minutes)
+- **Enhanced UX**: Users can stay logged in across browser sessions
+- **Security Maintained**: All existing security features (CSRF, session regeneration) preserved
 
-### 🔒 Security Enhancements
-- **Centralized Security Middleware**: Unified role-based access control across all blueprints
-- **Custom Error Pages**: Professional 403 Forbidden and 404 Not Found pages
-- **Standardized Guards**: Consistent security checks with abort(403) responses
+### 🎨 Premium UI/UX Enhancements
+- **Modern Card Designs**: Premium cards with gradients, animations, and hover effects
+- **Professional Login Pages**: Enterprise-grade login interfaces with security badges
+- **Enhanced Flash Messages**: Improved error/success message styling and positioning
+- **Smooth Animations**: Scroll-reveal animations and micro-interactions throughout
+- **Consistent Branding**: Unified color scheme and professional styling
 
-### 👥 Admin Workflow Improvements
-- **Face Request Management**: Dedicated admin page for approving/rejecting face enrollment requests
-- **Streamlined Navigation**: "Face Requests" button added to employee management page
-- **Request Status Tracking**: Pending, Approved, Rejected states with timestamps
+### 🛡️ Security & Session Management
+- **Professional Error Messages**: Replaced harsh "access denied" with user-friendly language
+- **Session Timeout Configuration**: Database-driven session timeout settings
+- **CSRF Validation**: Enhanced error handling for CSRF token validation failures
+- **Access Control**: Improved middleware with professional error responses
 
-### 🧹 Code Quality
-- **Blueprint Security**: Added middleware to attendance, leave, enroll, and kiosk blueprints
-- **Template Cleanup**: Removed unused enroll.html template
-- **Consistent Error Handling**: Standardized 403 responses across all protected routes
+### 📊 Employee Interface Improvements
+- **Face Request History**: Complete history table with image viewing modals
+- **Settings Page**: Password change functionality with validation and strength indicators
+- **Profile Management**: Enhanced employee profile with photo upload capabilities
+- **Navigation**: Improved navigation with active state indicators and smooth transitions
 
-### ⚡ Performance & UX
-- **Faster Route Protection**: Middleware-based security checks
-- **Improved Admin UX**: Centralized face request management workflow
-- **Clean Codebase**: Removed redundant templates and standardized security
+### ⚡ Performance & Code Quality
+- **Optimized Queries**: Improved database query performance
+- **Clean Codebase**: Consistent error handling and code organization
+- **Responsive Design**: Enhanced mobile and tablet compatibility
+- **Animation Performance**: Hardware-accelerated animations for smooth UX
 
 ---
 
@@ -93,9 +99,10 @@
 ### 🔐 Authentication & Security
 - **Face + Password Login**: Multi-factor authentication with live facial verification
 - **Role-Based Access Control (RBAC)**: Admin, HR, and Employee roles
+- **Remember Me Functionality**: Persistent sessions with configurable timeout
 - **Centralized Security Middleware**: Unified access control across all blueprints
 - **Custom Error Pages**: Professional 403/404 pages with consistent branding
-- **Session Management**: Secure Flask sessions with encrypted cookies
+- **Session Management**: Secure Flask sessions with encrypted cookies and permanent session support
 - **Password Encryption**: Werkzeug PBKDF2 SHA-256 hashing
 - **Anti-CSRF Protection**: Token-based request validation
 
@@ -107,7 +114,8 @@
 - **Face Enrollment**: Single high-quality capture with 512-dim embedding storage
 - **Face Request Management**: Admin approval system for enrollment requests
 - **Request Workflow**: Pending → Approved/Rejected with admin oversight
-- **Employee Self-Service**: Profile management, face enrollment requests
+- **Employee Self-Service**: Profile management, face enrollment requests, password changes
+- **Password Management**: Secure password change functionality with validation
 
 ### 📋 Leave Management System
 - **Leave Types**: Annual, Sick, Personal, Maternity, Paternity, Emergency, Casual
@@ -175,7 +183,7 @@
 - **Timeline View**: Chronological attendance feed
 - **Settings Panel**: Configure thresholds, working hours
 - **Department Management**: CRUD for departments
-- **Profile Management**: Update personal information
+- **Profile Management**: Update personal information and password
 - **Face Request Approval**: Admin dashboard for managing enrollment requests
 - **Custom Error Handling**: Professional error pages with navigation
 - **Charts & Analytics**: Visual data representation and insights
@@ -185,6 +193,8 @@
 - **Holiday Calendar**: Company holiday and weekend management
 - **Leave Management**: Complete leave application and approval system
 - **Contact Form**: Database-backed contact form with message storage and admin management
+- **Premium UI/UX**: Modern card designs, smooth animations, and professional styling
+- **Remember Me**: Persistent login sessions with configurable timeout
 
 ---
 
