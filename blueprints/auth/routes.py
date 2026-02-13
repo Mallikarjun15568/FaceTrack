@@ -129,6 +129,10 @@ def login():
             # Force session ID regeneration
             session.modified = True
 
+            # Handle "Remember Me" functionality
+            if request.form.get("remember"):
+                session.permanent = True
+
             # Audit successful login
             try:
                 # Log successful login to login_logs table
@@ -264,6 +268,10 @@ def user_login():
 
             # Force session ID regeneration
             session.modified = True
+
+            # Handle "Remember Me" functionality
+            if request.form.get("remember"):
+                session.permanent = True
 
             # Audit successful login
             try:
