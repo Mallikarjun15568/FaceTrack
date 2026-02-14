@@ -390,20 +390,32 @@ FaceTrack/
 ├── config.py                   # Configuration settings
 ├── db_utils.py                 # Database initialization & helpers
 ├── requirements.txt            # Python dependencies
+├── package.json                # Node.js dependencies (for TailwindCSS)
+├── postcss.config.js           # PostCSS configuration
+├── tailwind.config.js          # TailwindCSS configuration
 ├── README.md                   # Documentation
-├── WIREFRAMES.md               # UI/UX wireframes
+├── DEPLOYMENT.md               # Deployment guide
+├── docker-compose.yml          # Docker Compose configuration
+├── Dockerfile                  # Docker container setup
 │
 ├── blueprints/                 # Feature modules
 │   ├── auth/                   # Authentication (login/logout/signup)
+│   │   ├── __init__.py
 │   │   ├── routes.py           # Login, logout, password reset
-│   │   └── utils.py            # Auth helpers & decorators
+│   │   └── __pycache__/
 │   ├── admin/                  # Admin panel (/admin)
 │   │   ├── __init__.py         # Admin middleware & sub-blueprints
 │   │   ├── dashboard/          # Admin dashboard (/admin/dashboard)
+│   │   │   └── ...
 │   │   ├── employees/          # Employee management (/admin/employees)
 │   │   ├── reports/            # Reports & analytics (/admin/reports)
-│   │   └── settings/           # System settings (/admin/settings)
+│   │   ├── settings/           # System settings (/admin/settings)
+│   │   └── __pycache__/
 │   ├── attendance/             # Attendance records (/attendance)
+│   │   ├── __init__.py
+│   │   ├── attendance_utils.py # Attendance helper functions
+│   │   ├── routes.py
+│   │   └── __pycache__/
 │   ├── enroll/                 # Face enrollment (/enroll)
 │   ├── kiosk/                  # Kiosk mode (/kiosk)
 │   ├── leave/                  # Leave management (/leave)
@@ -411,43 +423,121 @@ FaceTrack/
 │   └── employee/               # Employee panel (/employee)
 │
 ├── utils/                      # Helper utilities
+│   ├── __init__.py
 │   ├── face_encoder.py         # Face embedding generation + recognition
+│   ├── liveness_detector.py    # Liveness detection module
 │   ├── db.py                   # Database connection pool
 │   ├── helpers.py              # Utility functions
 │   ├── email_service.py        # Email notifications
 │   ├── logger.py               # Logging utilities
-│   └── extensions.py           # Flask extensions
+│   ├── extensions.py           # Flask extensions
+│   ├── input_validation.py     # Input validation utilities
+│   ├── validators.py           # Data validators
+│   ├── csrf_exemptions.py      # CSRF exemption handlers
+│   ├── thread_safe_encoder.py  # Thread-safe face encoding
+│   └── __pycache__/
 │
-├── models/                     # AI models
-│   ├── users.py                # User model
-│   └── buffalo_l/              # InsightFace model files
+├── models/                     # Data models
+│   └── users.py                # User model
 │
 ├── templates/                  # Jinja2 HTML templates
 │   ├── base.html               # Base layout with sidebar
+│   ├── base_kiosk.html         # Kiosk-specific base layout
 │   ├── home.html               # Public homepage
 │   ├── login.html              # Login page
+│   ├── signup.html             # Signup page
+│   ├── forgot_password.html    # Password reset request
+│   ├── reset_password.html     # Password reset form
 │   ├── 403.html                # Custom forbidden page
 │   ├── 404.html                # Custom not found page
 │   ├── 500.html                # Custom error page
-│   ├── admin/
-│   │   └── face_requests.html  # Face request approval
+│   ├── contact.html            # Contact form
+│   ├── help.html               # Help page
+│   ├── about.html              # About page
+│   ├── admin/                  # Admin templates
+│   │   ├── dashboard_admin.html
+│   │   ├── employees.html
+│   │   ├── employee_edit.html
+│   │   ├── employee_view.html
+│   │   ├── reports.html
+│   │   ├── settings.html
+│   │   ├── user_management.html
+│   │   ├── backups/
+│   │   └── face_requests.html
 │   ├── employee/               # Employee panel templates
-│   │   ├── dashboard.html      # Employee dashboard
-│   │   ├── attendance.html     # Employee attendance view
-│   │   ├── leave.html          # Leave application
-│   │   ├── profile.html        # Profile management
-│   │   └── face_request.html   # Face enrollment request
+│   │   ├── dashboard.html
+│   │   ├── attendance.html
+│   │   ├── leave.html
+│   │   ├── profile.html
+│   │   └── face_request.html
 │   ├── leave/                  # Leave management templates
-│   │   ├── apply_leave.html    # Leave application form
-│   │   └── leave_list.html     # Leave history
+│   │   ├── apply_leave.html
+│   │   └── leave_list.html
 │   ├── attendance.html         # Admin attendance view
 │   ├── kiosk.html              # Kiosk interface
+│   ├── kiosk_exit.html         # Kiosk exit confirmation
 │   ├── enroll_face_list.html   # Enrollment management
-│   ├── employees_face_enroll.html    # Face enrollment form
-│   ├── employees_face_enroll_update.html  # Update enrollment
-│   └── [other admin templates]
+│   ├── enrolled_list.html      # Enrolled faces list
+│   ├── employees_face_enroll.html
+│   ├── employees_face_enroll_update.html
+│   ├── employees_add_modal.html
+│   └── [other templates]
 │
 ├── static/                     # Static assets
+│   ├── css/                    # Compiled CSS
+│   ├── js/                     # JavaScript files
+│   ├── faces/                  # Enrolled face images
+│   ├── snapshots/              # Attendance photos
+│   ├── pending_faces/          # Pending face requests
+│   ├── images/                 # UI assets
+│   ├── uploads/                # Uploaded files
+│   └── temp/                   # Temporary files
+│
+├── scripts/                    # Database scripts & utilities
+│   ├── database_setup.sql      # Database setup script
+│   ├── add_missing_columns.py  # Column addition script
+│   ├── add_missing_columns.sql
+│   ├── add_report_history.sql
+│   ├── check_users.py          # User verification script
+│   ├── checkout_reminder.py    # Checkout reminder script
+│   ├── create_admin.py         # Admin creation script
+│   ├── mark_absent.py          # Mark absent script
+│   ├── test_email.py           # Email testing script
+│   └── __pycache__/
+│
+├── logs/                       # Application logs
+│   ├── attendance.csv
+│   └── logout.csv
+│
+├── docs/                       # Documentation
+│   ├── 00_TITLE_PAGE.md
+│   ├── 01_CERTIFICATE.md
+│   ├── CHAPTER_01.md
+│   ├── CHAPTER_02.md
+│   ├── CHAPTER_03.md
+│   ├── CHAPTER_04.md
+│   ├── CHAPTER_05.md
+│   ├── CHAPTER_06_BIBLIOGRAPHY.md
+│   ├── ANNEXURE_1.md
+│   ├── ANNEXURE_2.md
+│   ├── ANNEXURE_3.md
+│   ├── MOBILE_ACCESS_SETUP.md
+│   ├── README.md
+│   ├── SCREENSHOT_CHECKLIST.md
+│   ├── SCREENSHOT_GUIDE.md
+│   └── diagrams/
+│
+├── tests/                      # Test suites
+│   ├── test_camera.py          # Camera testing
+│   ├── test_live_recognition.py # Live recognition testing
+│   ├── integration/            # Integration tests
+│   ├── performance/            # Performance tests
+│   └── unit/                   # Unit tests
+│
+└── __pycache__/                # Python bytecode cache
+```
+
+---
 │   ├── css/                    # Compiled CSS
 │   ├── js/                     # JavaScript files
 │   ├── faces/                  # Enrolled face images
