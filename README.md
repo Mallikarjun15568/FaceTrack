@@ -58,6 +58,10 @@
 ![Kiosk Mode](docs/screenshots/kiosk.png)
 *Real-time face detection with guidance overlay, distance meter, and confidence scoring*
 
+### Liveness Detection
+![Liveness Detection](docs/screenshots/liveness.png)
+*Real-time liveness verification with blink and movement prompts*
+
 ### Employee Management
 ![Employee List](docs/screenshots/employees.png)
 *Complete employee directory with face enrollment status and management tools*
@@ -150,7 +154,15 @@
 - **Multi-Face Support**: Detects up to 3 faces per frame
 - **Live Detection**: RetinaFace (InsightFace built-in detector)
 
-### 🖥️ Kiosk Mode (Production-Ready)
+### �️ Liveness Detection
+- **Anti-Spoofing**: Prevents photo/video attacks with real-time verification
+- **Blink Detection**: Eye aspect ratio analysis for natural blink verification
+- **Head Movement Tracking**: Directional movement detection (left/right)
+- **Adaptive Texture Analysis**: Lighting-aware skin texture validation
+- **Time-Window Voting**: Multi-frame analysis for robust detection
+- **Performance Optimized**: Fast processing with caching and frame skipping
+
+### �🖥️ Kiosk Mode (Production-Ready)
 - **Touchless Operation**: Fully automated face-based attendance
 - **Single-Row Per Day**: One record per employee per day (optimized)
 - **Auto Check-in**: First recognition marks check-in
