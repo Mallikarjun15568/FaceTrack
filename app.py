@@ -1,17 +1,27 @@
+"""
+Main application module for FaceTrack attendance system.
+Handles Flask app initialization, blueprints, and core routing.
+"""
+
 from flask import Flask, render_template, redirect, url_for, flash, session, jsonify, send_from_directory, request, abort
 import logging
 import time
 import os
-from dotenv import load_dotenv
-from utils.extensions import limiter
-from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
-
-from config import Config
-from db_utils import get_connection, close_db, get_setting
-from utils.logger import logger
 import shutil
 import tempfile
+
+from dotenv import load_dotenv
+from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
+from flask_limiter.errors import RateLimitExceeded
+
+from config import Config
+from db_utils import get_connection, close_db, get_setting, initialize_pool, execute
+from utils.extensions import limiter
+from utils.logger import logger
 from utils.face_encoder import face_encoder
+from utils.email_service import email_service
+from utils.csrf_exemptions import setup_csrf_exemptions
+from utils.validators import validate_email
 
 # --------------------------
 # BLUEPRINT IMPORTS
@@ -24,7 +34,8 @@ from blueprints.kiosk import bp as kiosk_bp
 from blueprints.admin.settings.routes import load_settings
 from blueprints.leave import bp as leave_bp
 from blueprints.charts import bp as charts_bp
-from utils.email_service import email_service
+from blueprints.employee import bp as employee_bp
+from utils.csrf_exemptions import setup_csrf_exemptions
 
 
 # --------------------------
@@ -35,14 +46,13 @@ app.config.from_object(Config)
 app.secret_key = app.config.get('SECRET_KEY')
 
 # Initialize database connection pool FIRST
-from db_utils import initialize_pool
 try:
     logger.info("Initializing MySQL connection pool...")
     initialize_pool()
     logger.info("Database connection pool initialized successfully")
 except Exception as e:
-    logger.critical(f"Failed to initialize database connection pool: {e}", exc_info=True)
-    raise RuntimeError("Cannot start application without database connection")
+    logger.critical("Failed to initialize database connection pool: %s", e, exc_info=True)
+    raise RuntimeError("Cannot start application without database connection") from e
 
 # Initialize CSRF for templates (settings page uses csrf_token())
 csrf = CSRFProtect(app)
@@ -81,7 +91,8 @@ app.config['FA_LOCAL_AVAILABLE'] = os.path.exists(fa_local_path)
 
 @app.context_processor
 def inject_feature_flags():
-    return dict(FA_LOCAL_AVAILABLE=app.config.get('FA_LOCAL_AVAILABLE', False))
+    """Inject feature flags into all templates."""
+    return {"FA_LOCAL_AVAILABLE": app.config.get('FA_LOCAL_AVAILABLE', False)}
 
 # ==========================
 # EMAIL (SYSTEM EMAIL CONFIG) - load from environment (.env)
@@ -109,7 +120,7 @@ logger = logging.getLogger("app")
 
 # --------------------------
 # REGISTER BLUEPRINTS
-# 
+#
 # --------------------------
 
 app.register_blueprint(auth_bp)
@@ -119,11 +130,9 @@ app.register_blueprint(enroll_bp)
 app.register_blueprint(kiosk_bp)
 app.register_blueprint(leave_bp)
 app.register_blueprint(charts_bp)
-from blueprints.employee import bp as employee_bp
 app.register_blueprint(employee_bp)
 
 # Setup selective CSRF exemptions AFTER registering blueprints
-from utils.csrf_exemptions import setup_csrf_exemptions
 setup_csrf_exemptions(app, csrf)
 
 # Load session timeout from database settings (after DB is initialized)
@@ -132,9 +141,9 @@ with app.app_context():
         session_timeout_minutes = int(get_setting('session_timeout', 30))  # Default 30 minutes
         session_timeout_seconds = session_timeout_minutes * 60
         app.config["PERMANENT_SESSION_LIFETIME"] = session_timeout_seconds
-        logger.info(f"Session timeout loaded from database: {session_timeout_minutes} minutes ({session_timeout_seconds} seconds)")
-    except Exception as e:
-        logger.warning(f"Failed to load session_timeout from database, keeping default. Error: {e}")
+        logger.info("Session timeout loaded from database: %s minutes (%s seconds)", session_timeout_minutes, session_timeout_seconds)
+    except (ValueError, TypeError) as e:
+        logger.warning("Failed to load session_timeout from database, keeping default. Error: %s", e)
 
 
 
@@ -144,6 +153,7 @@ with app.app_context():
 # --------------------------
 @app.route("/")
 def index():
+    """Redirect to appropriate dashboard based on user role."""
     # If user already logged in → go to their panel
     if session.get("user_id"):
         role = session.get("role")
@@ -160,42 +170,43 @@ def index():
 # Debugging helper: log session keys and any pending flashes for troubleshooting
 @app.before_request
 def _log_session_and_flashes():
+    """Log session keys and flashes for debugging."""
     try:
         # Avoid noisy logs for static assets
         if request.path.startswith('/static'):
             return
-        logger.info(f"[session] keys={list(session.keys())}")
-        logger.info(f"[_flashes]={session.get('_flashes')}")
-    except Exception as e:
-        logger.exception("Error in _log_session_and_flashes: %s", e)
+        logger.info("[session] keys=%s", list(session.keys()))
+        logger.info("[_flashes]=%s", session.get('_flashes'))
+    except Exception:
+        logger.exception("Error in _log_session_and_flashes")
 
 @app.route("/about")
 def about():
+    """Render about page."""
     return render_template("about.html")
 
 @app.route("/contact", methods=["GET", "POST"])
 def contact():
+    """Handle contact page and form submission."""
     if request.method == "POST":
         # Handle contact form submission
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip()
         message = request.form.get("message", "").strip()
-        
+
         # Basic validation
         if not name or not email or not message:
             flash("All fields are required", "error")
             return redirect(url_for("contact"))
-        
+
         # Email validation
-        from utils.validators import validate_email
-        is_valid, error_msg = validate_email(email)
+        is_valid, _ = validate_email(email)
         if not is_valid:
             flash("Invalid email format", "error")
             return redirect(url_for("contact"))
-        
+
         # Store contact message in database
         try:
-            from db_utils import execute
 
             # Insert into database
             execute("""
@@ -206,21 +217,22 @@ def contact():
             flash("Thank you for your message! We'll get back to you soon.", "success")
 
         except Exception as e:
-            from utils.logger import logger
-            logger.error(f"Failed to save contact form message: {e}")
+            logger.error("Failed to save contact form message: %s", e)
             flash("Sorry, there was an error saving your message. Please try again later.", "error")
-        
+
         return redirect(url_for("contact"))
-    
+
     return render_template("contact.html")
 
 @app.route("/help")
 def help_page():
+    """Render help page."""
     return render_template("help.html")
 
 
 @app.route("/favicon.ico", endpoint="favicon")
 def favicon():
+    """Serve favicon."""
     # Serve only the static/images/favicon.ico file. This project relies solely on that file.
     static_dir = os.path.join(app.root_path, "static", "images")
     favicon_path = os.path.join(static_dir, "favicon.ico")
@@ -242,20 +254,23 @@ def login_redirect():
 # ERROR HANDLERS
 # --------------------------
 @app.errorhandler(403)
-def forbidden(error):
-    logger.warning(f"403 Forbidden: {request.url} - {str(error)}")
+def forbidden(_):
+    """Handle 403 Forbidden errors."""
+    logger.warning("403 Forbidden: %s", request.url)
     return render_template('403.html'), 403
 
 
 @app.errorhandler(404)
-def not_found(error):
-    logger.warning(f"404 Error: {request.url}")
+def not_found(_):
+    """Handle 404 Not Found errors."""
+    logger.warning("404 Error: %s", request.url)
     return render_template('404.html'), 404
 
 
 @app.errorhandler(500)
-def internal_error(error):
-    logger.error(f"500 Error: {str(error)}", exc_info=True)
+def internal_error(_):
+    """Handle 500 Internal Server errors."""
+    logger.error("500 Error", exc_info=True)
     try:
         # attempt to rollback any open DB transaction
         close_db()
@@ -266,16 +281,18 @@ def internal_error(error):
 
 @app.errorhandler(Exception)
 def handle_exception(e):
-    logger.error(f"Unhandled exception: {str(e)}", exc_info=True)
+    """Handle unhandled exceptions."""
+    logger.error("Unhandled exception: %s", str(e), exc_info=True)
     try:
         close_db()
-    except Exception as e:
-        logger.exception("Error closing DB in exception handler: %s", e)
+    except Exception:
+        logger.exception("Error closing DB in exception handler")
     return jsonify({'error': 'Internal server error', 'message': 'Something went wrong. Please try again.'}), 500
 
 
 @app.errorhandler(CSRFError)
-def handle_csrf_error(e):
+def handle_csrf_error(_):
+    """Handle CSRF errors."""
     try:
         from db_utils import log_audit
         log_audit(None, 'CSRF_ERROR', 'csrf', str(e), request.remote_addr)
@@ -290,22 +307,21 @@ def handle_csrf_error(e):
         return redirect(url_for('auth.login'))
 
 
-from flask_limiter.errors import RateLimitExceeded
-
 @app.errorhandler(RateLimitExceeded)
-def handle_rate_limit_exceeded(e):
-    logger.warning(f"Rate limit exceeded: {request.remote_addr} - {request.path}")
-    
+def handle_rate_limit_exceeded(_):
+    """Handle rate limit exceeded errors."""
+    logger.warning("Rate limit exceeded: %s - %s", request.remote_addr, request.path)
+
     # Return JSON for API requests
     if request.is_json:
         return jsonify({
             'error': 'Rate limit exceeded',
             'message': 'Too many requests. Please try again later.'
         }), 429
-    
+
     # For web requests, flash message and render appropriate template
     flash('Too many requests. Please wait a few minutes before trying again.', 'error')
-    
+
     # Determine which template to render based on the path
     if 'forgot-password' in request.path:
         return render_template('forgot_password.html'), 429
@@ -401,9 +417,9 @@ with app.app_context():
     logger.info("Loading face embeddings from database...")
     try:
         face_encoder.load_all_embeddings()
-        logger.info(f"Successfully loaded {len(face_encoder.embeddings)} face embeddings")
+        logger.info("Successfully loaded %s face embeddings", len(face_encoder.embeddings))
     except Exception as e:
-        logger.error(f"Failed to load face embeddings: {e}", exc_info=True)
+        logger.error("Failed to load face embeddings: %s", e, exc_info=True)
         logger.warning("Application will start but face recognition may not work properly")
 
 
@@ -414,17 +430,16 @@ if __name__ == "__main__":
     try:
         logger.info("=" * 50)
         logger.info("FaceTrack Application Starting...")
-        logger.info(f"Environment: {app.config.get('APP_MODE', 'development')}")
-        logger.info(f"Debug Mode: {app.config.get('DEBUG', False)}")
+        logger.info("Environment: %s", app.config.get('APP_MODE', 'development'))
+        logger.info("Debug Mode: %s", app.config.get('DEBUG', False))
         logger.info("=" * 50)
 
         debug_mode = bool(app.config.get('DEBUG', False))
-        logger.info(f"Starting server with debug={debug_mode}, threaded=True")
+        logger.info("Starting server with debug=%s, threaded=True", debug_mode)
         app.run(debug=debug_mode, host='127.0.0.1', port=int(os.getenv('PORT', 5000)), use_reloader=False, threaded=True)
     except Exception as e:
-        logger.critical(f"CRITICAL ERROR during server startup: {e}", exc_info=True)
-        print(f"CRITICAL ERROR: {e}")
+        logger.critical("CRITICAL ERROR during server startup: %s", e, exc_info=True)
+        print("CRITICAL ERROR: %s" % e)
         import traceback
         traceback.print_exc()
         raise
-
