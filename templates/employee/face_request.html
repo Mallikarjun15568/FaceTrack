@@ -323,7 +323,7 @@
 
             <div class="flex flex-col items-center w-full">
               <div class="relative mb-5 w-full max-w-sm aspect-[4/3] rounded-xl overflow-hidden shadow-lg border border-slate-300">
-                <video id="video" autoplay muted class="absolute inset-0 w-full h-full object-cover bg-slate-800"></video>
+                <video id="video" width="400" height="300" autoplay muted class="w-full rounded-lg border-2 border-gray-300"></video>
                 <canvas id="faceCanvas" class="absolute inset-0 w-full h-full pointer-events-none hidden" style="z-index: 10;"></canvas>
                 <div id="guidanceText" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-lg text-xs font-medium hidden" style="z-index: 20;">
                   Center your face
@@ -332,10 +332,6 @@
 
               <!-- Camera Controls -->
               <div id="cameraControls" class="flex justify-center gap-3 mb-4 w-full max-w-sm">
-                <button id="startCameraBtn" class="btn btn-success text-sm flex-1">
-                  <i class="fas fa-video mr-1.5 text-xs"></i>
-                  Start Camera
-                </button>
                 <button id="stopCameraBtn" class="btn btn-danger hidden text-sm flex-1">
                   <i class="fas fa-stop mr-1.5 text-xs"></i>
                   Stop
@@ -395,7 +391,6 @@
     const faceCanvas = document.getElementById('faceCanvas');
     const previewImg = document.getElementById('previewImg');
     const captureBtn = document.getElementById('captureBtn');
-    const startCameraBtn = document.getElementById('startCameraBtn');
     const stopCameraBtn = document.getElementById('stopCameraBtn');
     const submitBtn = document.getElementById('submitBtn');
     const retakeBtn = document.getElementById('retakeBtn');
@@ -656,13 +651,13 @@
             .then(stream => {
                 currentStream = stream;
                 video.srcObject = stream;
+                video.play().catch(err => console.error('Video play error:', err)); // Ensure video starts playing
                 cameraSection?.classList.remove("hidden");
                 previewSection?.classList.add("hidden");
                 loadingBox?.classList.add("hidden");
                 faceCanvas?.classList.remove("hidden");
                 guidanceText?.classList.remove("hidden");
                 cameraControls?.classList.remove("hidden");
-                startCameraBtn?.classList.add("hidden");
                 stopCameraBtn?.classList.remove("hidden");
                 captureBtn?.classList.add("hidden");
                 video.onloadeddata = () => drawDetectionBox("#ef4444");
@@ -701,7 +696,6 @@
         faceCanvas?.classList.add("hidden");
         guidanceText?.classList.add("hidden");
         cameraControls?.classList.remove("hidden");
-        startCameraBtn?.classList.remove("hidden");
         stopCameraBtn?.classList.add("hidden");
         captureBtn?.classList.add("hidden");
     }
@@ -735,9 +729,6 @@
     });
     updateBtn?.addEventListener('click', () => {
       startCamera('update');
-    });
-    startCameraBtn?.addEventListener('click', () => {
-      startCamera(requestType || 'enroll');
     });
     stopCameraBtn?.addEventListener('click', stopCamera);
 
@@ -919,7 +910,6 @@
     // INITIALIZATION
     // =====================
     cameraControls?.classList.remove("hidden");
-    startCameraBtn?.classList.remove("hidden");
     stopCameraBtn?.classList.add("hidden");
     captureBtn?.classList.add("hidden");
     previewSection?.classList.add("hidden");
