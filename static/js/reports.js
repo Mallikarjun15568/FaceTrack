@@ -918,16 +918,17 @@ async function loadEmployeeAnalysis() {
     }
     
     let year, month;
+    let monthValue = '';
     
     if (periodType === 'month') {
         const monthSelector = document.getElementById("monthSelector");
-        const monthValue = monthSelector.value;
-        
+        monthValue = monthSelector?.value || '';
+
         if (!monthValue) {
             alert("Please select a month");
             return;
         }
-        
+
         // Parse month
         [year, month] = monthValue.split('-');
     } else {
@@ -944,6 +945,9 @@ async function loadEmployeeAnalysis() {
         const fromDateObj = new Date(fromDate);
         year = fromDateObj.getFullYear();
         month = fromDateObj.getMonth() + 1;
+
+        // Build monthValue for display (YYYY-MM)
+        monthValue = `${year}-${String(month).padStart(2, '0')}`;
     }
     
     // Get employee ID from selected option
