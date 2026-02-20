@@ -62,7 +62,7 @@
 
         {% if session.role in ['admin', 'hr'] %}
         <li>
-          <a href="{{ url_for('admin.dashboard.admin_dashboard') }}" class="nav-link {% if request.endpoint == 'admin.dashboard.admin_dashboard' %}active{% endif %}">
+          <a href="{{ url_for('admin.dashboard.admin_dashboard') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.dashboard.') %}active{% endif %}">
             <i data-feather="grid"></i>
             <span class="text-sm font-medium">Dashboard</span>
           </a>
@@ -72,7 +72,7 @@
         <!-- Admin & HR only -->
         {% if session.role in ['admin', 'hr'] %}
         <li>
-          <a href="{{ url_for('admin.employees.list_employees') }}" class="nav-link {% if request.endpoint == 'admin.employees.list_employees' %}active{% endif %}">
+          <a href="{{ url_for('admin.employees.list_employees') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.employees.') and request.endpoint != 'admin.employees.face_requests' %}active{% endif %}">
             <i data-feather="users"></i>
             <span class="text-sm font-medium">Employees</span>
           </a>
@@ -86,7 +86,7 @@
         </li>
 
         <li>
-          <a href="/enroll/" class="nav-link {% if 'enroll' in request.endpoint %}active{% endif %}">
+          <a href="/enroll/" class="nav-link {% if request.endpoint and request.endpoint.startswith('enroll.') %}active{% endif %}">
             <i data-feather="camera"></i>
             <span class="text-sm font-medium">Enroll Face</span>
           </a>
@@ -95,7 +95,7 @@
 
         {% if session.role in ['admin'] %}
         <li>
-          <a href="/kiosk/" class="nav-link {% if 'kiosk' in request.endpoint or 'recognition' in request.endpoint %}active{% endif %}">
+          <a href="/kiosk/" class="nav-link {% if request.endpoint and (request.endpoint.startswith('kiosk.') or request.endpoint.startswith('recognition.')) %}active{% endif %}">
           <i data-feather="monitor"></i>
           <span class="text-sm font-medium">Kiosk Mode</span>
          </a>
@@ -104,7 +104,7 @@
 
         {% if session.role in ['admin', 'hr'] %}
         <li>
-          <a href="/attendance/" class="nav-link {% if 'attendance' in request.endpoint %}active{% endif %}">
+          <a href="/attendance/" class="nav-link {% if request.endpoint and request.endpoint.startswith('attendance.') %}active{% endif %}">
             <i data-feather="check-circle"></i>
             <span class="text-sm font-medium">Attendance</span>
           </a>
@@ -120,7 +120,7 @@
 
         <!-- Reports - Admin & HR only -->
         <li>
-          <a href="{{ url_for('admin.reports.reports_page') }}" class="nav-link {% if 'reports' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.reports.reports_page') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.reports.') %}active{% endif %}">
             <i data-feather="bar-chart-2"></i>
             <span class="text-sm font-medium">Reports</span>
           </a>
@@ -130,14 +130,14 @@
         <!-- Admin only -->
         {% if session.role == 'admin' %}
         <li>
-          <a href="{{ url_for('admin.settings.settings_page') }}" class="nav-link {% if 'settings' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.settings.settings_page') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.settings.') %}active{% endif %}">
           <i data-feather="settings"></i>
           <span class="text-sm font-medium">Settings</span>
           </a>
         </li>
 
         <li>
-          <a href="{{ url_for('admin.employees.user_management') }}" class="nav-link {% if 'user_management' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.employees.user_management') }}" class="nav-link {% if request.endpoint and request.endpoint.endswith('user_management') %}active{% endif %}">
           <i data-feather="user-check"></i>
           <span class="text-sm font-medium">User Management</span>
           </a>

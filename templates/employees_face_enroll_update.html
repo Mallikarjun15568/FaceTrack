@@ -166,26 +166,22 @@
             
             <div class="flex justify-center mb-6">
                 <div class="camera-box w-full max-w-md">
-                    <div class="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-xl">
+                    <div class="relative w-full h-96 rounded-2xl overflow-hidden shadow-xl">
                         <!-- Inactive Overlay -->
                         <div id="cameraInactiveBox"
                              class="flex flex-col items-center justify-center absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-gray-900 rounded-2xl">
                             <!-- Modern Face Scan Icon -->
                             <div class="relative mb-6">
-                                <div class="w-28 h-28 rounded-2xl border-2 border-dashed border-slate-500 flex items-center justify-center relative">
-                                    <!-- Corner Markers -->
-                                    <div class="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-emerald-400 rounded-tl"></div>
-                                    <div class="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-emerald-400 rounded-tr"></div>
-                                    <div class="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-emerald-400 rounded-bl"></div>
-                                    <div class="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-emerald-400 rounded-br"></div>
-                                    <svg class="w-12 h-12 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                        <circle cx="12" cy="7" r="4"/>
-                                    </svg>
+                                    <div class="relative w-48 h-48 rounded-full border-4 border-dashed border-gray-600 flex items-center justify-center transition-all duration-300">
+                                        <div class="text-center">
+                                            <svg class="w-12 h-12 text-gray-500 mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+                                            </svg>
+                                            <p class="text-white font-bold text-sm tracking-wider uppercase">Camera Inactive</p>
+                                            <p class="text-white text-xs mt-2">Click "Start Camera" to begin capture</p>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <p class="text-slate-300 font-bold text-sm tracking-wider uppercase">Camera Inactive</p>
-                            <p class="text-slate-500 text-xs mt-2">Click "Start Camera" to begin capture</p>
                         </div>
 
                         <video id="camera"

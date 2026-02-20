@@ -43,7 +43,7 @@
                 </p>
             </div>
             <div class="flex gap-3">
-                <button onclick="showCalendarView()" class="btn bg-white border-2 border-gray-300 text-gray-700 hover:border-indigo-600 hover:text-indigo-600 flex items-center gap-2">
+                <button id="calendarToggleBtn" onclick="toggleCalendarView()" class="btn bg-white border-2 border-gray-300 text-gray-700 hover:border-indigo-600 hover:text-indigo-600 flex items-center gap-2">
                     <i class="far fa-calendar-alt"></i>
                     Calendar View
                 </button>
@@ -590,31 +590,17 @@ function hideRejectModal() {
     document.getElementById('rejectModal').classList.add('hidden');
 }
 
-function showCalendarView() {
+function toggleCalendarView() {
     const calendarSection = document.getElementById('leaveCalendarSection');
+    const button = document.getElementById('calendarToggleBtn');
     const isHidden = calendarSection.classList.contains('hidden');
-
     if (isHidden) {
         calendarSection.classList.remove('hidden');
         loadCalendar();
-        // Update button text
-        const button = document.querySelector('button[onclick="showCalendarView()"]');
-        if (button) {
-            button.innerHTML = '<i class="far fa-calendar-alt"></i> Hide Calendar';
-            button.onclick = hideCalendarView;
-        }
+        if (button) button.innerHTML = '<i class="far fa-calendar-alt"></i> Hide Calendar';
     } else {
-        hideCalendarView();
-    }
-}
-
-function hideCalendarView() {
-    document.getElementById('leaveCalendarSection').classList.add('hidden');
-    // Update button text
-    const button = document.querySelector('button[onclick="hideCalendarView()"]');
-    if (button) {
-        button.innerHTML = '<i class="far fa-calendar-alt"></i> Calendar View';
-        button.onclick = showCalendarView;
+        calendarSection.classList.add('hidden');
+        if (button) button.innerHTML = '<i class="far fa-calendar-alt"></i> Calendar View';
     }
 }
 

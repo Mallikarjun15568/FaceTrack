@@ -13,11 +13,11 @@ const retakeBtn = document.getElementById("retakeBtn");
 const cameraInactiveBox = document.getElementById("cameraInactiveBox");
 
 // ===== INITIAL UI STATE =====
-cameraInactiveBox.classList.remove("hidden");
-video.classList.add("hidden");
-faceCanvas.classList.add("hidden");
-guidanceText.classList.add("hidden");
-captureBtn.classList.add("hidden");
+if (cameraInactiveBox) cameraInactiveBox.classList.remove("hidden");
+if (video) video.classList.add("hidden");
+if (faceCanvas) faceCanvas.classList.add("hidden");
+if (guidanceText) guidanceText.classList.add("hidden");
+if (captureBtn) captureBtn.classList.add("hidden");
 
 // =====================
 // GLOBAL STATE
@@ -129,15 +129,12 @@ function startCamera() {
     navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
             currentStream = stream;
-            video.srcObject = stream;
-            cameraInactiveBox.classList.add("hidden");
-            cameraInactiveBox.style.display = "none";
-            video.classList.remove("hidden");
-            video.style.display = "block";
-            faceCanvas.classList.remove("hidden");
-            guidanceText.classList.remove("hidden");
-            startCameraBtn.classList.add("hidden");
-            startCameraBtn.style.display = "none";
+            if (video) video.srcObject = stream;
+            if (cameraInactiveBox) { cameraInactiveBox.classList.add("hidden"); cameraInactiveBox.style.display = "none"; }
+            if (video) { video.classList.remove("hidden"); video.style.display = "block"; }
+            if (faceCanvas) faceCanvas.classList.remove("hidden");
+            if (guidanceText) guidanceText.classList.remove("hidden");
+            if (startCameraBtn) { startCameraBtn.classList.add("hidden"); startCameraBtn.style.display = "none"; }
             
             // Show camera controls
             const cameraControls = document.getElementById("cameraControls");
@@ -146,11 +143,10 @@ function startCamera() {
             }
             stopCameraBtn.style.display = "flex";
             
-            previewImg.classList.add("hidden");
-            previewImg.style.display = "none";
-            actionBtns.style.display = "none";
-            saveBtn.style.display = "none";
-            retakeBtn.style.display = "none";
+            if (previewImg) { previewImg.classList.add("hidden"); previewImg.style.display = "none"; }
+            if (typeof actionBtns !== 'undefined' && actionBtns) actionBtns.style.display = "none";
+            if (saveBtn) saveBtn.style.display = "none";
+            if (retakeBtn) retakeBtn.style.display = "none";
             video.onloadeddata = () => {
                 setTimeout(() => drawDetectionBox("#ef4444"), 100);
             };
@@ -163,12 +159,10 @@ function startCamera() {
             requestAnimationFrame(scrollToCamera);
         })
         .catch(err => {
-            cameraInactiveBox.classList.remove("hidden");
-            cameraInactiveBox.style.display = "flex";
-            video.classList.add("hidden");
-            video.style.display = "none";
-            faceCanvas.classList.add("hidden");
-            guidanceText.classList.add("hidden");
+            if (cameraInactiveBox) { cameraInactiveBox.classList.remove("hidden"); cameraInactiveBox.style.display = "flex"; }
+            if (video) { video.classList.add("hidden"); video.style.display = "none"; }
+            if (faceCanvas) faceCanvas.classList.add("hidden");
+            if (guidanceText) guidanceText.classList.add("hidden");
             showStatusModal("error", "Camera not accessible! Please check permissions.");
             console.error(err);
         });
@@ -194,33 +188,27 @@ function stopCamera() {
     }
     
     if (!currentStream) {
-        cameraInactiveBox.classList.remove("hidden");
-        cameraInactiveBox.style.display = "flex";
-        video.classList.add("hidden");
-        video.style.display = "none";
-        faceCanvas.classList.add("hidden");
-        guidanceText.classList.add("hidden");
-        startCameraBtn.classList.remove("hidden");
-        startCameraBtn.style.display = "inline-flex";
-        stopCameraBtn.style.display = "none";
-        captureBtn.style.display = "none";
+        if (cameraInactiveBox) { cameraInactiveBox.classList.remove("hidden"); cameraInactiveBox.style.display = "flex"; }
+        if (video) { video.classList.add("hidden"); video.style.display = "none"; }
+        if (faceCanvas) faceCanvas.classList.add("hidden");
+        if (guidanceText) guidanceText.classList.add("hidden");
+        if (startCameraBtn) { startCameraBtn.classList.remove("hidden"); startCameraBtn.style.display = "inline-flex"; }
+        if (stopCameraBtn) stopCameraBtn.style.display = "none";
+        if (captureBtn) captureBtn.style.display = "none";
         return;
     }
     currentStream.getTracks().forEach(track => track.stop());
     currentStream = null;
-    video.srcObject = null;
-    cameraInactiveBox.classList.remove("hidden");
-    cameraInactiveBox.style.display = "flex";
-    video.classList.add("hidden");
-    video.style.display = "none";
-    faceCanvas.classList.add("hidden");
-    guidanceText.classList.add("hidden");
-    startCameraBtn.classList.remove("hidden");
-    startCameraBtn.style.display = "inline-flex";
-    stopCameraBtn.style.display = "none";
-    captureBtn.style.display = "none";
-    actionBtns.style.display = "none";
-    guidanceText.classList.add("hidden");
+    if (video) video.srcObject = null;
+    if (cameraInactiveBox) { cameraInactiveBox.classList.remove("hidden"); cameraInactiveBox.style.display = "flex"; }
+    if (video) { video.classList.add("hidden"); video.style.display = "none"; }
+    if (faceCanvas) faceCanvas.classList.add("hidden");
+    if (guidanceText) guidanceText.classList.add("hidden");
+    if (startCameraBtn) { startCameraBtn.classList.remove("hidden"); startCameraBtn.style.display = "inline-flex"; }
+    if (stopCameraBtn) stopCameraBtn.style.display = "none";
+    if (captureBtn) captureBtn.style.display = "none";
+    if (typeof actionBtns !== 'undefined' && actionBtns) actionBtns.style.display = "none";
+    if (guidanceText) guidanceText.classList.add("hidden");
 }
 
 // Show Guidance Text
@@ -240,13 +228,11 @@ function showGuidance(message) {
 }
 
 // Initial state (on page load)
-cameraInactiveBox.classList.remove("hidden");
-cameraInactiveBox.style.display = "flex";
-video.classList.add("hidden");
-video.style.display = "none";
-faceCanvas.classList.add("hidden");
-guidanceText.classList.add("hidden");
-captureBtn.style.display = "none";
+if (cameraInactiveBox) { cameraInactiveBox.classList.remove("hidden"); cameraInactiveBox.style.display = "flex"; }
+if (video) { video.classList.add("hidden"); video.style.display = "none"; }
+if (faceCanvas) faceCanvas.classList.add("hidden");
+if (guidanceText) guidanceText.classList.add("hidden");
+if (captureBtn) captureBtn.style.display = "none";
 
 // Button events
 startCameraBtn.addEventListener("click", startCamera);
