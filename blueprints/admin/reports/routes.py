@@ -1,5 +1,6 @@
 from . import bp
 from flask import jsonify, request, render_template, session, redirect, flash, current_app, make_response
+import json
 from utils.db import get_db
 from datetime import datetime, date, time, timedelta
 from blueprints.auth.utils import login_required, role_required
@@ -174,6 +175,154 @@ def jsonify_safe(rows):
                 except:
                     r[k] = str(v)
     return rows
+
+
+def record_report_history(report_type, report_name, period_type=None, period_from=None, period_to=None, filters=None, generated_by=None, file_size=0):
+    """Insert a row into `report_history`. Swallow errors and log them.
+
+    Call after a successful export so the UI can show generated reports.
+    """
+    try:
+        db = get_db()
+        cur = db.cursor()
+        cur.execute("""
+            INSERT INTO report_history
+            (report_type, report_name, period_type, period_from, period_to, filters, generated_by, file_size)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            report_type,
+            report_name,
+            period_type,
+            period_from if period_from else None,
+            period_to if period_to else None,
+            json.dumps(filters) if filters else None,
+            generated_by or session.get('user_id'),
+            file_size
+        ))
+        db.commit()
+        cur.close()
+    except Exception as e:
+        try:
+            current_app.logger.info(f"Could not record report history: {e}")
+        except:
+            pass
+
+
+
+
+
+# REPORT HISTORY API
+@bp.route("/api/history")
+@login_required
+@role_required("admin", "hr")
+def api_report_history():
+    """Return recent generated reports from `report_history` table.
+
+    If the table does not exist or any DB error occurs, return an empty list
+    so the frontend does not receive HTML/404 and crash JSON parsing.
+    """
+    try:
+        limit = int(request.args.get('limit', 10))
+    except Exception:
+        limit = 10
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    try:
+        cur.execute("""
+            SELECT rh.*, COALESCE(e.full_name, u.username, u.email) AS generated_by_name
+            FROM report_history rh
+            LEFT JOIN users u ON rh.generated_by = u.id
+            LEFT JOIN employees e ON u.id = e.user_id
+            ORDER BY rh.generated_at DESC
+            LIMIT %s
+        """, (limit,))
+
+        rows = cur.fetchall()
+        cur.close()
+
+        # Normalize datetime and binary fields
+        safe_rows = jsonify_safe(rows)
+
+        # Transform rows to frontend-friendly shape
+        transformed = []
+        for r in safe_rows:
+            item = dict(r)
+
+            # Normalize report_type to uppercase for frontend checks
+            rt = (item.get('report_type') or '')
+            item['report_type'] = rt.upper() if isinstance(rt, str) else rt
+
+            # Provide from_date/to_date aliases (frontend expects these keys)
+            if 'period_from' in item:
+                item['from_date'] = item.get('period_from')
+            if 'period_to' in item:
+                item['to_date'] = item.get('period_to')
+
+            # Provide a short period label
+            item['period'] = item.get('period_type') or ''
+
+            # Normalize filters: try to supply employee_name / department_name
+            try:
+                filters = item.get('filters')
+                if isinstance(filters, str):
+                    try:
+                        filters = json.loads(filters)
+                    except:
+                        filters = None
+                if filters:
+                    # If employee id present, try to resolve full name
+                    emp_name = None
+                    dept_name = None
+                    if filters.get('employee'):
+                        try:
+                            db2 = get_db()
+                            cur2 = db2.cursor(dictionary=True)
+                            cur2.execute("SELECT full_name FROM employees WHERE id = %s", (filters.get('employee'),))
+                            er = cur2.fetchone()
+                            cur2.close()
+                            if er:
+                                emp_name = er.get('full_name')
+                        except:
+                            emp_name = None
+                    if filters.get('department'):
+                        # department may already be a name; try to fetch if it's an id
+                        dept_val = filters.get('department')
+                        if isinstance(dept_val, int) or (isinstance(dept_val, str) and dept_val.isdigit()):
+                            try:
+                                db3 = get_db()
+                                cur3 = db3.cursor(dictionary=True)
+                                cur3.execute("SELECT name FROM departments WHERE id = %s", (dept_val,))
+                                dr = cur3.fetchone()
+                                cur3.close()
+                                if dr:
+                                    dept_name = dr.get('name')
+                                else:
+                                    dept_name = str(dept_val)
+                            except:
+                                dept_name = str(dept_val)
+                        else:
+                            dept_name = str(dept_val)
+
+                    if emp_name:
+                        filters['employee_name'] = emp_name
+                    if dept_name:
+                        filters['department_name'] = dept_name
+
+                    item['filters'] = filters
+            except Exception:
+                pass
+
+            transformed.append(item)
+
+        return jsonify({"status": "ok", "history": transformed})
+    except Exception as e:
+        current_app.logger.info(f"Report history unavailable or empty: {e}")
+        try:
+            cur.close()
+        except:
+            pass
+        return jsonify({"status": "ok", "history": []})
 
 
 # PAGE
@@ -622,6 +771,15 @@ def export_csv():
 
     filename = f"attendance_data_{from_date}_{to_date}.csv" if from_date and to_date else f"attendance_data_{date.today()}.csv"
 
+    # Record history (best-effort)
+    try:
+        data_bytes = output.getvalue().encode('utf-8')
+        file_size = len(data_bytes)
+        filters = {"department": dept, "employee": employee or employee_id}
+        record_report_history('csv', filename, period_type, from_date, to_date, filters, session.get('user_id'), file_size)
+    except:
+        pass
+
     return Response(
         output.getvalue(),
         mimetype="text/csv",
@@ -941,6 +1099,14 @@ def export_pdf():
     response = make_response(buffer.getvalue())
     response.headers["Content-Type"] = "application/pdf"
     response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+
+    # Record history (best-effort)
+    try:
+        file_size = len(buffer.getvalue())
+        filters = {"department": dept, "employee": employee or employee_id}
+        record_report_history('pdf', filename, period_type, from_date, to_date, filters, session.get('user_id'), file_size)
+    except:
+        pass
 
     return response
 
@@ -1277,5 +1443,13 @@ def export_excel():
     output = make_response(buffer.getvalue())
     output.headers["Content-Disposition"] = f"attachment; filename={filename}"
     output.headers["Content-type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    # Record history (best-effort)
+    try:
+        file_size = len(buffer.getvalue())
+        filters = {"department": dept, "employee": employee or employee_id}
+        record_report_history('excel', filename, period_type, from_date, to_date, filters, session.get('user_id'), file_size)
+    except:
+        pass
+
     return output
 
