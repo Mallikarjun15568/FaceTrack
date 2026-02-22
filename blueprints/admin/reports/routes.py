@@ -102,7 +102,18 @@ def get_period_dates(period_type, custom_from=None, custom_to=None):
 
 # HELPER: Calculate summary statistics
 def calculate_summary_stats(rows):
-    """Calculate attendance statistics from records"""
+    """Calculate attendance statistics from records.
+
+    The helper works off the list of rows returned by the export/query
+    functions.  It counts how many rows were marked present, determines
+    how many of those were late (check‑in after 09:30) and computes both
+    average and total working hours so the various export routines can
+    display whatever they need.
+
+    NOTE: this is a *record‑level* summary; absent employees are **not**
+    included here.  The dashboard summary API uses a different query
+    when employee‑level counts (including absentees) are required.
+    """
     if not rows:
         return {
             'total_records': 0,
@@ -110,24 +121,39 @@ def calculate_summary_stats(rows):
             'absent_count': 0,
             'late_count': 0,
             'on_time_count': 0,
+            'total_hours': 0,
             'avg_hours': 0,
             'unique_employees': 0
         }
     
-    present = sum(1 for r in rows if r.get('status') in ['Present', 'present'])
+    # Treat any row with a check-in/check-out (or common status variants)
+    # as a present record. Some rows store status as "check-out" after
+    # a completed day, so checking `check_in_time` and status lowercased
+    # gives a robust presence detection.
+    presence_statuses = {"present", "check-in", "check-out", "checked_in", "checked_out", "checkin", "checkout"}
+    present = 0
+    for r in rows:
+        # Prefer `entry_time` (export alias); fallback to legacy `check_in_time`.
+        if r.get('entry_time') or r.get('check_in_time'):
+            present += 1
+            continue
+        st = r.get('status')
+        if st and isinstance(st, str) and st.lower() in presence_statuses:
+            present += 1
     
-    # Calculate late entries (after 9:30 AM)
+    # Count late entries (after 9:30 AM)
     late = 0
     for r in rows:
-        check_in = r.get('check_in_time')
-        if check_in:
+        # Export queries alias check_in_time as `entry_time`.
+        entry = r.get('entry_time') or r.get('check_in_time')
+        if entry:
             try:
-                if isinstance(check_in, datetime):
-                    if check_in.time() > time(9, 30):
+                if isinstance(entry, datetime):
+                    if entry.time() > time(9, 30):
                         late += 1
                 else:
-                    check_in_dt = datetime.strptime(str(check_in), "%Y-%m-%d %H:%M:%S")
-                    if check_in_dt.time() > time(9, 30):
+                    entry_dt = datetime.strptime(str(entry), "%Y-%m-%d %H:%M:%S")
+                    if entry_dt.time() > time(9, 30):
                         late += 1
             except:
                 pass
@@ -155,9 +181,10 @@ def calculate_summary_stats(rows):
     return {
         'total_records': len(rows),
         'present_count': present,
-        'absent_count': 0,  # Will be calculated separately
+        'absent_count': 0,  # not derived from raw rows
         'late_count': late,
         'on_time_count': present - late,
+        'total_hours': round(total_hours, 1),
         'avg_hours': avg_hours,
         'unique_employees': unique_employees
     }
@@ -175,6 +202,87 @@ def jsonify_safe(rows):
                 except:
                     r[k] = str(v)
     return rows
+
+
+
+# ----------------------------------------------------------------------------------
+# HELPER: Employee‑level summary (present/late/absent)
+# ----------------------------------------------------------------------------------
+
+def get_employee_summary(start_date, end_date, employee_id=None, department=None):
+    """Return counts of present, late and absent employees for a given period.
+
+    The logic mirrors ``api_summary`` but accepts optional filters so it
+    can be reused by export endpoints.  ``start_date`` and ``end_date``
+    are ``date`` objects.
+    """
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # total active employees in period (respecting filters)
+    total_query = [
+        "SELECT COUNT(*) AS total FROM employees e WHERE e.status = 'active'",
+    ]
+    params = []
+    # join_date filter
+    total_query.append("AND (e.join_date IS NULL OR e.join_date <= %s)")
+    params.append(end_date)
+    if employee_id:
+        total_query.append("AND e.id = %s")
+        params.append(employee_id)
+    if department:
+        total_query.append("AND EXISTS (SELECT 1 FROM departments d WHERE d.id = e.department_id AND d.name = %s)")
+        params.append(department)
+
+    cur.execute(" ".join(total_query), tuple(params))
+    total = cur.fetchone().get('total', 0) or 0
+
+    # build detailed attendance counts using subquery similar to api_summary
+    summary_query = [
+        "SELECT",
+        "  COUNT(DISTINCT CASE WHEN COALESCE(total_days,0)=0 THEN e.id END) AS absent_count,",
+        "  COUNT(DISTINCT CASE WHEN total_days>0 AND COALESCE(late_days,0)=0 THEN e.id END) AS present_ontime_count,",
+        "  COUNT(DISTINCT CASE WHEN late_days>0 THEN e.id END) AS late_count,",
+        "  COUNT(DISTINCT CASE WHEN total_days>0 THEN e.id END) AS total_present_count",
+        "FROM employees e",
+        "LEFT JOIN (",
+        "    SELECT",
+        "        employee_id,",
+        "        COUNT(DISTINCT DATE(check_in_time)) AS total_days,",
+        "        COUNT(DISTINCT CASE WHEN TIME(check_in_time)>'09:30:00' THEN DATE(check_in_time) END) AS late_days",
+        "    FROM attendance",
+        "    WHERE DATE(check_in_time) BETWEEN %s AND %s",
+        "      AND check_in_time IS NOT NULL",
+        "    GROUP BY employee_id",
+        ") a ON e.id = a.employee_id",
+        "WHERE e.status = 'active'"
+    ]
+    params = [start_date, end_date]
+    if employee_id:
+        summary_query.append("AND e.id = %s")
+        params.append(employee_id)
+    if department:
+        summary_query.append("AND EXISTS (SELECT 1 FROM departments d WHERE d.id = e.department_id AND d.name = %s)")
+        params.append(department)
+
+    cur.execute(" \n".join(summary_query), tuple(params))
+    row = cur.fetchone() or {}
+    absent = row.get('absent_count', 0) or 0
+    present = row.get('total_present_count', 0) or 0
+    late = row.get('late_count', 0) or 0
+
+    percent = 0
+    if total > 0:
+        percent = round((present / total) * 100)
+
+    cur.close()
+    return {
+        'total_employees': total,
+        'present': present,
+        'late': late,
+        'absent': absent,
+        'attendance_percent': percent
+    }
 
 
 def record_report_history(report_type, report_name, period_type=None, period_from=None, period_to=None, filters=None, generated_by=None, file_size=0):
@@ -739,12 +847,29 @@ def export_csv():
     output = StringIO()
     writer = csv.writer(output)
 
+    # compute summary stats from the fetched rows
+    stats = calculate_summary_stats(rows)
+
+    # compute employee-level summary (matches dashboard counts)
+    emp_summary = get_employee_summary(start_date, end_date, employee_id, dept)
+
     # Company name header
     writer.writerow([company_name])
     writer.writerow([f"Attendance Report: {start_date.strftime('%d %b %Y')} to {end_date.strftime('%d %b %Y')}"])
     writer.writerow([f"Generated on: {datetime.now().strftime('%d %b %Y, %I:%M %p')}"])
     writer.writerow([])  # Blank line
-    
+
+    # employee-level summary
+    writer.writerow(["EMPLOYEE SUMMARY"])
+    writer.writerow(["Total Employees", emp_summary['total_employees']])
+    writer.writerow(["Present", emp_summary['present']])
+    writer.writerow(["Late", emp_summary['late']])
+    writer.writerow(["Absent", emp_summary['absent']])
+    writer.writerow(["Attendance %", f"{emp_summary['attendance_percent']}%" if emp_summary['total_employees']>0 else "-"])
+    writer.writerow([])
+
+    # (Removed record-level summary to keep report concise)
+
     # Column headers
     writer.writerow(["Date", "Employee Name", "Department", "Status", "Entry Time", "Exit Time", "Working Hours"])
 
@@ -864,6 +989,11 @@ def export_pdf():
     
     # Calculate summary stats
     stats = calculate_summary_stats(rows)
+    # Employee-level summary (matches dashboard counts) used in PDF header/table
+    try:
+        emp_summary = get_employee_summary(start_date, end_date, employee_id, dept)
+    except Exception:
+        emp_summary = {'total_employees': 0, 'present': 0, 'late': 0, 'absent': 0, 'attendance_percent': 0}
     
     cur.close()
 
@@ -965,21 +1095,22 @@ def export_pdf():
     elements.append(meta_table)
     elements.append(Spacer(1, 0.3*inch))
 
-    # Summary Statistics Box with gradient effect
+    # Summary Statistics Box with gradient effect (employee-level only)
     elements.append(Paragraph("📊 SUMMARY STATISTICS", heading_style))
     elements.append(Spacer(1, 0.1*inch))
-    
+
+    # Keep only employee-level row for a clean professional look
     summary_data = [
-        ['📋 Total Records', '✅ Present Days', '⏰ Late Entries', '⚡ On-Time', '🕐 Avg Hours'],
+        ['👥 Employees', '✅ Present', '⏰ Late', '🚫 Absent', '📈 Attendance %'],
         [
-            str(stats['total_records']),
-            str(stats['present_count']),
-            str(stats['late_count']),
-            str(stats['on_time_count']),
-            f"{stats['avg_hours']} hrs"
+            str(emp_summary.get('total_employees', 0)),
+            str(emp_summary.get('present', 0)),
+            str(emp_summary.get('late', 0)),
+            str(emp_summary.get('absent', 0)),
+            f"{emp_summary.get('attendance_percent', 0)}%"
         ]
     ]
-    
+
     summary_table = Table(summary_data, colWidths=[2*inch]*5)
     summary_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
@@ -1295,8 +1426,8 @@ def export_excel():
     ws_summary.row_dimensions[row].height = 22
     row += 1
     
-    # Stats Table Header
-    stats_headers = ['📋 Total Records', '✅ Present Days', '⏰ Late Entries', '⚡ On-Time', '🕐 Average Hours']
+    # Stats Table Header (employee-level summary for clarity)
+    stats_headers = ['👥 Employees', '✅ Present', '⏰ Late', '🚫 Absent', '📈 Attendance %']
     for col, header in enumerate(stats_headers, start=1):
         cell = ws_summary.cell(row=row, column=col)
         cell.value = header
@@ -1307,17 +1438,22 @@ def export_excel():
     ws_summary.row_dimensions[row].height = 25
     row += 1
     
-    # Stats Values with color coding
+    # Stats Values with color coding (use employee-level summary)
+    try:
+        emp_summary = get_employee_summary(start_date, end_date, employee_id, dept)
+    except Exception:
+        emp_summary = {'total_employees': 0, 'present': 0, 'late': 0, 'absent': 0, 'attendance_percent': 0}
+
     stats_values = [
-        stats['total_records'],
-        stats['present_count'],
-        stats['late_count'],
-        stats['on_time_count'],
-        f"{stats['avg_hours']} hrs"
+        emp_summary.get('total_employees', 0),
+        emp_summary.get('present', 0),
+        emp_summary.get('late', 0),
+        emp_summary.get('absent', 0),
+        f"{emp_summary.get('attendance_percent', 0)}%"
     ]
-    
-    stats_fills = [light_blue_fill, green_fill, yellow_fill, green_fill, light_blue_fill]
-    
+
+    stats_fills = [light_blue_fill, green_fill, yellow_fill, PatternFill(start_color='FEE2E2', end_color='FEE2E2', fill_type='solid'), light_blue_fill]
+
     for col, (value, fill) in enumerate(zip(stats_values, stats_fills), start=1):
         cell = ws_summary.cell(row=row, column=col)
         cell.value = value
