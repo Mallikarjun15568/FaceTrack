@@ -1,29 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Face Request - FaceTrack Employee</title>
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+{% extends "employee/base.html" %}
+{% block title %}Face Request - FaceTrack Employee{% endblock %}
 
-  <!-- Inter Font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/professional.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/premium.css') }}">
-
-  <!-- Icons: prefer local copy (if available), otherwise use CDN -->
-  {% if FA_LOCAL_AVAILABLE %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-  {% else %}
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  {% endif %}
-
-  <style>
+{% block head %}
+<style>
     body { font-family: 'Inter', sans-serif; }
     .admin-bg {
       background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
@@ -80,65 +59,10 @@
     }
     /* Header uses internal h-16; page layout handles top spacing */
   </style>
-</head>
-<body class="m-0 bg-soft-mist min-h-screen">
+{% endblock %}
 
-  <!-- Premium Header -->
-    <header class="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-100 shadow-sm">
-      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <!-- Logo only (compact) -->
-        <div class="flex items-center gap-2">
-          <a href="/" class="block">
-            <img src="{{ url_for('static', filename='images/FaceTrack_logo.png') }}" alt="FaceTrack Logo" class="h-16 w-auto">
-          </a>
-        </div>
-
-        <!-- Navigation Menu -->
-        <nav class="flex items-center gap-6">
-          <a href="{{ url_for('employee.dashboard') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.dashboard' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
-            <i class="fas fa-home mr-2"></i>Dashboard
-          </a>
-          <a href="{{ url_for('employee.attendance') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.attendance' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
-            <i class="fas fa-clipboard-list mr-2"></i>Attendance
-          </a>
-          <a href="{{ url_for('employee.face_request') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.face_request' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
-            <i class="fas fa-camera mr-2"></i>Face Request
-          </a>
-          <a href="{{ url_for('employee.leave') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.leave' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
-            <i class="fas fa-calendar-plus mr-2"></i>Leave
-          </a>
-          <a href="{{ url_for('employee.summary') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.summary' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:text-blue-600{% endif %}">
-            <i class="fas fa-chart-bar mr-2"></i>Summary
-          </a>
-        </nav>
-
-        <!-- User Section (compact dropdown) -->
-        <div class="relative">
-          <button id="userMenuBtn" onclick="toggleUserMenu(event)" class="flex items-center gap-3 focus:outline-none">
-            <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-sm">
-              <i class="fas fa-user text-white text-sm"></i>
-            </div>
-            <span class="ml-2 hidden sm:inline text-sm font-medium text-gray-800">{{ session.get('full_name', 'Employee') }}</span>
-            <i class="fas fa-caret-down ml-1 text-gray-500"></i>
-          </button>
-          <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-md py-2 z-50">
-            <a href="{{ url_for('employee.profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-user mr-2"></i>Profile</a>
-            <a href="{{ url_for('employee.settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-cog mr-2"></i>Settings</a>
-            <form action="{{ url_for('auth.logout') }}" method="post" style="display: inline;">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-              <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <script>
-      function toggleUserMenu(e){ e.stopPropagation(); const m=document.getElementById('userMenu'); if(m) m.classList.toggle('hidden'); }
-      document.addEventListener('click', function(){ const m=document.getElementById('userMenu'); if(m && !m.classList.contains('hidden')) m.classList.add('hidden'); });
-    </script>
-
-  <!-- Main Content -->
+{% block content %}
+<!-- Main Content -->
   <div class="pt-24 pb-8">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -996,3 +920,4 @@
             </button>
             <button type="button" onclick="hideFaceRequestCancelModal()"
                 class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all">
+{% endblock %}

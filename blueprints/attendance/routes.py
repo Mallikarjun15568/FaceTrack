@@ -159,27 +159,20 @@ def api_attendance():
         elif r.get("is_holiday") and r["is_holiday"] > 0:
             r["status"] = "holiday"
 
-    # Check for missing checkouts and send email (only after office hours)
-    try:
-        check_missing_checkouts()
-    except Exception as e:
-        current_app.logger.error(f"Error checking missing checkouts: {str(e)}")
+    # Note: Missing checkout check now runs automatically via scheduler at 6 PM
+    # (see app.py background scheduler setup)
 
     return jsonify({"status": "ok", "records": rows})
 
 
 # --------------------------------------------------
-# CHECK MISSING CHECKOUTS & SEND EMAIL (End of Day)
+# CHECK MISSING CHECKOUTS & SEND EMAIL (Scheduled Daily at 6 PM)
+# Called automatically by APScheduler background job (see app.py)
 # --------------------------------------------------
 def check_missing_checkouts():
     """Check for employees who checked in but didn't check out by end of day"""
     from datetime import datetime
     current_time = datetime.now()
-    
-    # Only check after 6 PM (configurable checkout time)
-    checkout_hour = 18  # 6 PM
-    if current_time.hour < checkout_hour:
-        return  # Too early, don't check
     
     # Only check once per day (use a simple flag)
     today = current_time.date()
@@ -195,10 +188,12 @@ def check_missing_checkouts():
         return  # Already sent emails today
     
     # Find employees with check-in but no check-out for today
+    # Also join users table to get user_id for preference lookup
     cur.execute("""
-        SELECT a.employee_id, e.full_name, e.email
+        SELECT a.employee_id, e.full_name, e.email, u.id AS user_id
         FROM attendance a
         JOIN employees e ON a.employee_id = e.id
+        LEFT JOIN users u ON u.employee_id = e.id
         WHERE DATE(a.check_in_time) = CURDATE()
             AND a.check_out_time IS NULL
             AND a.status = 'check-in'
@@ -215,13 +210,35 @@ def check_missing_checkouts():
         db.commit()
         return
     
-    # Send email to each employee
+    # Send email to each employee (respecting notification preferences)
     email_service = EmailService(current_app)
     sent_count = 0
     
     for record in missing_checkouts:
         employee_name = record[1]
         employee_email = record[2]
+        user_id = record[3]
+        
+        # Check notification preferences (default to True if not set)
+        should_send = True
+        if user_id:
+            pref_cur = db.cursor()
+            # Check overall email preference
+            pref_cur.execute("SELECT setting_value FROM settings WHERE setting_key = %s", (f"notif_email_{user_id}",))
+            email_pref = pref_cur.fetchone()
+            if email_pref and email_pref[0] == '0':
+                should_send = False
+            
+            if should_send:
+                # Check checkout reminder preference
+                pref_cur.execute("SELECT setting_value FROM settings WHERE setting_key = %s", (f"notif_checkout_reminder_{user_id}",))
+                checkout_pref = pref_cur.fetchone()
+                if checkout_pref and checkout_pref[0] == '0':
+                    should_send = False
+            pref_cur.close()
+        
+        if not should_send:
+            continue
         
         try:
             email_service.send_missing_checkout_notification(employee_email, employee_name)

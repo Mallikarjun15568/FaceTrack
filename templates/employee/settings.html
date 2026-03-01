@@ -1,29 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Settings - FaceTrack Employee</title>
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+{% extends "employee/base.html" %}
+{% block title %}Settings - FaceTrack Employee{% endblock %}
 
-  <!-- Inter Font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/professional.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/premium.css') }}">
-
-  <!-- Icons: prefer local copy (if available), otherwise use CDN -->
-  {% if FA_LOCAL_AVAILABLE %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-  {% else %}
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  {% endif %}
-
-  <style>
+{% block head %}
+<style>
     body { font-family: 'Inter', sans-serif; }
     .admin-bg {
       background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
@@ -65,65 +44,10 @@
       }
     }
   </style>
-</head>
-<body class="m-0 bg-soft-mist min-h-screen">
+{% endblock %}
 
-  <!-- Premium Header -->
-    <header class="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-100 shadow-sm">
-      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <!-- Logo only (compact) -->
-        <div class="flex items-center gap-2">
-          <a href="/" class="block">
-            <img src="{{ url_for('static', filename='images/FaceTrack_logo.png') }}" alt="FaceTrack Logo" class="h-16 w-auto">
-          </a>
-        </div>
-
-        <!-- Navigation Menu -->
-        <nav class="flex items-center gap-4">
-          <a href="{{ url_for('employee.dashboard') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.dashboard' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
-            <i class="fas fa-home mr-2"></i>Dashboard
-          </a>
-          <a href="{{ url_for('employee.attendance') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.attendance' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
-            <i class="fas fa-clipboard-list mr-2"></i>Attendance
-          </a>
-          <a href="{{ url_for('employee.face_request') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.face_request' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
-            <i class="fas fa-camera mr-2"></i>Face Request
-          </a>
-          <a href="{{ url_for('employee.leave') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.leave' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
-            <i class="fas fa-calendar-plus mr-2"></i>Leave
-          </a>
-          <a href="{{ url_for('employee.summary') }}" class="text-sm font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint == 'employee.summary' %}bg-blue-100 text-blue-700{% else %}text-gray-700 hover:text-blue-600{% endif %}">
-            <i class="fas fa-chart-bar mr-2"></i>Summary
-          </a>
-        </nav>
-
-        <!-- User Section (compact dropdown) -->
-        <div class="relative">
-          <button id="userMenuBtn" onclick="toggleUserMenu(event)" class="flex items-center gap-3 focus:outline-none">
-            <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-sm">
-              <i class="fas fa-user text-white text-sm"></i>
-            </div>
-            <span class="ml-2 hidden sm:inline text-sm font-medium text-gray-800">{{ session.get('full_name', 'Employee') }}</span>
-            <i class="fas fa-caret-down ml-1 text-gray-500"></i>
-          </button>
-          <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-md py-2 z-50">
-            <a href="{{ url_for('employee.profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-user mr-2"></i>Profile</a>
-            <a href="{{ url_for('employee.settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-cog mr-2"></i>Settings</a>
-            <form action="{{ url_for('auth.logout') }}" method="post" style="display: inline;">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-              <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <script>
-      function toggleUserMenu(e){ e.stopPropagation(); const m=document.getElementById('userMenu'); if(m) m.classList.toggle('hidden'); }
-      document.addEventListener('click', function(){ const m=document.getElementById('userMenu'); if(m && !m.classList.contains('hidden')) m.classList.add('hidden'); });
-    </script>
-
-  <!-- Main Content -->
+{% block content %}
+<!-- Main Content -->
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
 
     <!-- Header Section -->
@@ -150,6 +74,7 @@
 
       <form method="POST" class="space-y-6" id="passwordForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="action" value="change_password"/>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -196,62 +121,110 @@
 
     <!-- Notification Preferences -->
     <div class="premium-card p-8 mb-8 scroll-reveal" style="animation-delay: 0.1s">
-      <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+      <h3 class="text-xl font-bold text-gray-900 mb-2 flex items-center gap-3">
         <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
           <i class="fas fa-bell text-white text-sm"></i>
         </div>
         Notification Preferences
       </h3>
+      <p class="text-sm text-gray-500 mb-6 ml-11">Control which email notifications you receive from FaceTrack.</p>
 
-      <div class="space-y-6">
-        <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-green-100 to-emerald-200 rounded-lg flex items-center justify-center">
-              <i class="fas fa-envelope text-green-600"></i>
+      <form method="POST" id="notifForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="action" value="save_notifications"/>
+
+        <div class="space-y-4">
+
+          <!-- Email Notifications (WORKING) -->
+          <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-gradient-to-br from-green-100 to-emerald-200 rounded-lg flex items-center justify-center">
+                <i class="fas fa-envelope text-green-600"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h4 class="font-semibold text-gray-900">Email Notifications</h4>
+                  <span class="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">Active</span>
+                </div>
+                <p class="text-sm text-gray-600">Receive attendance and leave updates via email</p>
+              </div>
             </div>
-            <div>
-              <h4 class="font-semibold text-gray-900">Email Notifications</h4>
-              <p class="text-sm text-gray-600">Receive attendance and leave updates via email</p>
-            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" name="notif_email" class="sr-only peer" {{ 'checked' if notif_prefs.get('email', True) else '' }}>
+              <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
           </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" class="sr-only peer" checked>
-            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
+
+          <!-- Late Check-in Alerts (COMING SOON - not yet sending emails) -->
+          <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 opacity-70">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-gradient-to-br from-yellow-100 to-amber-200 rounded-lg flex items-center justify-center">
+                <i class="fas fa-clock text-amber-600"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h4 class="font-semibold text-gray-900">Late Check-in Alerts</h4>
+                  <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 rounded-full">Coming Soon</span>
+                </div>
+                <p class="text-sm text-gray-500">Get notified when you check in late <span class="italic">(feature in development)</span></p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-not-allowed">
+              <input type="checkbox" name="notif_late_alerts" class="sr-only peer" disabled>
+              <div class="w-11 h-6 bg-gray-200 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+            </label>
+          </div>
+
+          <!-- Leave Status Updates (LOCKED - Always ON) -->
+          <div class="flex items-center justify-between p-4 bg-gradient-to-br from-purple-50 to-violet-50 rounded-lg border-2 border-purple-200 shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-gradient-to-br from-purple-100 to-violet-200 rounded-lg flex items-center justify-center shadow-sm">
+                <i class="fas fa-calendar-check text-purple-600"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h4 class="font-semibold text-gray-900">Leave Status Updates</h4>
+                  <span class="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full border border-purple-300">
+                    <i class="fas fa-lock text-[10px] mr-1"></i>Required
+                  </span>
+                </div>
+                <p class="text-sm text-gray-600">Email when your leave is approved or rejected <span class="font-medium text-purple-700">(always enabled)</span></p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-not-allowed opacity-75">
+              <input type="checkbox" name="notif_leave_updates" class="sr-only peer" checked disabled>
+              <div class="w-11 h-6 bg-purple-400 rounded-full peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+            </label>
+          </div>
+
+          <!-- Missing Checkout Reminders (WORKING) -->
+          <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-gradient-to-br from-orange-100 to-red-200 rounded-lg flex items-center justify-center">
+                <i class="fas fa-sign-out-alt text-orange-600"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h4 class="font-semibold text-gray-900">Missing Checkout Reminder</h4>
+                  <span class="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">Active</span>
+                </div>
+                <p class="text-sm text-gray-600">Reminder email if you forget to check out after 6 PM</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" name="notif_checkout_reminder" class="sr-only peer" {{ 'checked' if notif_prefs.get('checkout_reminder', True) else '' }}>
+              <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+
         </div>
 
-        <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-yellow-100 to-amber-200 rounded-lg flex items-center justify-center">
-              <i class="fas fa-clock text-amber-600"></i>
-            </div>
-            <div>
-              <h4 class="font-semibold text-gray-900">Late Check-in Alerts</h4>
-              <p class="text-sm text-gray-600">Get notified when you check in late</p>
-            </div>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" class="sr-only peer" checked>
-            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
+        <div class="pt-6 border-t border-gray-200 mt-6">
+          <button type="submit" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-8 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-[1.02]">
+            <i class="fas fa-save mr-2"></i>Save Notification Preferences
+          </button>
         </div>
-
-        <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-purple-100 to-violet-200 rounded-lg flex items-center justify-center">
-              <i class="fas fa-calendar-check text-purple-600"></i>
-            </div>
-            <div>
-              <h4 class="font-semibold text-gray-900">Leave Status Updates</h4>
-              <p class="text-sm text-gray-600">Notifications about your leave request status</p>
-            </div>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" class="sr-only peer" checked>
-            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
-        </div>
-      </div>
+      </form>
     </div>
 
     <!-- Account Information -->
@@ -397,6 +370,4 @@
       }
     });
   </script>
-
-</body>
-</html>
+{% endblock %}

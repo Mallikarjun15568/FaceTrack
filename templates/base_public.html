@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}FaceTrack Pro{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/static/css/output.css">
+  <link rel="stylesheet" href="/static/css/professional.css">
+  <link rel="stylesheet" href="/static/css/premium.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    .gradient-text {
+      background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    /* ---------- Scroll-reveal ---------- */
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+    @keyframes fadeInUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+
+  {% block head %}{% endblock %}
+</head>
+
+<body class="{% block body_class %}bg-soft-mist text-gray-900{% endblock %}">
+
+  <!-- ============================================================
+       SHARED NAVBAR
+  ============================================================ -->
+  <header class="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-100 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-0">
+        <a href="/"><img src="{{ url_for('static', filename='images/FaceTrack_logo.png') }}" alt="FaceTrack Logo" class="h-16 w-auto"></a>
+      </div>
+      <nav class="flex items-center gap-2 text-sm font-medium">
+        <a href="/"
+           class="flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors
+                  {% if request.path == '/' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-blue-50 hover:text-blue-600{% endif %}">
+          <i class="fas fa-home text-xs"></i>Home
+        </a>
+        <a href="/about"
+           class="flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors
+                  {% if request.path.startswith('/about') %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-blue-50 hover:text-blue-600{% endif %}">
+          <i class="fas fa-info-circle text-xs"></i>About
+        </a>
+        <a href="/contact"
+           class="flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors
+                  {% if request.path.startswith('/contact') %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-blue-50 hover:text-blue-600{% endif %}">
+          <i class="fas fa-envelope text-xs"></i>Contact
+        </a>
+        <a href="/help"
+           class="flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors
+                  {% if request.path.startswith('/help') %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-blue-50 hover:text-blue-600{% endif %}">
+          <i class="fas fa-question-circle text-xs"></i>Help
+        </a>
+        <a href="/auth/user_login"
+           class="ml-2 flex items-center gap-1.5 px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-semibold">
+          <i class="fas fa-sign-in-alt text-xs"></i>Login
+        </a>
+      </nav>
+      <!-- Mobile Menu Button -->
+      <button class="sm:hidden p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       PAGE CONTENT
+  ============================================================ -->
+  {% block content %}{% endblock %}
+
+  <!-- ============================================================
+       SHARED FOOTER
+  ============================================================ -->
+  <footer class="bg-gray-900 text-gray-400 pt-12 pb-6">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+              <i class="fas fa-camera text-white text-xl"></i>
+            </div>
+            <span class="text-lg font-bold text-white">FaceTrack Pro</span>
+          </div>
+          <p class="text-sm leading-relaxed">
+            AI-powered facial recognition attendance system for modern workplace management.
+          </p>
+        </div>
+        <div>
+          <h4 class="text-white font-semibold mb-3">Quick Links</h4>
+          <ul class="space-y-2 text-sm">
+            <li><a href="/" class="hover:text-white transition">Home</a></li>
+            <li><a href="/about" class="hover:text-white transition">About</a></li>
+            <li><a href="/contact" class="hover:text-white transition">Contact</a></li>
+            <li><a href="/help" class="hover:text-white transition">Help</a></li>
+            <li><a href="/auth/user_login" class="hover:text-white transition"><i class="fas fa-user mr-1"></i>Login</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-white font-semibold mb-3">System Info</h4>
+          <ul class="space-y-2 text-sm">
+            <li>Version 1.0</li>
+            <li>Face Recognition</li>
+            <li>Web Application</li>
+            <li class="pt-1">
+              <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-medium">
+                <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+                Active
+              </span>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-white font-semibold mb-3">Contact</h4>
+          <ul class="space-y-2 text-sm">
+            <li><i class="fas fa-envelope mr-2"></i>support@facetrackpro.com</li>
+            <li><i class="fas fa-phone mr-2"></i>+91 98765 43210</li>
+            <li><i class="fas fa-map-marker-alt mr-2"></i>Solapur, Maharashtra</li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-gray-800 pt-6 text-center text-sm">
+        <p>&copy; 2026 FaceTrack Pro. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast notification system -->
+  <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+  {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}
+  <script type="application/json" id="_flashData">{{ messages | tojson }}</script>
+  {% endif %}{% endwith %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var el = document.getElementById('_flashData');
+      if (!el) return;
+      var msgs = JSON.parse(el.textContent || '[]');
+      msgs.forEach(function(item) {
+        if (typeof showToast === 'function') {
+          showToast(item[1], item[0] === 'success' ? 'success' : 'error', 4000);
+        }
+      });
+    });
+  </script>
+
+  {% block scripts %}{% endblock %}
+
+
+</body>
+</html>

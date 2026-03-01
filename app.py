@@ -9,8 +9,10 @@ import time
 import os
 import shutil
 import tempfile
+import atexit
 
 from dotenv import load_dotenv
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_limiter.errors import RateLimitExceeded
 
@@ -144,6 +146,55 @@ with app.app_context():
         logger.info("Session timeout loaded from database: %s minutes (%s seconds)", session_timeout_minutes, session_timeout_seconds)
     except (ValueError, TypeError) as e:
         logger.warning("Failed to load session_timeout from database, keeping default. Error: %s", e)
+
+
+# --------------------------
+# BACKGROUND SCHEDULER SETUP
+# --------------------------
+# ⚠️ PRODUCTION WARNING:
+# In multi-worker deployments (Gunicorn, uWSGI, etc), this scheduler will run
+# in EVERY worker process, causing duplicate job executions.
+#
+# Solutions for production:
+# 1. Use environment variable to enable scheduler in only ONE worker:
+#    if os.getenv('ENABLE_SCHEDULER') == '1':
+# 2. Run scheduler in a separate dedicated process
+# 3. Use external scheduler (Celery Beat, APScheduler with Redis/database backend)
+# 4. Use OS-level cron jobs instead
+#
+# For development (single process Flask), current setup works fine.
+# --------------------------
+
+def scheduled_checkout_check():
+    """Background job to check missing checkouts at 6 PM daily"""
+    with app.app_context():
+        try:
+            from blueprints.attendance.routes import check_missing_checkouts
+            logger.info("Running scheduled checkout check...")
+            check_missing_checkouts()
+        except Exception as e:
+            logger.error(f"Scheduled checkout check failed: {str(e)}")
+
+# Only start scheduler if not already running (safety check)
+# In production, use ENABLE_SCHEDULER env var to control this
+if os.getenv('ENABLE_SCHEDULER', '1') == '1':
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(
+        func=scheduled_checkout_check,
+        trigger="cron",
+        hour=18,
+        minute=0,
+        id='daily_checkout_check',
+        name='Check missing checkouts at 6 PM',
+        replace_existing=True
+    )
+    scheduler.start()
+    logger.info("Background scheduler started - checkout reminders will run daily at 6:00 PM")
+    
+    # Shut down the scheduler when exiting the app
+    atexit.register(lambda: scheduler.shutdown())
+else:
+    logger.info("Scheduler disabled via ENABLE_SCHEDULER environment variable")
 
 
 

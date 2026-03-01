@@ -2,6 +2,10 @@
 //             ATTENDANCE LOGS (CLEAN)
 // =============================================
 
+const RECORDS_PER_PAGE = 25;
+let allAttendanceRecords = [];
+let currentPage = 1;
+
 document.addEventListener("DOMContentLoaded", () => {
 
     // Safely load usernames only if dropdown exists
@@ -86,11 +90,89 @@ function loadAttendance() {
         .then(res => res.json())
         .then(data => {
             if (data.status !== "ok") return;
-            renderAttendance(data.records);
+            allAttendanceRecords = data.records;
+            currentPage = 1;
+            renderPage(currentPage);
         })
         .catch(err => console.error("Failed to load attendance:", err));
 }
 
+
+// =============================================
+//   PAGINATION: RENDER A SPECIFIC PAGE
+// =============================================
+function renderPage(page) {
+    const total = allAttendanceRecords.length;
+    const totalPages = Math.ceil(total / RECORDS_PER_PAGE);
+    currentPage = Math.max(1, Math.min(page, totalPages || 1));
+
+    const start = (currentPage - 1) * RECORDS_PER_PAGE;
+    const end   = start + RECORDS_PER_PAGE;
+    const pageRecords = allAttendanceRecords.slice(start, end);
+
+    renderAttendance(pageRecords);
+    renderPagination(total, currentPage, totalPages);
+}
+
+// =============================================
+//   PAGINATION: RENDER CONTROLS
+// =============================================
+function renderPagination(total, page, totalPages) {
+    let container = document.getElementById("attendancePagination");
+    if (!container) {
+        // Create the pagination container and insert after the table wrapper
+        const tableWrapper = document.querySelector("#attendanceTable")?.closest(".scroll-reveal");
+        if (!tableWrapper) return;
+        container = document.createElement("div");
+        container.id = "attendancePagination";
+        tableWrapper.after(container);
+    }
+
+    if (total === 0) { container.innerHTML = ""; return; }
+
+    const from = (page - 1) * RECORDS_PER_PAGE + 1;
+    const to   = Math.min(page * RECORDS_PER_PAGE, total);
+
+    let pages = "";
+    for (let i = 1; i <= totalPages; i++) {
+        if (
+            i === 1 || i === totalPages ||
+            (i >= page - 2 && i <= page + 2)
+        ) {
+            pages += `
+                <button onclick="renderPage(${i})"
+                    class="px-3 py-1.5 text-sm rounded-lg border transition-all
+                           ${i === page
+                               ? 'bg-indigo-600 text-white border-indigo-600 font-semibold shadow-sm'
+                               : 'bg-white text-gray-700 border-gray-300 hover:bg-indigo-50 hover:border-indigo-400'}"
+                >${i}</button>`;
+        } else if (i === page - 3 || i === page + 3) {
+            pages += `<span class="px-1 text-gray-400">…</span>`;
+        }
+    }
+
+    container.className = "flex items-center justify-between mt-4 px-2";
+    container.innerHTML = `
+        <p class="text-sm text-gray-600">
+            Showing <span class="font-semibold text-gray-900">${from}–${to}</span>
+            of <span class="font-semibold text-gray-900">${total}</span> records
+        </p>
+        <div class="flex items-center gap-1.5">
+            <button onclick="renderPage(${page - 1})" ${page <= 1 ? 'disabled' : ''}
+                class="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border transition-all
+                       ${page <= 1 ? 'opacity-40 cursor-not-allowed bg-gray-100 border-gray-200 text-gray-500'
+                                   : 'bg-white text-gray-700 border-gray-300 hover:bg-indigo-50 hover:border-indigo-400'}">
+                <i class="fas fa-chevron-left text-xs"></i> Prev
+            </button>
+            ${pages}
+            <button onclick="renderPage(${page + 1})" ${page >= totalPages ? 'disabled' : ''}
+                class="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border transition-all
+                       ${page >= totalPages ? 'opacity-40 cursor-not-allowed bg-gray-100 border-gray-200 text-gray-500'
+                                           : 'bg-white text-gray-700 border-gray-300 hover:bg-indigo-50 hover:border-indigo-400'}">
+                Next <i class="fas fa-chevron-right text-xs"></i>
+            </button>
+        </div>`;
+}
 
 // =============================================
 //        RENDER ATTENDANCE TABLE

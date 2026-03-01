@@ -793,8 +793,39 @@ def settings():
     db = get_db()
     cur = db.cursor(dictionary=True)
     user_id = session.get('user_id')
-    
+    employee_id = session.get('employee_id')
+
     if request.method == 'POST':
+        action = request.form.get('action', 'change_password')
+
+        # ── Save notification preferences ──────────────────────
+        if action == 'save_notifications':
+            prefs = {
+                'email':             'notif_email'             in request.form,
+                # 'leave_updates' is LOCKED (always enabled) - ignore user input
+                'checkout_reminder': 'notif_checkout_reminder' in request.form,
+            }
+            for key, value in prefs.items():
+                setting_key = f'notif_{key}_{user_id}'
+                setting_val = '1' if value else '0'
+                cur.execute("""
+                    INSERT INTO settings (setting_key, setting_value)
+                    VALUES (%s, %s)
+                    ON DUPLICATE KEY UPDATE setting_value = %s
+                """, (setting_key, setting_val, setting_val))
+            
+            # Force leave_updates to always be ON (locked)
+            cur.execute("""
+                INSERT INTO settings (setting_key, setting_value)
+                VALUES (%s, '1')
+                ON DUPLICATE KEY UPDATE setting_value = '1'
+            """, (f'notif_leave_updates_{user_id}',))
+            
+            db.commit()
+            flash('Notification preferences saved', 'success')
+            return redirect(url_for('employee.settings'))
+
+        # ── Change password (default action) ───────────────────
         current_password = request.form.get('current_password')
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
@@ -830,11 +861,21 @@ def settings():
         flash('Password changed successfully', 'success')
         return redirect(url_for('employee.settings'))
 
-    # Get last login info (simplified - could be enhanced with proper session tracking)
-    # For now, we'll just pass None since user_sessions table may not exist
-    last_login = None
+    # ── GET: load preferences ────────────────────────────────
+    notif_keys = ['email', 'leave_updates', 'checkout_reminder']
+    notif_prefs = {}
+    for key in notif_keys:
+        setting_key = f'notif_{key}_{user_id}'
+        cur.execute("SELECT setting_value FROM settings WHERE setting_key = %s", (setting_key,))
+        row = cur.fetchone()
+        # Default to True (enabled) if not yet saved
+        notif_prefs[key] = (row['setting_value'] == '1') if row else True
+    
+    # Force leave_updates to always be True (locked preference)
+    notif_prefs['leave_updates'] = True
 
-    return render_template('employee/settings.html', last_login=last_login)
+    last_login = None
+    return render_template('employee/settings.html', last_login=last_login, notif_prefs=notif_prefs)
 
 
 # ================================
