@@ -1,212 +1,119 @@
-# 🎯 FaceTrack Pro - Enterprise AI Attendance System
+<div align="center">
 
-[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Flask](https://img.shields.io/badge/Flask-3.1-green.svg)](https://flask.palletsprojects.com/)
-[![InsightFace](https://img.shields.io/badge/InsightFace-buffalo__l-orange.svg)](https://github.com/deepinsight/insightface)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg)](https://www.mysql.com/)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8.svg)](https://tailwindcss.com/)
-[![Production](https://img.shields.io/badge/Production-Ready-success.svg)](DEPLOYMENT.md)
+# 🎯 FaceTrack Pro
 
-> Production-grade facial recognition attendance system powered by InsightFace ArcFace. Features real-time kiosk mode with mobile camera support, smooth animations, liveness detection, and enterprise-level security.
+### Enterprise AI-Powered Attendance Management System
 
-> **🎉 Version 2.5** - Remember Me functionality, premium UI/UX enhancements, professional login pages, enhanced security messaging, and improved session management!
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.1-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
----
+**Production-ready facial recognition attendance system powered by InsightFace ArcFace with modern UI and advanced security features**
 
-## 📱 Latest Updates (v2.5)
-
-### 🔐 Remember Me Functionality
-- **Persistent Sessions**: "Remember Me" checkbox on both admin and employee login pages
-- **Configurable Duration**: Sessions persist for admin-configurable timeout period (default: 30 minutes)
-- **Enhanced UX**: Users can stay logged in across browser sessions
-- **Security Maintained**: All existing security features (CSRF, session regeneration) preserved
-
-### 🎨 Premium UI/UX Enhancements
-- **Modern Card Designs**: Premium cards with gradients, animations, and hover effects
-- **Professional Login Pages**: Enterprise-grade login interfaces with security badges
-- **Enhanced Flash Messages**: Improved error/success message styling and positioning
-- **Smooth Animations**: Scroll-reveal animations and micro-interactions throughout
-- **Consistent Branding**: Unified color scheme and professional styling
-
-### 🛡️ Security & Session Management
-- **Professional Error Messages**: Replaced harsh "access denied" with user-friendly language
-- **Session Timeout Configuration**: Database-driven session timeout settings
-- **CSRF Validation**: Enhanced error handling for CSRF token validation failures
-- **Access Control**: Improved middleware with professional error responses
-
-### 📊 Employee Interface Improvements
-- **Face Request History**: Complete history table with image viewing modals
-- **Settings Page**: Password change functionality with validation and strength indicators
-- **Profile Management**: Enhanced employee profile with photo upload capabilities
-- **Navigation**: Improved navigation with active state indicators and smooth transitions
-
-### ⚡ Performance & Code Quality
-- **Optimized Queries**: Improved database query performance
-- **Clean Codebase**: Consistent error handling and code organization
-- **Responsive Design**: Enhanced mobile and tablet compatibility
-- **Animation Performance**: Hardware-accelerated animations for smooth UX
+[Features](#-key-features) • [Installation](#-quick-start) • [Documentation](#-documentation) • [Demo](#-demo)
 
 ---
 
-## � Screenshots
+### 🌟 Latest Version: 2.6
 
-### Dashboard
-![Dashboard View](docs/screenshots/dashboard.png)
-*Admin dashboard with real-time attendance statistics and analytics*
+✨ Modern Kiosk UI • 🔐 Enhanced Security • 🎨 Professional Design • 📱 Mobile-Optimized
 
-### Kiosk Mode - Face Recognition
-![Kiosk Mode](docs/screenshots/kiosk.png)
-*Real-time face detection with guidance overlay, distance meter, and confidence scoring*
-
-### Liveness Detection
-![Liveness Detection](docs/screenshots/liveness.png)
-*Real-time liveness verification with blink and movement prompts*
-
-### Employee Management
-![Employee List](docs/screenshots/employees.png)
-*Complete employee directory with face enrollment status and management tools*
-
-### Attendance Records
-![Attendance View](docs/screenshots/attendance.png)
-*Comprehensive attendance tracking with filters and export capabilities*
-
-### Reports & Analytics
-![Reports](docs/screenshots/reports.png)
-*Department-wise analytics with monthly trends and custom date ranges*
-
-### Settings Panel
-![Settings](docs/screenshots/settings.png)
-*System configuration for thresholds, working hours, and kiosk preferences*
-
-> **Note**: Screenshots showcase the professional UI with consistent indigo theme, real-time feedback systems, and enterprise-grade design.
+</div>
 
 ---
 
-## 📋 Table of Contents
+## 🎥 Demo
 
-- [Screenshots](#-screenshots)
-- [Features](#-features)
-- [Technology Stack](#-technology-stack)
-- [Installation](#-installation)
-- [Usage](#-usage)
-- [Project Structure](#-project-structure)
-- [Database Schema](#-database-schema)
-- [Configuration](#-configuration)
-- [Troubleshooting](#-troubleshooting)
-- [Testing](#-testing)
-- [Roadmap](#-roadmap)
+<div align="center">
+
+### Modern Kiosk Interface
+Real-time face recognition with professional UI design and smooth animations
+
+### Dashboard & Analytics
+Comprehensive attendance tracking with real-time insights and visual reports
+
+</div>
 
 ---
 
-## ✨ Features
+## 🚀 Key Features
 
-### 🔐 Authentication & Security
-- **Face + Password Login**: Multi-factor authentication with live facial verification
-- **Role-Based Access Control (RBAC)**: Admin, HR, and Employee roles
-- **Remember Me Functionality**: Persistent sessions with configurable timeout
-- **Centralized Security Middleware**: Unified access control across all blueprints
-- **Custom Error Pages**: Professional 403/404 pages with consistent branding
-- **Session Management**: Secure Flask sessions with encrypted cookies and permanent session support
-- **Password Encryption**: Werkzeug PBKDF2 SHA-256 hashing
-- **Anti-CSRF Protection**: Token-based request validation
+<table>
+<tr>
+<td width="50%">
+
+### 🎭 AI-Powered Recognition
+- **InsightFace ArcFace** ResNet-100
+- **98%+ Accuracy** in controlled environments
+- **<150ms** recognition speed
+- **512-dim embeddings** with cosine similarity
+- **Anti-spoofing** liveness detection
+- **Multi-face** detection support
+
+</td>
+<td width="50%">
+
+### 🖥️ Modern Kiosk Mode
+- **Touchless operation** with auto-detection
+- **Mobile-optimized** with camera switching
+- **Real-time feedback** visual + audio
+- **Professional UI** with smooth animations
+- **Snapshot storage** for audit trails
+- **Fullscreen mode** for dedicated terminals
+
+</td>
+</tr>
+<tr>
+<td>
 
 ### 👥 Employee Management
-- **Complete CRUD**: Add, view, edit, and archive employees
-- **Department Organization**: IT, HR, Sales, Marketing, Finance, Admin
-- **Status Tracking**: Active, Inactive, On Leave
-- **Profile Photos**: Upload and manage employee images
-- **Face Enrollment**: Single high-quality capture with 512-dim embedding storage
-- **Face Request Management**: Admin approval system for enrollment requests
-- **Request Workflow**: Pending → Approved/Rejected with admin oversight
-- **Employee Self-Service**: Profile management, face enrollment requests, password changes
-- **Password Management**: Secure password change functionality with validation
+- Complete CRUD operations
+- Department organization
+- Face enrollment system
+- Profile photo management
+- Self-service portal
+- Request approval workflow
 
-### 📋 Leave Management System
-- **Leave Types**: Annual, Sick, Personal, Maternity, Paternity, Emergency, Casual
-- **Leave Application**: Employee self-service leave requests
-- **Admin Approval**: HR/Admin approval workflow with status tracking
-- **Leave Balance Tracking**: Automatic balance management per employee per year
-- **Leave Calendar**: Integration with attendance system
-- **Leave History**: Complete audit trail of leave applications
+</td>
+<td>
 
-### 🏖️ Holiday Management
-- **Company Holidays**: Configurable company holidays
-- **Weekend Tracking**: Automatic weekend detection
-- **Calendar Integration**: Attendance calculations exclude holidays/weekends
-- **Holiday Types**: Distinguish between weekends and company holidays
+### 📊 Advanced Analytics
+- Real-time attendance tracking
+- Department-wise reports
+- Custom date ranges
+- CSV export capabilities
+- Monthly trends analysis
+- Visual charts & graphs
 
-### 🔍 Audit & Security
-- **Audit Logging**: Complete system audit trail
-- **Login Tracking**: Authentication attempt logging with IP addresses
-- **Recognition Logging**: Face recognition event tracking with confidence scores
-- **Password Reset**: Secure token-based password recovery
-- **Session Security**: Encrypted sessions with configurable timeouts
-- **Centralized Middleware**: Unified security checks across all blueprints
-- **Face Request Management**: Admin approval system for enrollment requests
-- **Request Workflow**: Pending → Approved/Rejected with admin oversight
+</td>
+</tr>
+<tr>
+<td>
 
-### 🎭 Advanced Face Recognition
-- **AI Engine**: InsightFace buffalo_l (ArcFace ResNet-100)
-- **Accuracy**: 98%+ in controlled lighting
-- **Speed**: <150ms per recognition
-- **Embeddings**: 512-dimensional float32 vectors stored as MySQL BLOB
-- **Similarity Metric**: Cosine distance (threshold: 0.4)
-- **Multi-Face Support**: Detects up to 3 faces per frame
-- **Live Detection**: RetinaFace (InsightFace built-in detector)
+### 🔐 Enterprise Security
+- Multi-factor authentication
+- Role-based access control (RBAC)
+- Session management with "Remember Me"
+- CSRF protection
+- Password encryption (PBKDF2 SHA-256)
+- Complete audit logging
 
-### �️ Liveness Detection
-- **Anti-Spoofing**: Prevents photo/video attacks with real-time verification
-- **Blink Detection**: Eye aspect ratio analysis for natural blink verification
-- **Head Movement Tracking**: Directional movement detection (left/right)
-- **Adaptive Texture Analysis**: Lighting-aware skin texture validation
-- **Time-Window Voting**: Multi-frame analysis for robust detection
-- **Performance Optimized**: Fast processing with caching and frame skipping
+</td>
+<td>
 
-### �🖥️ Kiosk Mode (Production-Ready)
-- **Touchless Operation**: Fully automated face-based attendance
-- **Single-Row Per Day**: One record per employee per day (optimized)
-- **Auto Check-in**: First recognition marks check-in
-- **Auto Check-out**: Updates check-out on subsequent recognition
-- **Real-time Feedback**: Visual + audio confirmation with smooth animations
-- **Mobile Camera Support**: Front/back camera switching on mobile devices
-- **Smooth UI**: Bouncing modals, fade transitions, hover effects
-- **Flexible Settings**: Skip PIN for view-only access
-- **Recent Logs**: Live display of last 10 attendance entries
-- **Snapshot Storage**: Captures and stores attendance photos
-- **Fullscreen Mode**: Dedicated kiosk interface
-- **Responsive Design**: Works on desktop, tablet, and mobile
+### 🏖️ Leave & Holiday Management
+- Leave application system
+- Admin approval workflow
+- Balance tracking
+- Holiday calendar integration
+- Multiple leave types
+- Comprehensive history
 
-### 📊 Attendance System
-- **Single-Row Architecture**: One record per employee/day
-- **Working Hours**: Auto-calculates time between check-in/out
-- **Status Management**: Present, Absent, Late, Half-Day
-- **Date Filters**: Daily, weekly, monthly views
-- **Department Filters**: Filter by department or all
-- **Search**: Quick search by name or employee ID
-
-### 📈 Reports & Analytics
-- **Daily Reports**: Real-time attendance summary
-- **Monthly Analytics**: Comprehensive statistics
-- **Custom Date Ranges**: Flexible reporting
-- **Department Reports**: Breakdown by departments
-- **CSV Export**: Download for offline analysis
-
-### ⚙️ Additional Features
-- **Timeline View**: Chronological attendance feed
-- **Settings Panel**: Configure thresholds, working hours
-- **Department Management**: CRUD for departments
-- **Profile Management**: Update personal information and password
-- **Face Request Approval**: Admin dashboard for managing enrollment requests
-- **Custom Error Handling**: Professional error pages with navigation
-- **Charts & Analytics**: Visual data representation and insights
-- **Email Notifications**: Automated email alerts for various events
-- **Audit Trail**: Complete system activity logging
-- **Password Recovery**: Secure password reset functionality
-- **Holiday Calendar**: Company holiday and weekend management
-- **Leave Management**: Complete leave application and approval system
-- **Contact Form**: Database-backed contact form with message storage and admin management
-- **Premium UI/UX**: Modern card designs, smooth animations, and professional styling
-- **Remember Me**: Persistent login sessions with configurable timeout
+</td>
+</tr>
+</table>
 
 ---
 
@@ -215,47 +122,43 @@
 ### Backend
 - **Framework**: Flask 3.1.3
 - **Language**: Python 3.11+
-- **Database**: MySQL 8.0 (Only database used)
-- **ORM**: Flask-MySQLdb
-- **Session**: Flask-Session
-- **Security**: Werkzeug, Flask-CORS
+- **Database**: MySQL 8.0
+- **Security**: Werkzeug, Flask-CSRF
 
-### AI/ML Stack
+### AI/ML
 - **Face Recognition**: InsightFace 0.7.3
 - **Model**: buffalo_l (ArcFace ResNet-100)
-- **Detection**: RetinaFace (built-in)
+- **Detection**: RetinaFace
 - **Runtime**: ONNX Runtime 1.19+
 - **Image Processing**: OpenCV 4.10+
-- **Embeddings**: NumPy 1.26+ (512-dim vectors)
-- **Similarity**: Cosine Distance (scipy)
 
 ### Frontend
 - **Template Engine**: Jinja2
 - **CSS Framework**: TailwindCSS 3.4
 - **JavaScript**: Vanilla ES6+
-- **Icons**: Feather Icons
-- **Webcam**: MediaDevices getUserMedia API
+- **Icons**: Font Awesome 6.5
 
 ---
 
-## 📥 Installation
+## ⚡ Quick Start
 
 ### Prerequisites
-- Python 3.11 or higher
-- MySQL 8.0 Server
-- Webcam (for enrollment and kiosk)
-- Windows/Linux/macOS
-- 8GB RAM recommended
+```bash
+✓ Python 3.11+
+✓ MySQL 8.0
+✓ Webcam (for enrollment and kiosk)
+✓ 8GB RAM recommended
+```
 
-### Step 1: Clone Repository
+### Installation
 
+1. **Clone the repository**
 ```bash
 git clone https://github.com/Mallikarjun15568/FaceTrack.git
 cd FaceTrack
 ```
 
-### Step 2: Create Virtual Environment
-
+2. **Create virtual environment**
 ```bash
 # Windows
 python -m venv venv
@@ -266,118 +169,84 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-### Step 3: Install Dependencies
-
+3. **Install dependencies**
 ```bash
 pip install -r requirements.txt
 ```
 
-### Step 4: Configure Database
-
-1. Create database:
-```sql
+4. **Configure database**
+```bash
+# Create database
+mysql -u root -p
 CREATE DATABASE facetrack_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+EXIT;
 ```
 
-2. Update `config.py`:
+5. **Update configuration**
 ```python
+# config.py
 DB_HOST = 'localhost'
 DB_USER = 'root'
 DB_PASSWORD = 'your_password'
 DB_NAME = 'facetrack_db'
 ```
 
-3. Initialize tables:
+6. **Initialize database**
 ```bash
 python db_utils.py
 ```
 
-### Step 5: Download InsightFace Model
-
-```bash
-# Model auto-downloads on first run
-# Or manually download buffalo_l to models/ directory
-```
-
-### Step 6: Run Application
-
+7. **Run the application**
 ```bash
 python app.py
 ```
 
-Application starts at: **http://127.0.0.1:5000**
+8. **Access the application**
+```
+🌐 Application: http://127.0.0.1:5000
+👤 Default Admin: admin@facetrack.com / admin123
+```
 
 ---
 
-## 🚀 Usage
+## 📖 Usage Guide
 
-### 1. First Time Setup
-
-#### Admin Login
-Default credentials (change immediately):
-- Email: `admin@facetrack.com`
-- Password: `admin123`
+### 1. Admin Login
+- Navigate to `http://127.0.0.1:5000`
+- Login with default credentials (change immediately!)
+- Access admin dashboard
 
 ### 2. Add Employees
-
-1. Navigate to **Employees** → **Add Employee**
-2. Fill in details:
-   - Name, Employee ID, Email
-   - Department, Role
-   - Status (Active/Inactive)
+1. Go to **Employees** → **Add Employee**
+2. Fill in employee details (name, ID, email, department)
 3. Upload profile photo (optional)
-4. Click **Save**
+4. Save employee record
 
 ### 3. Enroll Faces
-
-1. Go to **Enroll** page
+1. Navigate to **Enroll** page
 2. Select employee from dropdown
-3. Allow webcam access
-4. Position face in frame (good lighting)
-5. Click **Capture** when face is centered
-6. System generates 512-dim embedding
-7. Confirms enrollment success
+3. Position face in camera view
+4. Capture photo when prompted
+5. System generates 512-dim embedding
 
 **Best Practices:**
-- ✅ Front-facing, neutral expression
 - ✅ Good lighting (avoid shadows)
+- ✅ Front-facing, neutral expression  
 - ✅ Remove glasses if possible
 - ✅ Clear background
 
-### 4. Mark Attendance (Kiosk Mode)
+### 4. Mark Attendance (Kiosk)
+1. Open `http://127.0.0.1:5000/kiosk`
+2. System auto-detects and recognizes faces
+3. First recognition = Check-in
+4. Subsequent recognition = Check-out
+5. View real-time confirmation
 
-1. Open: http://127.0.0.1:5000/kiosk
-2. System auto-detects face
-3. Recognizes employee
-4. Marks check-in/check-out automatically
-5. Displays confirmation with photo
-
-**Kiosk Behavior:**
-- **First recognition of day**: Check-in time recorded
-- **Subsequent recognition**: Check-out time updated
-- **Already marked**: Shows existing record
-- **Unknown face**: Displays "Not Recognized" alert
-
-### 5. View Attendance
-
-1. Navigate to **Attendance** page
-2. Filter by:
-   - Date range (start/end)
-   - Department
-   - Employee
-3. View check-in/out times
-4. See total working hours
-5. View attendance snapshots
-
-### 6. Generate Reports
-
+### 5. View & Export Reports
 1. Go to **Reports** page
-2. Select:
-   - Report type (Daily/Monthly)
-   - Date range
-   - Department (optional)
-3. Click **Generate**
-4. Export to CSV if needed
+2. Select date range and filters
+3. Generate attendance reports
+4. Export to CSV for analysis
 
 ---
 
@@ -385,564 +254,178 @@ Default credentials (change immediately):
 
 ```
 FaceTrack/
+├── app.py                     # Main Flask application
+├── config.py                  # Configuration settings
+├── db_utils.py                # Database utilities
+├── requirements.txt           # Python dependencies
+├── package.json               # Node.js dependencies
+├── tailwind.config.js         # TailwindCSS config
 │
-├── app.py                      # Main Flask application
-├── config.py                   # Configuration settings
-├── db_utils.py                 # Database initialization & helpers
-├── requirements.txt            # Python dependencies
-├── package.json                # Node.js dependencies (for TailwindCSS)
-├── postcss.config.js           # PostCSS configuration
-├── tailwind.config.js          # TailwindCSS configuration
-├── README.md                   # Documentation
-├── DEPLOYMENT.md               # Deployment guide
-├── docker-compose.yml          # Docker Compose configuration
-├── Dockerfile                  # Docker container setup
+├── blueprints/                # Flask blueprints
+│   ├── admin/                 # Admin dashboard
+│   ├── attendance/            # Attendance management
+│   ├── auth/                  # Authentication
+│   ├── employee/              # Employee portal
+│   ├── enroll/                # Face enrollment
+│   ├── kiosk/                 # Kiosk mode
+│   └── leave/                 # Leave management
 │
-├── blueprints/                 # Feature modules
-│   ├── auth/                   # Authentication (login/logout/signup)
-│   │   ├── __init__.py
-│   │   ├── routes.py           # Login, logout, password reset
-│   │   └── __pycache__/
-│   ├── admin/                  # Admin panel (/admin)
-│   │   ├── __init__.py         # Admin middleware & sub-blueprints
-│   │   ├── dashboard/          # Admin dashboard (/admin/dashboard)
-│   │   │   └── ...
-│   │   ├── employees/          # Employee management (/admin/employees)
-│   │   ├── reports/            # Reports & analytics (/admin/reports)
-│   │   ├── settings/           # System settings (/admin/settings)
-│   │   └── __pycache__/
-│   ├── attendance/             # Attendance records (/attendance)
-│   │   ├── __init__.py
-│   │   ├── attendance_utils.py # Attendance helper functions
-│   │   ├── routes.py
-│   │   └── __pycache__/
-│   ├── enroll/                 # Face enrollment (/enroll)
-│   ├── kiosk/                  # Kiosk mode (/kiosk)
-│   ├── leave/                  # Leave management (/leave)
-│   ├── charts/                 # Charts & analytics (/charts)
-│   └── employee/               # Employee panel (/employee)
+├── models/                    # Database models
+│   └── users.py               # User model
 │
-├── utils/                      # Helper utilities
-│   ├── __init__.py
-│   ├── face_encoder.py         # Face embedding generation + recognition
-│   ├── liveness_detector.py    # Liveness detection module
-│   ├── db.py                   # Database connection pool
-│   ├── helpers.py              # Utility functions
-│   ├── email_service.py        # Email notifications
-│   ├── logger.py               # Logging utilities
-│   ├── extensions.py           # Flask extensions
-│   ├── input_validation.py     # Input validation utilities
-│   ├── validators.py           # Data validators
-│   ├── csrf_exemptions.py      # CSRF exemption handlers
-│   ├── thread_safe_encoder.py  # Thread-safe face encoding
-│   └── __pycache__/
+├── static/                    # Static assets
+│   ├── css/                   # Compiled CSS
+│   ├── js/                    # JavaScript files
+│   ├── images/                # Images & icons
+│   ├── faces/                 # Face embeddings
+│   └── snapshots/             # Attendance photos
 │
-├── models/                     # Data models
-│   └── users.py                # User model
+├── templates/                 # Jinja2 templates
+│   ├── base.html              # Base layout
+│   ├── home.html              # Landing page
+│   ├── kiosk.html             # Kiosk interface
+│   ├── admin/                 # Admin templates
+│   └── employee/              # Employee templates
 │
-├── templates/                  # Jinja2 HTML templates
-│   ├── base.html               # Base layout with sidebar
-│   ├── base_kiosk.html         # Kiosk-specific base layout
-│   ├── home.html               # Public homepage
-│   ├── login.html              # Login page
-│   ├── signup.html             # Signup page
-│   ├── forgot_password.html    # Password reset request
-│   ├── reset_password.html     # Password reset form
-│   ├── 403.html                # Custom forbidden page
-│   ├── 404.html                # Custom not found page
-│   ├── 500.html                # Custom error page
-│   ├── contact.html            # Contact form
-│   ├── help.html               # Help page
-│   ├── about.html              # About page
-│   ├── admin/                  # Admin templates
-│   │   ├── dashboard_admin.html
-│   │   ├── employees.html
-│   │   ├── employee_edit.html
-│   │   ├── employee_view.html
-│   │   ├── reports.html
-│   │   ├── settings.html
-│   │   ├── user_management.html
-│   │   ├── backups/
-│   │   └── face_requests.html
-│   ├── employee/               # Employee panel templates
-│   │   ├── dashboard.html
-│   │   ├── attendance.html
-│   │   ├── leave.html
-│   │   ├── profile.html
-│   │   └── face_request.html
-│   ├── leave/                  # Leave management templates
-│   │   ├── apply_leave.html
-│   │   └── leave_list.html
-│   ├── attendance.html         # Admin attendance view
-│   ├── kiosk.html              # Kiosk interface
-│   ├── kiosk_exit.html         # Kiosk exit confirmation
-│   ├── enroll_face_list.html   # Enrollment management
-│   ├── enrolled_list.html      # Enrolled faces list
-│   ├── employees_face_enroll.html
-│   ├── employees_face_enroll_update.html
-│   ├── employees_add_modal.html
-│   └── [other templates]
+├── utils/                     # Utility modules
+│   ├── face_encoder.py        # Face recognition
+│   ├── liveness_detector.py   # Liveness detection
+│   ├── email_service.py       # Email notifications
+│   └── validators.py          # Input validation
 │
-├── static/                     # Static assets
-│   ├── css/                    # Compiled CSS
-│   ├── js/                     # JavaScript files
-│   ├── faces/                  # Enrolled face images
-│   ├── snapshots/              # Attendance photos
-│   ├── pending_faces/          # Pending face requests
-│   ├── images/                 # UI assets
-│   ├── uploads/                # Uploaded files
-│   └── temp/                   # Temporary files
-│
-├── scripts/                    # Database scripts & utilities
-│   ├── database_setup.sql      # Database setup script
-│   ├── add_missing_columns.py  # Column addition script
-│   ├── add_missing_columns.sql
-│   ├── add_report_history.sql
-│   ├── check_users.py          # User verification script
-│   ├── checkout_reminder.py    # Checkout reminder script
-│   ├── create_admin.py         # Admin creation script
-│   ├── mark_absent.py          # Mark absent script
-│   ├── test_email.py           # Email testing script
-│   └── __pycache__/
-│
-├── logs/                       # Application logs
-│   ├── attendance.csv
-│   └── logout.csv
-│
-├── docs/                       # Documentation
-│   ├── 00_TITLE_PAGE.md
-│   ├── 01_CERTIFICATE.md
-│   ├── CHAPTER_01.md
-│   ├── CHAPTER_02.md
-│   ├── CHAPTER_03.md
-│   ├── CHAPTER_04.md
-│   ├── CHAPTER_05.md
-│   ├── CHAPTER_06_BIBLIOGRAPHY.md
-│   ├── ANNEXURE_1.md
-│   ├── ANNEXURE_2.md
-│   ├── ANNEXURE_3.md
-│   ├── MOBILE_ACCESS_SETUP.md
-│   ├── README.md
-│   ├── SCREENSHOT_CHECKLIST.md
-│   ├── SCREENSHOT_GUIDE.md
-│   └── diagrams/
-│
-├── tests/                      # Test suites
-│   ├── test_camera.py          # Camera testing
-│   ├── test_live_recognition.py # Live recognition testing
-│   ├── integration/            # Integration tests
-│   ├── performance/            # Performance tests
-│   └── unit/                   # Unit tests
-│
-└── __pycache__/                # Python bytecode cache
-```
-
----
-│   ├── css/                    # Compiled CSS
-│   ├── js/                     # JavaScript files
-│   ├── faces/                  # Enrolled face images
-│   ├── snapshots/              # Attendance photos
-│   ├── pending_faces/          # Pending face requests
-│   └── images/                 # UI assets
-│
-├── scripts/                    # Database scripts & utilities
-│   ├── create_*.sql            # Table creation scripts
-│   ├── add_*.sql               # Column addition scripts
-│   ├── migrate_*.sql           # Migration scripts
-│   └── *.py                    # Utility scripts
-│
-├── logs/                       # Application logs
-│   ├── attendance.csv
-│   └── logout.csv
-│
-└── instance/                   # Instance files
-    └── facetrack.db            # SQLite database (dev)
+├── logs/                      # Application logs
+├── scripts/                   # Utility scripts
+└── docs/                      # Documentation
 ```
 
 ---
 
-## 🗄️ Database Schema
+## 🔧 Configuration
 
-### Users Table (Authentication)
+### Environment Variables
+Create a `.env` file in the project root:
 
-```sql
-CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(80) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'hr', 'employee') DEFAULT 'employee',
-    email VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_username (username)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```env
+# Database
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=facetrack_db
+
+# Flask
+SECRET_KEY=your-secret-key-here
+FLASK_ENV=production
+
+# Email (Optional)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
 ```
 
-### Employees Table (Master Data)
-
-```sql
-CREATE TABLE employees (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT UNIQUE,
-    full_name VARCHAR(255) NOT NULL,
-    email VARCHAR(150) UNIQUE,
-    phone VARCHAR(20),
-    gender VARCHAR(20),
-    job_title VARCHAR(100),
-    department_id INT,
-    join_date DATE,
-    status VARCHAR(20) DEFAULT 'Active',
-    photo VARCHAR(255),                    -- Consolidated photo column (admin + employee photos)
-    face_embedding LONGBLOB,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
-    INDEX idx_email (email),
-    INDEX idx_department (department_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
-
-**Note**: The `photo` column consolidates both admin-uploaded photos and employee self-uploaded profile photos into a single, unified column. This simplifies the schema and eliminates confusion between `photo_path` and `profile_photo` columns that existed in earlier versions.
-
-### Attendance Table (Single-Row Architecture)
-
-```sql
-CREATE TABLE attendance (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    employee_id INT NOT NULL,
-    date DATE NOT NULL,                    -- Legacy column (not used in queries)
-    status ENUM('present','late','absent','check-in','check-out','already') DEFAULT 'present',
-    captured_photo_path TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    timestamp DATETIME,                     -- Last action timestamp
-    check_in_time DATETIME,                 -- Primary check-in datetime (used in all queries)
-    check_out_time DATETIME,                -- Check-out datetime
-    working_hours FLOAT,                    -- Calculated hours (check_out - check_in)
-    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
-    INDEX idx_employee_date (employee_id, check_in_time),
-    INDEX idx_date (date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- IMPORTANT: All queries use DATE(check_in_time) as primary date field
--- Legacy 'date' column exists for backward compatibility but is NOT used
-```
-
-### Face Encodings Table
-
-```sql
-CREATE TABLE face_data (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    emp_id INT NOT NULL,
-    embedding LONGBLOB NOT NULL,     -- 512-dim float32 array (2048 bytes)
-    image_path VARCHAR(255),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (emp_id) REFERENCES employees(id) ON DELETE CASCADE,
-    INDEX idx_emp_id (emp_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
-
-### Settings Table (System Configuration)
-
-```sql
-CREATE TABLE IF NOT EXISTS settings (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    setting_key VARCHAR(100) NOT NULL UNIQUE,
-    setting_value TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_key (setting_key)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
-
-### Leaves Table (Leave Management)
-
-```sql
-CREATE TABLE IF NOT EXISTS leaves (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    employee_id INT NOT NULL,
-    leave_type ENUM('annual', 'sick', 'personal', 'maternity', 'paternity', 'emergency', 'casual_leave') NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    reason TEXT,
-    status ENUM('pending', 'approved', 'rejected', 'cancelled') DEFAULT 'pending',
-    approved_by INT NULL,
-    approved_at TIMESTAMP NULL,
-    applied_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
-    FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_employee_id (employee_id),
-    INDEX idx_status (status),
-    INDEX idx_dates (start_date, end_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
-
-### Holidays Table (Company Holidays & Weekends)
-
-```sql
-CREATE TABLE IF NOT EXISTS holidays (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    holiday_date DATE NOT NULL UNIQUE,
-    holiday_name VARCHAR(255) NOT NULL,
-    holiday_type ENUM('weekend', 'company_holiday') DEFAULT 'company_holiday',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_date (holiday_date),
-    INDEX idx_type (holiday_type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-```
-
-### Pending Face Requests Table (Face Enrollment Approval)
-
-```sql
-CREATE TABLE IF NOT EXISTS pending_face_requests (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    emp_id INT NOT NULL,
-    request_type ENUM('enroll', 'update') NOT NULL,
-    image_path VARCHAR(255) NOT NULL,
-    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
-    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    approved_at TIMESTAMP NULL,
-    approved_by INT NULL,
-    rejection_reason TEXT NULL,
-    FOREIGN KEY (emp_id) REFERENCES employees(id) ON DELETE CASCADE,
-    FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_status (status),
-    INDEX idx_emp_id (emp_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
-
-### Audit Logs Table (System Audit Trail)
-
-```sql
-CREATE TABLE IF NOT EXISTS audit_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NULL,
-    action VARCHAR(100) NOT NULL,
-    module VARCHAR(100) NULL,
-    details TEXT NULL,
-    ip_address VARCHAR(45) NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_user (user_id),
-    INDEX idx_action (action),
-    INDEX idx_created (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
-
-### Password Reset Tokens Table (Password Recovery)
-
-```sql
-CREATE TABLE IF NOT EXISTS password_reset_tokens (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    token VARCHAR(255) NOT NULL UNIQUE,
-    expires_at DATETIME NOT NULL,
-    used TINYINT(1) DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ip_address VARCHAR(45),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_token (token),
-    INDEX idx_expires (expires_at),
-    INDEX idx_user (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-```
-
-### Leave Balance Table (Leave Entitlements)
-
-```sql
-CREATE TABLE IF NOT EXISTS leave_balance (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    employee_id INT NOT NULL,
-    casual_leave INT DEFAULT 0,
-    sick_leave INT DEFAULT 0,
-    vacation_leave INT DEFAULT 0,
-    emergency_leave INT DEFAULT 0,
-    year INT NOT NULL,
-    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_employee_year (employee_id, year)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
-
-### Login Logs Table (Authentication Audit)
-
-```sql
-CREATE TABLE IF NOT EXISTS login_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NULL,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('success', 'failed') NOT NULL,
-    ip_address VARCHAR(100),
-    user_agent TEXT,
-    INDEX idx_user (user_id),
-    INDEX idx_timestamp (timestamp),
-    INDEX idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
-
-### Recognition Logs Table (Face Recognition Audit)
-
-```sql
-CREATE TABLE IF NOT EXISTS recognition_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    employee_id INT NULL,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    confidence FLOAT,
-    action ENUM('enroll', 'recognize', 'unknown') DEFAULT 'unknown',
-    image_path TEXT,
-    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL,
-    INDEX idx_employee (employee_id),
-    INDEX idx_timestamp (timestamp),
-    INDEX idx_action (action)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
-
-### Contact Messages Table (Contact Form Storage)
-
-```sql
-CREATE TABLE IF NOT EXISTS contact_messages (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('new', 'read', 'replied') DEFAULT 'new'
-);
-```
+### System Settings
+- **Recognition Threshold**: 0.4 (adjustable in admin settings)
+- **Session Timeout**: 30 minutes (configurable)
+- **Working Hours**: 8:00 AM - 6:00 PM (customizable)
+- **Late Threshold**: 15 minutes after start time
 
 ---
 
-## ⚙️ Configuration
+## 🔍 Troubleshooting
 
-## ⚙️ Configuration
+### Common Issues
 
-### Recognition Threshold
-
-Edit `config.py`:
-
-```python
-RECOGNITION_THRESHOLD = 0.4  # Lower = stricter (0.3-0.5 recommended)
+**Issue**: Camera not detected
+```bash
+✓ Check camera permissions in browser
+✓ Try different browser (Chrome recommended)
+✓ Restart application
 ```
 
-### Working Hours
-
-```python
-WORKING_HOURS = {
-    'start': '09:00',
-    'end': '18:00',
-    'half_day_hours': 4.0
-}
+**Issue**: Face not recognized
+```bash
+✓ Ensure good lighting
+✓ Check if face is enrolled
+✓ Verify recognition threshold in settings
+✓ Re-enroll face if needed
 ```
 
-### Database Connection
-
-```python
-DB_HOST = 'localhost'
-DB_USER = 'root'
-DB_PASSWORD = 'your_password'
-DB_NAME = 'facetrack_db'
-DB_POOL_SIZE = 10
+**Issue**: Database connection error
+```bash
+✓ Verify MySQL is running
+✓ Check credentials in config.py
+✓ Ensure database exists
+✓ Check firewall settings
 ```
 
----
-
-## 🐛 Troubleshooting
-
-### Camera Not Working
-
-**Error**: `NotFoundError: Requested device not found`
-
-**Solutions**:
-1. Check browser permissions (Settings → Privacy → Camera)
-2. Ensure no other app is using webcam
-3. Try different browser (Chrome recommended)
-4. Check camera drivers
-
-### Face Not Recognized
-
-**Problem**: Kiosk shows "Not Recognized"
-
-**Solutions**:
-1. Verify face enrollment (check `face_enrolled = TRUE`)
-2. Improve lighting (avoid shadows)
-3. Face camera directly
-4. Clean camera lens
-5. Lower `RECOGNITION_THRESHOLD` to 0.35
-
-### Database Connection Error
-
-**Error**: `OperationalError: (2003) Can't connect to MySQL server`
-
-**Solutions**:
-1. Start MySQL service: `net start MySQL80`
-2. Check credentials in `config.py`
-3. Verify database exists: `SHOW DATABASES;`
-4. Check firewall settings
-
-### InsightFace Model Not Loading
-
-**Error**: `Model file not found`
-
-**Solutions**:
-1. Download model manually:
-   ```bash
-   python -c "import insightface; insightface.model_zoo.get_model('buffalo_l')"
-   ```
-2. Ensure `models/` directory exists
-3. Check internet connection (first-time download)
+**Issue**: InsightFace model not loading
+```bash
+✓ Download buffalo_l model manually
+✓ Place in ~/.insightface/models/
+✓ Restart application
+```
 
 ---
 
 ## 🧪 Testing
 
-### Manual Test Checklist
+### Run Tests
+```bash
+# Run all tests
+pytest tests/
 
-- [ ] Admin can login
-- [ ] Add new employee
-- [ ] Upload profile photo
-- [ ] Enroll employee face
-- [ ] Kiosk recognizes face
-- [ ] Check-in recorded
-- [ ] Check-out updates same record
-- [ ] Reports generate correctly
-- [ ] CSV export works
-- [ ] Settings save properly
+# Run specific test file
+pytest tests/test_camera.py
 
-### Performance Benchmarks
+# Run with coverage
+pytest --cov=app tests/
+```
 
-| Operation | Time | Target |
-|-----------|------|--------|
-| Face Detection | 50-80ms | <100ms |
-| Face Recognition | 100-150ms | <200ms |
-| Embedding Generation | 80-120ms | <150ms |
-| Database Query | 5-15ms | <50ms |
-| Total Kiosk Cycle | 200-300ms | <500ms |
+### Test Coverage
+- Unit tests for face recognition
+- Integration tests for API endpoints
+- Performance tests for recognition speed
+- Security tests for authentication
 
 ---
 
-## 🔮 Roadmap
+## 📚 Documentation
 
-### Version 2.0 (Planned Q1 2026)
+- 📖 [Full Documentation](docs/README.md)
+- 🚀 [Deployment Guide](DEPLOYMENT.md)
+- 📱 [Mobile Setup](docs/MOBILE_ACCESS_SETUP.md)
+- ⚙️ [Scheduler Guide](docs/SCHEDULER_PRODUCTION_GUIDE.md)
 
-**Phase 1: Anti-Spoof Detection**
-- [ ] Depth sensing (if hardware available)
-- [ ] Challenge-response verification
+---
 
-**Phase 2: Advanced Features**
-- [ ] Mobile app (React Native)
-- [ ] Shift scheduling
-- [ ] Geofencing for remote attendance
-- [ ] Multi-camera support
+## 🎯 Roadmap
 
-**Phase 3: Analytics**
-- [ ] Attendance prediction (ML)
-- [ ] Behavioral analytics
-- [ ] Department performance metrics
-- [ ] Custom dashboards
+### Version 2.7 (Coming Soon)
+- [ ] Multi-language support
+- [ ] Dark mode toggle
+- [ ] Advanced analytics dashboard
+- [ ] Mobile app integration
+- [ ] Push notifications
+- [ ] Geolocation tracking
 
-**Phase 4: Integrations**
-- [ ] Slack/Teams notifications
-- [ ] Payroll integration
-- [ ] HR management systems
+### Version 3.0 (Future)
+- [ ] Cloud deployment support
+- [ ] Multi-tenant architecture
+- [ ] Advanced AI models
+- [ ] Biometric integration
 - [ ] API for third-party apps
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
@@ -952,43 +435,27 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 👨‍💻 Author
+## 💬 Support
 
-**Asapure Mallikarjun Siddharam**
-- GitHub: [@Mallikarjun15568](https://github.com/Mallikarjun15568)
-- Email: asapuremallikarjun23@gmail.com
-- LinkedIn: [Mallikarjun Asapure](#)
-
----
-
-## 🙏 Acknowledgments
-
-- **InsightFace** - State-of-the-art face recognition models
-- **Flask** - Lightweight and powerful web framework
-- **TailwindCSS** - Utility-first CSS framework
-- **MySQL** - Robust database management system
-- **ONNX Runtime** - High-performance inference engine
+- 📧 Email: support@facetrack.com
+- 🐛 Issues: [GitHub Issues](https://github.com/Mallikarjun15568/FaceTrack/issues)
+- 📖 Wiki: [Project Wiki](https://github.com/Mallikarjun15568/FaceTrack/wiki)
 
 ---
 
-## 📊 Project Stats
+## 🌟 Acknowledgments
 
-- **Lines of Code**: ~12,000+
-- **Python Files**: 55+
-- **HTML Templates**: 25+
-- **JavaScript Files**: 20+
-- **Database Tables**: 14
-- **API Endpoints**: 50+
-- **Blueprints**: 8
-- **Recognition Accuracy**: 98%+
-- **Avg Response Time**: <300ms
+- [InsightFace](https://github.com/deepinsight/insightface) - Face recognition model
+- [Flask](https://flask.palletsprojects.com/) - Web framework
+- [TailwindCSS](https://tailwindcss.com/) - CSS framework
+- [OpenCV](https://opencv.org/) - Computer vision library
 
 ---
 
 <div align="center">
-  
-**⭐ If you find this project useful, please give it a star! ⭐**
 
-**Made with ❤️ using Flask, InsightFace & TailwindCSS**
+### Made with ❤️ by FaceTrack Team
+
+**⭐ Star this repo if you find it helpful!**
 
 </div>
