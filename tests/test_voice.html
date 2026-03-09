@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Announcement Test - FaceTrack</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .test-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .icon {
+            font-size: 20px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-checkin {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-checkin:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-checkout {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .btn-checkout:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+        }
+        
+        .btn-already {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-already:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        
+        .btn-voices {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-voices:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .status.show {
+            display: block;
+        }
+        
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+        
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .voices-list {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .voices-list.show {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .voice-item {
+            padding: 10px;
+            background: white;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-size: 13px;
+            border-left: 3px solid #667eea;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .voice-item:hover {
+            background: #f0f4ff;
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+        
+        .voice-item.selected {
+            background: #e0e7ff;
+            border-left: 3px solid #10b981;
+        }
+        
+        .voice-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .voice-lang {
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .test-voice-btn {
+            background: #3b82f6;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-top: 5px;
+            display: inline-block;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .speaking {
+            animation: pulse 1s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔊 Voice Announcement Test</h1>
+        <p class="subtitle">FaceTrack Pro - Testing Browser TTS System</p>
+        
+        <div class="test-section">
+            <h3><span class="icon">👤</span> Employee Name</h3>
+            <input type="text" id="employeeName" placeholder="Enter employee name (e.g., Rahul)" value="Rahul">
+        </div>
+        
+        <div class="test-section">
+            <h3><span class="icon">🎤</span> Test Announcements</h3>
+            <div class="button-group">
+                <button class="btn-checkin" onclick="testAnnouncement('check-in')">
+                    ✅ Check-In
+                </button>
+                <button class="btn-checkout" onclick="testAnnouncement('check-out')">
+                    👋 Check-Out
+                </button>
+                <button class="btn-already" onclick="testAnnouncement('already')">
+                    ⚠️ Already Marked
+                </button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3><span class="icon">🎙️</span> Voice Info</h3>
+            <button class="btn-voices" onclick="toggleVoices()">
+                Show Available Voices
+            </button>
+            <div class="voices-list" id="voicesList"></div>
+        </div>
+        
+        <div class="status" id="status"></div>
+    </div>
+
+    <script>
+        let voices = [];
+        let voicesLoaded = false;
+        let selectedVoice = null;
+        
+        // Load voices
+        function loadVoices() {
+            voices = speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                voicesLoaded = true;
+            }
+        }
+        
+        // Load voices on page load and when they change
+        loadVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
+        
+        // Show status message
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type} show`;
+            
+            setTimeout(() => {
+                status.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Test announcement
+        async function testAnnouncement(status) {
+            const name = document.getElementById('employeeName').value.trim();
+            
+            if (!name) {
+                showStatus('⚠️ Please enter an employee name!', 'error');
+                return;
+            }
+            
+            if (!('speechSynthesis' in window)) {
+                showStatus('❌ Your browser does not support Text-to-Speech!', 'error');
+                return;
+            }
+            
+            // Prepare config
+            const config = {
+                'check-in': {
+                    text: `Welcome ${name}`,
+                    emoji: '✅'
+                },
+                'check-out': {
+                    text: `Goodbye ${name}`,
+                    emoji: '👋'
+                },
+                'already': {
+                    text: `${name}, already marked`,
+                    emoji: '⚠️'
+                }
+            };
+            
+            const selectedConfig = config[status];
+            
+            // Create utterance
+            const utterance = new SpeechSynthesisUtterance(selectedConfig.text);
+            utterance.lang = 'en-IN';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            // Use manually selected voice OR try preferred voices
+            let voiceToUse = null;
+            
+            if (selectedVoice) {
+                // Use manually selected voice
+                voiceToUse = selectedVoice;
+                utterance.voice = selectedVoice;
+            } else {
+                // Try to use preferred voices
+                const preferredVoices = [
+                    'Google UK English Male',
+                    'Microsoft Heera - English (India)',
+                    'Google हिन्दी',
+                    'Google UK English Female',
+                    'English (India)'
+                ];
+                
+                for (const preferred of preferredVoices) {
+                    const voice = voices.find(v => v.name.includes(preferred));
+                    if (voice) {
+                        voiceToUse = voice;
+                        utterance.voice = voice;
+                        break;
+                    }
+                }
+            }
+            
+            // Show status
+            const voiceName = voiceToUse ? voiceToUse.name : 'Default';
+            showStatus(`${selectedConfig.emoji} Speaking: "${selectedConfig.text}" (Voice: ${voiceName})`, 'success');
+            
+            // Add speaking animation
+            const container = document.querySelector('.container');
+            container.classList.add('speaking');
+            
+            utterance.onend = () => {
+                container.classList.remove('speaking');
+            };
+            
+            // Speak
+            speechSynthesis.cancel();
+            speechSynthesis.speak(utterance);
+        }
+        
+        // Toggle voices list
+        function toggleVoices() {
+            const voicesList = document.getElementById('voicesList');
+            
+            if (!voicesLoaded) {
+                loadVoices();
+            }
+            
+            if (voicesList.classList.contains('show')) {
+                voicesList.classList.remove('show');
+                return;
+            }
+            
+            // Build voices list
+            let html = '';
+            const englishVoices = voices.filter(v => 
+                v.lang.includes('en') || 
+                v.name.includes('English') ||
+                v.name.includes('India')
+            );
+            
+            if (englishVoices.length === 0) {
+                html = '<div class="voice-item">No English voices found. Using default voice.</div>';
+            } else {
+                englishVoices.forEach((voice, index) => {
+                    const isPremium = voice.name.includes('Google') || 
+                                    voice.name.includes('Microsoft') ||
+                                    voice.name.includes('Heera');
+                    const badge = isPremium ? '⭐' : '';
+                    const isSelected = selectedVoice && selectedVoice.name === voice.name;
+                    const selectedClass = isSelected ? 'selected' : '';
+                    
+                    html += `
+                        <div class="voice-item ${selectedClass}" onclick="selectVoice(${index})" data-voice-index="${index}">
+                            <div class="voice-name">${badge} ${voice.name} ${isSelected ? '✓' : ''}</div>
+                            <div class="voice-lang">Language: ${voice.lang} | ${voice.localService ? 'Local' : 'Network'}</div>
+                            <button class="test-voice-btn" onclick="testVoice(${index}); event.stopPropagation();">🎤 Test This Voice</button>
+                        </div>
+                    `;
+                });
+            }
+            
+            voicesList.innerHTML = html;
+            voicesList.classList.add('show');
+            
+            showStatus(`Found ${englishVoices.length} English voices. Click any voice to select it!`, 'info');
+        }
+        
+        // Select a voice
+        function selectVoice(index) {
+            const englishVoices = voices.filter(v => 
+                v.lang.includes('en') || 
+                v.name.includes('English') ||
+                v.name.includes('India')
+            );
+            
+            selectedVoice = englishVoices[index];
+            
+            // Update UI
+            document.querySelectorAll('.voice-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            const selectedItem = document.querySelector(`[data-voice-index="${index}"]`);
+            if (selectedItem) {
+                selectedItem.classList.add('selected');
+            }
+            
+            showStatus(`✅ Selected: ${selectedVoice.name}`, 'success');
+        }
+        
+        // Test a specific voice
+        function testVoice(index) {
+            const englishVoices = voices.filter(v => 
+                v.lang.includes('en') || 
+                v.name.includes('English') ||
+                v.name.includes('India')
+            );
+            
+            const voice = englishVoices[index];
+            const name = document.getElementById('employeeName').value.trim() || 'Guest';
+            
+            const utterance = new SpeechSynthesisUtterance(`Welcome ${name}`);
+            utterance.voice = voice;
+            utterance.lang = 'en-IN';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            showStatus(`🎤 Testing: ${voice.name}`, 'info');
+            
+            const container = document.querySelector('.container');
+            container.classList.add('speaking');
+            
+            utterance.onend = () => {
+                container.classList.remove('speaking');
+            };
+            
+            speechSynthesis.cancel();
+            speechSynthesis.speak(utterance);
+        }
+        
+        // Test on Enter key
+        document.getElementById('employeeName').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                testAnnouncement('check-in');
+            }
+        });
+        
+        // Show initial info
+        setTimeout(() => {
+            showStatus('✅ Voice system ready! Enter a name and click a button to test.', 'success');
+        }, 500);
+    </script>
+</body>
+</html>

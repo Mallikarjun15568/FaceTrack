@@ -22,6 +22,7 @@ from utils.extensions import limiter
 from utils.logger import logger
 from utils.face_encoder import face_encoder
 from utils.email_service import email_service
+from utils.simple_audio import simple_audio
 from utils.csrf_exemptions import setup_csrf_exemptions
 from utils.validators import validate_email
 
@@ -108,6 +109,9 @@ app.config['BASE_URL'] = os.getenv('BASE_URL', 'http://127.0.0.1:5000')
 
 # Initialize email service with app config
 email_service.init_app(app)
+
+# Initialize simple audio service
+simple_audio.init_app(app)
 
 
 # --------------------------

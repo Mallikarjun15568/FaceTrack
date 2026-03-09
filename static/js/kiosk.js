@@ -339,9 +339,71 @@ window.speak = function (msg) {
     if (!("speechSynthesis" in window)) return;
     const u = new SpeechSynthesisUtterance(msg);
     u.lang = "en-IN";
+    u.rate = 0.9;  // Slightly slower for clarity
     speechSynthesis.cancel();
     speechSynthesis.speak(u);
 };
+
+// =======================
+// SIMPLE AUDIO ANNOUNCEMENT
+// =======================
+async function playAnnouncement(name, status) {
+    if (!voiceEnabled) return;
+    
+    try {
+        const response = await fetch('/kiosk/api/audio', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                name: name,
+                status: status  // 'check-in' or 'check-out'
+            })
+        });
+        
+        if (!response.ok) {
+            // Fallback to simple browser TTS
+            speak(status === 'check-in' ? `Welcome ${name}` : `Goodbye ${name}`);
+            return;
+        }
+        
+        const data = await response.json();
+        
+        // Browser TTS with optimized settings
+        if (data.mode === 'tts' && data.config) {
+            const config = data.config;
+            if ("speechSynthesis" in window) {
+                const utterance = new SpeechSynthesisUtterance(config.text);
+                utterance.lang = config.lang;
+                utterance.rate = config.rate;
+                utterance.pitch = config.pitch;
+                utterance.volume = config.volume;
+                
+                // Try preferred voices
+                if (config.preferredVoices) {
+                    const voices = speechSynthesis.getVoices();
+                    for (const preferred of config.preferredVoices) {
+                        const voice = voices.find(v => v.name.includes(preferred));
+                        if (voice) {
+                            utterance.voice = voice;
+                            break;
+                        }
+                    }
+                }
+                
+                speechSynthesis.cancel();
+                speechSynthesis.speak(utterance);
+            }
+        }
+    } catch (error) {
+        console.error('Announcement error:', error);
+        // Final fallback
+        const fallbackMsg = status === 'check-in' ? `Welcome ${name}` : `Goodbye ${name}`;
+        speak(fallbackMsg);
+    }
+}
 
 // =======================
 // CAMERA DETECTION
@@ -697,12 +759,22 @@ function updateUI(data) {
 
     if (data.status === "check-in") {
         playBeep(1000, 150);
-        if (canSpeak(data.name)) speak(`Welcome ${data.name}`);
+        if (canSpeak(data.name)) {
+            // Use simple audio announcement (instant)
+            playAnnouncement(data.name, 'check-in').catch(() => {
+                speak(`Welcome ${data.name}`);  // Fallback
+            });
+        }
         setScanMessage(`Welcome ${data.name}`);
         setScanSuccess();
     } else if (data.status === "check-out") {
         playBeep(900, 150);
-        if (canSpeak(data.name)) speak(`Goodbye ${data.name}`);
+        if (canSpeak(data.name)) {
+            // Use simple audio announcement (instant)
+            playAnnouncement(data.name, 'check-out').catch(() => {
+                speak(`Goodbye ${data.name}`);  // Fallback
+            });
+        }
         setScanMessage(`Goodbye ${data.name}`);
         setScanSuccess();
     } else if (data.status === "already") {

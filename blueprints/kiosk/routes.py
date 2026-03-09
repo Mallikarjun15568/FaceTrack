@@ -360,6 +360,46 @@ def kiosk_status():
 
 
 # ---------------------------------------------------------
+# API: Get Audio Announcement
+# ---------------------------------------------------------
+@bp.route("/api/audio", methods=["POST"])
+def get_audio_announcement():
+    """
+    Get audio announcement for kiosk using browser TTS.
+    Simple, fast, zero setup required.
+    """
+    try:
+        from utils.simple_audio import simple_audio
+        
+        data = request.get_json()
+        name = data.get("name", "User")
+        status = data.get("status", "check-in")  # 'check-in' or 'check-out'
+        
+        # Get browser TTS config
+        tts_config = simple_audio.get_browser_tts_config(name, status)
+        return jsonify({
+            "success": True,
+            "mode": "tts",
+            "config": tts_config
+        })
+        
+    except Exception as e:
+        logger.error(f"Audio announcement failed: {e}", exc_info=True)
+        # Final fallback
+        return jsonify({
+            "success": True,
+            "mode": "tts",
+            "config": {
+                "text": f"Welcome {data.get('name', 'User')}",
+                "lang": "en-IN",
+                "rate": 0.9,
+                "pitch": 1.0,
+                "volume": 1.0
+            }
+        })
+
+
+# ---------------------------------------------------------
 # ADMIN: Force Unlock Kiosk
 # ---------------------------------------------------------
 @bp.route("/admin/force_unlock", methods=["POST"])
