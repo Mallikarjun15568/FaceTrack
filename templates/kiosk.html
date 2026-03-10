@@ -64,6 +64,38 @@
   100% { top: 100%; opacity: 0; }
 }
 
+/* Slide down animation for notifications */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -100%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Slide in from right animation for error notifications */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.4s ease-out forwards;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.4s ease-out forwards;
+}
+
 .animate-fadeInUp {
   animation: fadeInUp 0.5s ease-out forwards;
 }
@@ -309,6 +341,54 @@
         </div>
       </div>
     </div>
+    
+    <!-- Divider -->
+    <div class="border-t-2 border-gray-300 my-2"></div>
+    <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">Performance Settings</div>
+    
+    <!-- Auto-Stop Timeout -->
+    <div class="p-4 rounded-xl border-2 border-gray-200 bg-gray-50 shadow-sm">
+      <label class="block text-sm font-bold text-gray-800 mb-3">
+        <i class="fas fa-clock text-purple-600 mr-2"></i> Auto-Stop Timeout
+      </label>
+      <select id="idleTimeoutSelect" class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none transition-all font-medium">
+        <option value="30000">30 seconds</option>
+        <option value="45000" selected>45 seconds (Default)</option>
+        <option value="60000">60 seconds</option>
+        <option value="0">Never (Always ON)</option>
+      </select>
+      <p class="text-xs text-gray-600 mt-2">Camera stops if no face detected</p>
+    </div>
+    
+    <!-- Polling Delay -->
+    <div class="p-4 rounded-xl border-2 border-gray-200 bg-gray-50 shadow-sm">
+      <label class="block text-sm font-bold text-gray-800 mb-3">
+        <i class="fas fa-tachometer-alt text-green-600 mr-2"></i> Processing Speed
+      </label>
+      <select id="pollingDelaySelect" class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-green-500 focus:ring-4 focus:ring-green-100 outline-none transition-all font-medium">
+        <option value="400">Fast (400ms) - Higher load</option>
+        <option value="800" selected>Balanced (800ms) - Recommended</option>
+        <option value="1000">Slower (1000ms) - Lower load</option>
+        <option value="1500">Very Slow (1500ms) - Minimal load</option>
+      </select>
+      <p class="text-xs text-gray-600 mt-2">How often to check for faces</p>
+    </div>
+    
+    <!-- Client-Side Detection Toggle -->
+    <div id="clientDetectionToggle" class="p-4 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors border-2 border-gray-200 bg-white shadow-sm">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <i class="fas fa-brain text-orange-600 text-xl"></i>
+          <div>
+            <span class="font-bold text-gray-800 block">Smart Detection</span>
+            <span class="text-xs text-gray-600">90% load reduction</span>
+          </div>
+        </div>
+        <div class="toggle-switch w-14 h-7 bg-green-500 rounded-full flex items-center px-1 transition-colors shadow-md">
+          <div class="toggle-knob w-6 h-6 bg-white rounded-full translate-x-6 transition-transform shadow-lg"></div>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="p-6 border-t-2 border-gray-200 space-y-4 bg-gray-50"> <button id="exitKioskBtn" class="w-full bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]"> <i
         class="fas fa-sign-out-alt mr-2"></i> Exit Kiosk </button> <button id="closeSettingsBtn"
@@ -391,6 +471,8 @@
   }
 </style>
 </style> {% endblock %} {% block scripts %}
+<!-- Face Detection Library (Lightweight) -->
+<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js"></script>
 <script src="{{ url_for('static', filename='js/kiosk.js') }}"></script>
 <script src="{{ url_for('static', filename='js/kiosk_mobile_flip.js') }}"></script>
 <script> // Kiosk mode: Intercept back button and show PIN modal let backButtonPressed = false; history.pushState(null, '', location.href); window.addEventListener('popstate', function(e) { // Prevent actual navigation history.pushState(null, '', location.href); // Show PIN modal for exit backButtonPressed = true; const pinModal = document.getElementById('pinModal'); const pinInput = document.getElementById('pinInput'); if (pinModal && pinInput) { window.pendingExit = true; // Set flag for exit (used by kiosk.js) pinInput.value = ''; pinModal.classList.remove('hidden'); pinModal.classList.add('flex'); setTimeout(() => pinInput.focus(), 100); } }); </script>

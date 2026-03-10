@@ -102,6 +102,276 @@ let voiceEnabled = true;
 let cameraSwitchAllowed = true;
 let showCameraStatus = true;
 
+// ===== IDLE TIMEOUT & FACE DETECTION STATE =====
+let idleTimeoutHandle = null;
+let lastFaceDetectedTime = 0;
+// Load from localStorage or use default
+window.IDLE_TIMEOUT_MS = parseInt(localStorage.getItem('idleTimeoutMs') || '45000', 10);
+let countdownInterval = null;
+let faceApiLoaded = false;
+let faceDetectionModel = null;
+
+// ===== FACE-API.JS INITIALIZATION =====
+async function initFaceDetection() {
+    try {
+        if (typeof faceapi === 'undefined') {
+            console.warn('⚠️ face-api.js not loaded, using fallback detection');
+            faceApiLoaded = false;
+            return;
+        }
+
+        console.log('🔄 Loading face detection models...');
+        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
+        
+        // Load only tiny face detector (lightweight ~300KB)
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        
+        faceApiLoaded = true;
+        console.log('✅ Face detection ready');
+    } catch (err) {
+        console.error('❌ Face detection init failed:', err);
+        faceApiLoaded = false;
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    initFaceDetection();
+});
+
+// ===== CLIENT-SIDE FACE DETECTION =====
+async function detectFaceClientSide() {
+    // Check if client detection is disabled
+    if (typeof clientDetectionEnabled !== 'undefined' && !clientDetectionEnabled) {
+        return true; // Always return true when disabled (send all frames to backend)
+    }
+    
+    // Fallback: always return true if face-api not loaded
+    if (!faceApiLoaded || typeof faceapi === 'undefined' || !video.videoWidth) {
+        return true;
+    }
+
+    try {
+        const options = new faceapi.TinyFaceDetectorOptions({
+            inputSize: 160,  // Small size for speed
+            scoreThreshold: 0.4
+        });
+
+        const detection = await faceapi.detectSingleFace(video, options);
+        return !!detection;
+    } catch (err) {
+        console.warn('Face detection error:', err);
+        return true; // Fallback to backend on error
+    }
+}
+
+// ===== IDLE TIMEOUT FUNCTIONS =====
+function resetIdleTimeout() {
+    // Clear existing timeout
+    if (idleTimeoutHandle) {
+        clearTimeout(idleTimeoutHandle);
+        idleTimeoutHandle = null;
+    }
+    
+    // Clear countdown interval
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+    
+    // Hide countdown UI
+    hideCountdownUI();
+    
+    // Start new timeout only if not set to "Never" (0)
+    const timeoutValue = window.IDLE_TIMEOUT_MS || 45000;
+    if (timeoutValue > 0) {
+        idleTimeoutHandle = setTimeout(() => {
+            handleIdleTimeout();
+        }, timeoutValue);
+    } else {
+        console.log('⏰ Idle timeout disabled (Never mode)');
+    }
+}
+
+function handleIdleTimeout() {
+    console.log('⏰ Idle timeout - Auto-stopping camera');
+    
+    // Show notification
+    showIdleNotification();
+    
+    // Stop camera after 2 seconds
+    setTimeout(() => {
+        if (stopBtn) {
+            stopBtn.click();
+        }
+    }, 2000);
+}
+
+function showIdleNotification() {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%) !important;
+        color: white !important;
+        padding: 1.5rem 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 30px rgba(139, 92, 246, 0.4) !important;
+        z-index: 9999;
+        animation: slideDown 0.4s ease-out forwards;
+        border: 4px solid #a78bfa !important;
+        min-width: 380px;
+    `;
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="
+                background: rgba(255,255,255,0.2);
+                padding: 0.75rem;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            ">
+                <i class="fas fa-power-off" style="font-size: 1.75rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.4);"></i>
+            </div>
+            <div>
+                <p style="font-weight: 700; font-size: 1.25rem; margin: 0 0 0.25rem 0; color: white; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">⏹️ Camera Stopped</p>
+                <p style="font-size: 0.95rem; margin: 0; opacity: 0.95; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.4);">No activity detected for 45 seconds</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 4500);
+}
+
+function showCountdownUI(secondsLeft) {
+    let countdownEl = document.getElementById('idleCountdown');
+    
+    if (!countdownEl) {
+        countdownEl = document.createElement('div');
+        countdownEl.id = 'idleCountdown';
+        countdownEl.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 z-[60]';
+        countdownEl.style.cssText = 'pointer-events: none;';
+        document.body.appendChild(countdownEl);
+    }
+    
+    // Clean 3-color system
+    let bgColor, borderColor, pulseClass;
+    
+    if (secondsLeft > 10) {
+        // YELLOW - Caution (15-11 seconds)
+        bgColor = '#fbbf24';
+        borderColor = '#f59e0b';
+        pulseClass = '';
+    } else if (secondsLeft > 5) {
+        // ORANGE - Warning (10-6 seconds)
+        bgColor = '#f97316';
+        borderColor = '#ea580c';
+        pulseClass = '';
+    } else {
+        // RED - Critical (5-1 seconds)
+        bgColor = '#dc2626';
+        borderColor = '#b91c1c';
+        pulseClass = 'animate-pulse';
+    }
+    
+    console.log(`🎨 Countdown UI: ${secondsLeft}s - Color: ${bgColor}`);
+    
+    countdownEl.innerHTML = `
+        <div class="${pulseClass}" style="
+            background: ${bgColor} !important;
+            border: 4px solid ${borderColor} !important;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.3) !important;
+            border-radius: 1.5rem !important;
+            padding: 1.25rem 2.5rem !important;
+            min-width: 400px !important;
+        ">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <i class="fas fa-hourglass-half" style="
+                    color: white !important;
+                    font-size: 2rem !important;
+                    text-shadow: 2px 2px 6px rgba(0,0,0,0.5) !important;
+                    filter: drop-shadow(0 0 8px rgba(255,255,255,0.3)) !important;
+                "></i>
+                <div>
+                    <p style="
+                        font-weight: 700 !important;
+                        font-size: 1.25rem !important;
+                        color: white !important;
+                        margin: 0 0 0.25rem 0 !important;
+                        text-shadow: 2px 2px 6px rgba(0,0,0,0.5) !important;
+                    ">⚠️ No Face Detected</p>
+                    <p style="
+                        font-size: 0.95rem !important;
+                        color: white !important;
+                        margin: 0 !important;
+                        opacity: 0.95 !important;
+                        text-shadow: 1px 1px 4px rgba(0,0,0,0.4) !important;
+                    ">Camera will stop in <span style="
+                        font-size: 2rem !important;
+                        font-weight: 900 !important;
+                        color: white !important;
+                        text-shadow: 3px 3px 8px rgba(0,0,0,0.6) !important;
+                        display: inline-block !important;
+                        padding: 0 0.5rem !important;
+                        background: rgba(0,0,0,0.2) !important;
+                        border-radius: 0.5rem !important;
+                    ">${secondsLeft}</span> seconds</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function hideCountdownUI() {
+    const countdownEl = document.getElementById('idleCountdown');
+    if (countdownEl) {
+        countdownEl.remove();
+    }
+}
+
+function startCountdownDisplay() {
+    const WARNING_START = 15; // Start showing countdown at 15 seconds left
+    
+    // Don't start countdown if idle timeout is disabled
+    const timeoutValue = window.IDLE_TIMEOUT_MS || 45000;
+    if (timeoutValue === 0) {
+        console.log('⏰ Countdown disabled (timeout set to Never)');
+        return;
+    }
+    
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+    
+    countdownInterval = setInterval(() => {
+        if (!cameraRunning) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+            hideCountdownUI();
+            return;
+        }
+        
+        const elapsed = Date.now() - lastFaceDetectedTime;
+        const remaining = timeoutValue - elapsed;
+        const secondsLeft = Math.ceil(remaining / 1000);
+        
+        console.log('⏰ Countdown check:', { elapsed, remaining, secondsLeft, WARNING_START });
+        
+        if (secondsLeft <= WARNING_START && secondsLeft > 0) {
+            showCountdownUI(secondsLeft);
+        } else if (secondsLeft > WARNING_START) {
+            hideCountdownUI();
+        } else if (secondsLeft <= 0) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+            hideCountdownUI();
+        }
+    }, 1000);
+}
+
 // ===== Enhanced Scan Ring State Helpers with Animations =====
 function setScanIdle() {
     scanRing.className = "relative w-56 h-56 rounded-full border-3 border-gray-400 flex items-center justify-center transition-all duration-500 shadow-lg";
@@ -624,6 +894,12 @@ if (startBtn) {
 
             setScanScanning();
             await loadCameras();
+            
+            // Start idle timeout monitoring
+            lastFaceDetectedTime = Date.now();
+            resetIdleTimeout();
+            startCountdownDisplay();
+            
             startRecognitionLoop();
 
         } catch (err) {
@@ -644,6 +920,18 @@ if (stopBtn) {
         if (!stream) return;
 
         stopRecognitionLoop();
+        
+        // Clear idle timeout timers
+        if (idleTimeoutHandle) {
+            clearTimeout(idleTimeoutHandle);
+            idleTimeoutHandle = null;
+        }
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+        hideCountdownUI();
+        
         stream.getTracks().forEach(t => t.stop());
         video.srcObject = null;
         stream = null;
@@ -975,7 +1263,8 @@ function drawKioskFaceBox() {
 // =======================
 // RECOGNITION LOOP
 // =======================
-const POLLING_DELAY_MS = 400; // Faster polling for better UX - ~0.4 seconds
+// Load from localStorage or use default
+window.POLLING_DELAY_MS = parseInt(localStorage.getItem('pollingDelayMs') || '800', 10);
 
 async function sendFrame() {
     if (!cameraRunning || sendingFrame || !video.videoWidth) return;
@@ -983,6 +1272,21 @@ async function sendFrame() {
 
     try {
         if (Date.now() < hardCooldownUntil) return;
+
+        // ===== CLIENT-SIDE FACE DETECTION (Phase 2) =====
+        const hasFaceDetected = await detectFaceClientSide();
+        
+        if (!hasFaceDetected) {
+            // No face detected - skip backend processing
+            // Note: Don't update lastFaceDetectedTime - let timer continue
+            console.log('⏭️ No face detected client-side, skipping backend');
+            return;
+        }
+        
+        // Face detected - reset idle timer
+        console.log('✅ Face detected, resetting idle timeout');
+        lastFaceDetectedTime = Date.now();
+        resetIdleTimeout();
 
         // (Intentionally left blank) do not overwrite backend messages here
 
@@ -1067,6 +1371,17 @@ async function sendFrame() {
         setSuccessState();
         updateUI(data);
         hardCooldownUntil = Date.now() + RECOGNITION_COOLDOWN_MS;
+        
+        // Auto-stop camera after successful attendance (3 seconds)
+        if (data.status === "check-in" || data.status === "check-out") {
+            console.log('✅ Attendance marked successfully, auto-stopping camera in 3 seconds...');
+            setTimeout(() => {
+                if (stopBtn && cameraRunning) {
+                    stopBtn.click();
+                    console.log('⏸️ Camera auto-stopped after successful attendance');
+                }
+            }, 3000);
+        }
 
     } catch (err) {
         console.error("Recognition error:", err);
@@ -1081,7 +1396,7 @@ async function startRecognitionLoop() {
 
     while (recognitionRunning) {
         await sendFrame();
-        await new Promise(r => setTimeout(r, POLLING_DELAY_MS));
+        await new Promise(r => setTimeout(r, window.POLLING_DELAY_MS || 800));
     }
 }
 
@@ -1357,7 +1672,23 @@ if (pinVerify) {
                 }
 
             } else {
-                alert(data.message || "Invalid PIN");
+                console.error('❌ Settings access failed:', data.message);
+                
+                // Professional error notification (consistent with Exit error)
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'fixed top-4 right-4 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] animate-slideInRight';
+                errorMsg.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-exclamation-circle text-2xl"></i>
+                        <div>
+                            <p class="font-bold text-sm">Settings Access Failed</p>
+                            <p class="text-xs opacity-90">${data.message || 'Invalid PIN. Please try again.'}</p>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(errorMsg);
+                setTimeout(() => errorMsg.remove(), 4000);
+                
                 pinInput.value = "";
                 pinInput.focus();
             }
@@ -1457,6 +1788,74 @@ if (cameraStatusToggle) {
         }
 
         console.log("ℹ️ Show Camera Status:", showCameraStatus ? "ON" : "OFF");
+    });
+}
+
+// ===== NEW PERFORMANCE CONTROLS =====
+const idleTimeoutSelect = document.getElementById('idleTimeoutSelect');
+const pollingDelaySelect = document.getElementById('pollingDelaySelect');
+const clientDetectionToggle = document.getElementById('clientDetectionToggle');
+
+// Client-side detection toggle
+let clientDetectionEnabled = true;
+
+if (clientDetectionToggle) {
+    // Load saved setting
+    const savedClientDetection = localStorage.getItem('clientDetectionEnabled');
+    if (savedClientDetection !== null) {
+        clientDetectionEnabled = savedClientDetection === 'true';
+        updateToggleUI(clientDetectionToggle, clientDetectionEnabled);
+    }
+    
+    clientDetectionToggle.addEventListener("click", () => {
+        clientDetectionEnabled = !clientDetectionEnabled;
+        updateToggleUI(clientDetectionToggle, clientDetectionEnabled);
+        localStorage.setItem('clientDetectionEnabled', clientDetectionEnabled);
+        console.log("🧠 Client Detection:", clientDetectionEnabled ? "ON" : "OFF");
+    });
+}
+
+// Idle timeout select
+if (idleTimeoutSelect) {
+    // Load saved setting
+    const savedTimeout = localStorage.getItem('idleTimeoutMs');
+    if (savedTimeout !== null) {
+        idleTimeoutSelect.value = savedTimeout;
+    }
+    
+    idleTimeoutSelect.addEventListener("change", () => {
+        const newTimeout = parseInt(idleTimeoutSelect.value, 10);
+        localStorage.setItem('idleTimeoutMs', newTimeout);
+        
+        // Update the global constant by re-declaring it
+        window.IDLE_TIMEOUT_MS = newTimeout;
+        
+        console.log("⏰ Idle Timeout set to:", newTimeout === 0 ? "Never" : `${newTimeout/1000}s`);
+        
+        // Reset current timer if camera is running
+        if (cameraRunning) {
+            lastFaceDetectedTime = Date.now();
+            resetIdleTimeout();
+        }
+    });
+}
+
+// Polling delay select
+if (pollingDelaySelect) {
+    // Load saved setting
+    const savedPolling = localStorage.getItem('pollingDelayMs');
+    if (savedPolling !== null) {
+        pollingDelaySelect.value = savedPolling;
+    }
+    
+    pollingDelaySelect.addEventListener("change", () => {
+        const newDelay = parseInt(pollingDelaySelect.value, 10);
+        localStorage.setItem('pollingDelayMs', newDelay);
+        
+        // Update the global constant
+        window.POLLING_DELAY_MS = newDelay;
+        
+        console.log("⚡ Polling Delay set to:", `${newDelay}ms`);
     });
 }
 
