@@ -208,6 +208,9 @@ function handleIdleTimeout() {
 }
 
 function showIdleNotification() {
+    // Calculate actual timeout in seconds
+    const timeoutSeconds = Math.round((window.IDLE_TIMEOUT_MS || 45000) / 1000);
+
     const notification = document.createElement('div');
     notification.style.cssText = `
         position: fixed;
@@ -238,7 +241,7 @@ function showIdleNotification() {
             </div>
             <div>
                 <p style="font-weight: 700; font-size: 1.25rem; margin: 0 0 0.25rem 0; color: white; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">⏹️ Camera Stopped</p>
-                <p style="font-size: 0.95rem; margin: 0; opacity: 0.95; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.4);">No activity detected for 45 seconds</p>
+                <p style="font-size: 0.95rem; margin: 0; opacity: 0.95; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.4);">No activity detected for ${timeoutSeconds} seconds</p>
             </div>
         </div>
     `;
