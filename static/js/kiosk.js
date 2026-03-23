@@ -622,8 +622,9 @@ window.speak = function (msg) {
 // =======================
 async function playAnnouncement(name, status) {
     if (!voiceEnabled) return;
-    
+
     try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
         const response = await fetch('/kiosk/api/audio', {
             method: 'POST',
             headers: {
