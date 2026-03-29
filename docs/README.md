@@ -143,6 +143,13 @@ Take screenshots of your running application for:
 
 ---
 
+## 📚 Related Academic Resources
+
+- `ASPNET_CORE_UNIT_QUESTIONS.md` – **ASP.NET Core MVC Unit-Wise Question Bank** (BCA1604)  
+  Unit-wise questions with answers covering all four units of the ASP.NET Core syllabus (BCA-III CBCS Sem VI), including MCQs, fill-in-the-blanks, short answers, long answers, and previous year exam paper (March/April 2025).
+
+---
+
 ## 📋 Submission Checklist
 
 - [ ] All placeholders filled with actual information

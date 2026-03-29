@@ -86,10 +86,12 @@ ERD_FaceTrack.svg
 wireframes_index.md
 demo_data.sql
 
-# Documentation files (keep only README.md and DEPLOYMENT.md)
+# Documentation files (keep only README.md, DEPLOYMENT.md, and learning modules)
 *.md
 !README.md
 !DEPLOYMENT.md
+!docs/README.md
+!docs/ASPNET_CORE_UNIT_QUESTIONS.md
 CHANGELOG.md
 COMPLETE_FIX_REPORT.md
 DEEP_ANALYSIS_REPORT.md
